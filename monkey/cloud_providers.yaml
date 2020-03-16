@@ -1,0 +1,12 @@
+providers:
+    - name: "gcp"
+      type: "gcp"
+      zone: "us-east1-b"
+      project: "mit-mic"
+
+defaults:
+    gcp:
+        instance-type: ""
+        # In GB
+        disk-size: "15"
+        
