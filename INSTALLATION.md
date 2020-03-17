@@ -15,7 +15,10 @@ After you download the service key, you will need to configure your project vari
 providers:
     - gcp:
         type: "gcp"
-        zone: "us-east1-b"
+        zones: 
+         - "us-east1-b"
+         - "us-west1-b"
         project: "gcp-project-id"
+        credentials-key": "gcp-service-key.json"  # (optional), defaults
 
 ```
