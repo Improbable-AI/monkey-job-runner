@@ -66,8 +66,8 @@ class CloudHandler():
             self.provider_type == None)
 
     def __str__(self):
-        return "Provider: {}, name: {}, zones: {}, project: {}"\
-            .format(self.provider_type, self.name, ", ".join(self.zones), self.project)
+        return "Name: {}, provider: {}, zones: {}, project: {}"\
+            .format(self.name, self.provider_type, ", ".join(self.zones), self.project)
 
 class CloudHandlerGCP(CloudHandler):
 
@@ -255,7 +255,7 @@ summary below
                 print(metadata_items)
                 for metadata_set in metadata_items:
                     startup_script.replace("${}".format(metadata_set["key"]), metadata_set["value"])
-                print(startup_script)
+                # print(startup_script)
             except:
                 logger.warning("Could not read startup script file")
 

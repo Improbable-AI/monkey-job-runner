@@ -5,7 +5,7 @@ apt-get update
 cd $HOME
 echo "Hello there" > test.txt
 echo "asdf $USER" > user.txt
-
+printenv > env.txt
 echo $GCP_USER > "gcpuser.txt"
 
 apt-get -y update
