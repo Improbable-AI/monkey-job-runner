@@ -1,0 +1,3 @@
+[submodule "monkey-client"]
+	path = monkey-client
+	url = https://github.com/Averylamp/monkey-client.git
