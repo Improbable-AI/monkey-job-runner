@@ -39,8 +39,6 @@ class CloudInstanceGCP(CloudInstance):
     
     def __init__(self, params):
         logger.info("Initialization of GCP Instance")
-        credentials = service_account.Credentials.from_service_account_file('gcp-service-key.json')
-        logger.info(credentials)
 
 
     def get_type(self):

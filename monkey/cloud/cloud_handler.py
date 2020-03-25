@@ -3,6 +3,8 @@ import json
 import time
 import random
 import string
+import datetime
+
 import logging 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +48,9 @@ class CloudHandler():
     def list_instances(self):
         raise NotImplementedError("This is not implemented yet")
 
+    def list_jobs(self):
+        raise NotImplementedError("This is not implemented yet")
+
     def list_images(self):
         raise NotImplementedError("This is not implemented yet")
 
@@ -72,7 +77,8 @@ class CloudHandler():
 class CloudHandlerGCP(CloudHandler):
 
     compute_api = None
-
+    firewall_rule_name = 'monkey-firewall'
+    monkey_required_ports = ['9991']
 
     def __init__(self, provider_info, default_params):
         super().__init__(provider_info, default_params)
@@ -90,7 +96,40 @@ class CloudHandlerGCP(CloudHandler):
             credentials_key_name = provider_info["credentials-key"]
         self.credentials = service_account.Credentials.from_service_account_file(credentials_key_name)
         self.compute_api = googleapiclient.discovery.build('compute', 'v1', credentials=self.credentials, cache_discovery=False)
-        
+        self.check_for_firewall_rule()
+
+    def check_for_firewall_rule(self):
+        result = self.compute_api.firewalls().list(project=self.project).execute()
+        result = result.get('items', [])
+        firewall_rule_found = False
+        for item in result:
+            if item.get('name', None) == self.firewall_rule_name:
+                firewall_rule_found = True
+                break 
+        if not firewall_rule_found:
+            logger.info("Creating Firewall Rule")
+            self.create_firewall_rule()
+
+    def create_firewall_rule(self):
+        firewall_rule = {
+            'name': self.firewall_rule_name,
+            'description': 'Monkey Job runner monkey-client firewall rule.  Allows for connection to monkey-client',
+            'allowed': [
+                {
+                    'IPProtocol': 'tcp',
+                    'ports': self.monkey_required_ports,
+                },
+                {
+                    'IPProtocol': 'udp',
+                    'ports': self.monkey_required_ports,
+                }
+            ],
+            'targetTags':[
+                self.firewall_rule_name
+            ]
+        }
+        result = self.compute_api.firewalls().insert(project=self.project, body=firewall_rule).execute()
+
 
     def is_valid(self):
         return super().is_valid() and self.compute_api is not None
@@ -116,6 +155,22 @@ class CloudHandlerGCP(CloudHandler):
             except: 
                 pass
         return instances
+    
+    def list_jobs(self):
+        jobs = []
+        for zone in self.zones:
+            try:
+                result = self.compute_api.instances().list(project=self.project, zone=zone).execute()
+                result = result['items'] if 'items' in result else None
+                if result:
+                    for item in result:
+                        labels = item['labels'] if 'labels' in item else  []
+                        monkey_identifier_target = self.machine_defaults['monkey-identifier']
+                        if 'monkey-identifier' in labels and labels['monkey-identifier'] == monkey_identifier_target:
+                            jobs.append(item['name'])
+            except: 
+                pass
+        return jobs
 
     def list_images(self):
         images = []
@@ -200,9 +255,7 @@ summary below
                 }
             ],
 
-            # Tags the machine
-            'labels': all_params['labels'] if 'labels' in all_params else dict(),
-
+            
             # Specify a network interface with NAT to access the public
             # internet.
             'networkInterfaces': [{
@@ -220,8 +273,35 @@ summary below
                     'https://www.googleapis.com/auth/logging.write'
                 ]
             }],
+            
+            # Configure network tag for monkey firewall
+            'tags':{
+                'items':[
+                    self.firewall_rule_name
+                ]
+            },
+            
 
         }
+
+        all_labels = dict()
+        if 'labels' in all_params:
+            for key, value in all_params['labels'].items():
+                all_labels[key] = value
+
+        all_labels["job-creation-time"] = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        
+        # Monkey Identifier (required)
+        # Should be unique for every user in the providers
+        if 'monkey-identifier' in all_params:
+            all_labels['monkey-identifier'] = all_params['monkey-identifier']
+        else:
+            logger.error("You must have a the monkey-identifier set for each user in cloud_providers.yaml")
+            raise ValueError("You must have a the monkey-identifier set for each user in cloud_providers.yaml")
+            return
+
+        # Tags the machine
+        config['labels'] = all_labels
 
         # Preemptible setting
         if 'preemptible' in all_params:
@@ -239,6 +319,9 @@ summary below
 
         # Metadata
         metadata_items = []
+
+        
+
         if 'metadata' in all_params:
             for key, value in all_params['metadata'].items():
                 metadata_items.append({
@@ -246,18 +329,20 @@ summary below
                     'value': value
                 })
 
+
         # Startup Script
         startup_script = None
         if "startup-script-file" in all_params:
             script_file = all_params["startup-script-file"]
             try:
                 startup_script = open(script_file, 'r').read()
-                print(metadata_items)
+                logger.debug(metadata_items)
                 for metadata_set in metadata_items:
                     startup_script.replace("${}".format(metadata_set["key"]), metadata_set["value"])
                 # print(startup_script)
             except:
                 logger.warning("Could not read startup script file")
+                raise ValueError("Could not read startup script file")
 
         if startup_script is not None:
             metadata_items.append({
@@ -268,7 +353,7 @@ summary below
                 })
             
         config['metadata'] = {'items': metadata_items}
-        logger.info(json.dumps(config, indent=2))
+        logger.debug(json.dumps(config, indent=2))
 
         return self.compute_api.instances().insert(
             project=self.project,
@@ -282,7 +367,7 @@ summary below
                 project=self.project,
                 zone=self.zones[0],
                 operation=operation_name).execute()
-            print(result)
+            logger.debug(result)
             if result['status'] == 'DONE':
                 logger.info("Operation {} done.".format(operation_name))
                 if 'error' in result:

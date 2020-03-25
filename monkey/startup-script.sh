@@ -1,12 +1,9 @@
 #!/bin/bash
 
-apt-get update
 
-cd $HOME
-echo "Hello there" > test.txt
-echo "asdf $USER" > user.txt
-printenv > env.txt
-echo $GCP_USER > "gcpuser.txt"
+touch /startup-script.lock
+
+apt-get update
 
 apt-get -y update
 apt-get -y --no-install-recommends install \
@@ -50,3 +47,4 @@ usermod -aG docker $GCP_US
 echo "Done" > "done.txt"
 
 # sudo reboot
+rm /startup-script.lock

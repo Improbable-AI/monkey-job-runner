@@ -6,6 +6,7 @@ import sys
 import json
 from cmd import Cmd
 
+
 class MonkeyCLI(Cmd):
 
     prompt = 'monkey> '
@@ -23,8 +24,9 @@ class MonkeyCLI(Cmd):
         '''exit the application.'''
         print("Bye")
         return True
-    def do_add(self, inp):
-        print("Adding '{}'".format(inp))
+
+    def do_help(self, inp):
+        self.parse_args(["--help"])
 
     def default(self, inp):
         if inp == 'x' or inp == 'q':
@@ -33,32 +35,39 @@ class MonkeyCLI(Cmd):
         print("Default: {}".format(inp))
         self.parse_args(inp.split(" "))
 
-
-    def run(self, input_args):
-        print("Running")
-        print(input_args)
-        # parser.add_argument('-p','--provider', dest='provider', type=str, required=True,
-        #                 help='The provider you wish to use.  Should be defined in cloud_providers.yaml')
-        pass
-
-
     def create_instance(self, provider, machine_overrides):
         print("Creating Instance with override args:\n{}".format(machine_overrides))
-        return self.monkey.create_instance(provider= provider, machine_params=machine_overrides)
+        return self.monkey.create_instance(provider= provider, machine_params=machine_overrides)        
 
-    def list(self, input_args):
-        print("Listing")
-        print(input_args)
-        parser = argparse.ArgumentParser(description='Monkey list commands')
-        
-
-    def list_providers(self):
-        print('''
+    def list_providers(self, printout=False):
+        if printout:
+            print('''
 Listing Providers available
                 ''')
+        providers = []
         for handler in self.monkey.handlers:
-            print("{}".format(handler))
-        return True
+            if printout:
+                print("{}".format(handler))
+            providers.append(handler.name)
+        return providers
+
+    def list_jobs(self, providers, printout=False):
+        if printout:
+            print('''
+Listing Jobs available
+                ''')
+        print(providers)
+        jobs = []
+        for handler in self.monkey.handlers:
+            if handler.name in providers:
+                jobs += handler.list_jobs()
+
+        if printout:
+            print('''
+Found Jobs:
+{}            
+        '''.format(',\n'.join(jobs)))
+        return jobs
 
     def parse_args(self, input_args):
         print("Parsing args: {}".format(input_args))
@@ -81,12 +90,17 @@ Listing Providers available
         list_subparser = list_parser.add_subparsers(description="List command options", dest="list_option")
         list_jobs_parser = list_subparser.add_parser("jobs", help="List the jobs on the given provider")
         list_providers_parser = list_subparser.add_parser("providers", help="List the jobs on the given provider")
-        list_jobs_parser.add_argument('-p','--provider', dest='provider', type=str, required=True,
+        list_jobs_parser.add_argument('-p','--providers', dest='providers', type=str, required=False, nargs="*", default=None,
                          help='The provider you wish to use.  Should be defined in cloud_providers.yaml')
+
+        info_parser = subparser.add_parser("info", help="Infoon the specified item")
+        info_subparser = info_parser.add_subparsers(description="Info options", dest="info_option")
+        info_jobs_parser = list_subparser.add_parser("job", help="Gets the info on the specified job")
+        info_providers_parser = list_subparser.add_parser("instance", help="List the info of the specified instance")
+
+
         try:
             args, remaining_args = parser.parse_known_args(input_args)
-            print(args)
-            print(remaining_args)
         except:
             return False
         if args.command == "run":
@@ -108,17 +122,18 @@ Listing Providers available
                 return False
         elif args.command == "list":
             if args.list_option == "jobs":
-                pass
+                if args.providers is not None:
+                    self.list_jobs(providers=args.providers, printout=True)
+                else:
+                    self.list_jobs(providers=self.list_providers(), printout=True)
             elif args.list_option == "providers":
-                return self.list_providers()
+                return self.list_providers(printout=True)
             else:
                 list_parser.print_help()
                 return False
         else:
             parser.print_help()
             return False
-
-                
 
 
         # parser.add_argument('command', help='Subcommand to run')
