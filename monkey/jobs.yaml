@@ -1,0 +1,18 @@
+jobs:
+    sample:
+      cmd: "python /home/averylamp/samples/test.py"
+      provider: "gcp"
+      mounts:
+        - from:
+            type: "gcloud_bucket"
+            location: "monkey_fs"
+          to:
+            type: "local"
+            location: "/home/averylamp/monkey_fs"
+      copy:
+        - from: 
+            type: "local"
+            location: "."
+          to:
+            type: "local"
+            location: "/home/averylamp/"

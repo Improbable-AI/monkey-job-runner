@@ -1,10 +1,5 @@
 #!/bin/bash
 
-
-touch /startup-script.lock
-
-apt-get update
-
 apt-get -y update
 apt-get -y --no-install-recommends install \
     curl \
@@ -43,8 +38,4 @@ apt-get install -y nvidia-docker2
 groupadd docker
 usermod -aG docker $GCP_US
 
-
-echo "Done" > "done.txt"
-
-# sudo reboot
-rm /startup-script.lock
+echo "Done"

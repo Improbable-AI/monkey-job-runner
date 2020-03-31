@@ -76,6 +76,8 @@ Found Jobs:
         subparser = parser.add_subparsers(help="Monkey Commands", dest="command")
 
         run_parser = subparser.add_parser("run", help="Run a job on the specified provider")
+        run_parser.add_argument("job_name", help="Which job to run, include the job name, which can be found in jobs.yaml")
+        
         
         create_parser = subparser.add_parser("create", help="Create an instance on the specified provider")
         create_subparser = create_parser.add_subparsers(description="Create command options", dest="create_option")

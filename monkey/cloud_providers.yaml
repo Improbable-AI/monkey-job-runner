@@ -36,6 +36,7 @@ defaults:
         metadata:
             # For all metadata items, a replace for $KEY will be run over the startup script
             GCP_USER: "averylamp"
+
     gcp:
         # to specify cpus memory, use `custom-CPUS-MEMORY`
         # memory should be in multiples of 256 MB
@@ -52,6 +53,6 @@ defaults:
 
         source-image: "projects/gce-uefi-images/global/images/family/ubuntu-1804-lts"
         #  On gcp, the startup script logs are stored in /var/log/syslog for ubuntu images
-        startup-script-file: "/Users/avery/Developer/projects/monkey-client/inject-start.sh"
+        startup-script-file: "startup-script-short.sh"
         preemptible: true
         

@@ -19,6 +19,7 @@ class CloudHandler():
     name = None
     provider_type = None
     machine_defaults = dict()
+    jobs = []
 
     def merge_params(self, base, additional):
         for key, value in additional.items():
@@ -267,7 +268,7 @@ summary below
 
             # Allow the instance to access cloud storage and logging.
             'serviceAccounts': [{
-                'email': 'default',
+                'email': self.credentials.service_account_email,
                 'scopes': [
                     'https://www.googleapis.com/auth/devstorage.read_write',
                     'https://www.googleapis.com/auth/logging.write'
@@ -331,7 +332,7 @@ summary below
 
 
         # Startup Script
-        startup_script = None
+        startup_script = ""
         if "startup-script-file" in all_params:
             script_file = all_params["startup-script-file"]
             try:
@@ -343,22 +344,39 @@ summary below
             except:
                 logger.warning("Could not read startup script file")
                 raise ValueError("Could not read startup script file")
-
-        if startup_script is not None:
-            metadata_items.append({
-                    # Startup script is automatically executed by the
-                    # instance upon startup.
-                    'key': 'startup-script',
-                    'value': startup_script
-                })
+        
+        # Inject beginning and end script
+        start_script = None
+        with open('../monkey-client/inject-start.sh') as inject_start_file:
+            start_script = inject_start_file.read()
+        end_script = None
+        with open('../monkey-client/inject-end.sh') as inject_end_file:
+            end_script = inject_end_file.read()
+        if start_script is None or end_script is None:
+            raise ValueError("Unable to read inject-start.sh or inject-end.sh")
+        startup_script = start_script + startup_script + end_script
+        metadata_items.append({
+                # Startup script is automatically executed by the
+                # instance upon startup.
+                'key': 'startup-script',
+                'value': startup_script
+            })
             
         config['metadata'] = {'items': metadata_items}
-        logger.debug(json.dumps(config, indent=2))
-
-        return self.compute_api.instances().insert(
+        # logger.debug(json.dumps(config, indent=2))
+        result = self.compute_api.instances().insert(
             project=self.project,
             zone=instance_zone,
             body=config).execute()
+
+        return_result = {
+            'machine_name': instance_name,
+            'machine_project': self.project,
+            'machine_zone': instance_zone,
+            'operation_name': result.get('name', None),
+        }
+        print(return_result)
+        return return_result
 
     def wait_for_operation(self, operation_name):
         logger.info('Waiting for operation to finish...')
