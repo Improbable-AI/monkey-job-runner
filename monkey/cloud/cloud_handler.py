@@ -11,6 +11,27 @@ logger = logging.getLogger(__name__)
 from google.oauth2 import service_account
 import googleapiclient.discovery
 
+from cloud.monkey_instance import MonkeyInstanceGCP
+
+
+from threading import Thread
+from concurrent.futures import Future
+
+# Creates backgound decorators @threaded.  To block and get the result, use .result()
+def call_with_future(fn, future, args, kwargs):
+    try:
+        result = fn(*args, **kwargs)
+        future.set_result(result)
+    except Exception as exc:
+        future.set_exception(exc)
+
+def threaded(fn):
+    def wrapper(*args, **kwargs):
+        future = Future()
+        Thread(target=call_with_future, args=(fn, future, args, kwargs)).start()
+        return future
+    return wrapper
+
 class CloudHandler():
 
     credentials = None
@@ -19,7 +40,7 @@ class CloudHandler():
     name = None
     provider_type = None
     machine_defaults = dict()
-    jobs = []
+    instances = []
 
     def merge_params(self, base, additional):
         for key, value in additional.items():
@@ -55,7 +76,7 @@ class CloudHandler():
     def list_images(self):
         raise NotImplementedError("This is not implemented yet")
 
-    def create_instance(self, machine_params):
+    def create_instance(self, machine_params, wait_for_monkey_client=False):
         raise NotImplementedError("This is not implemented yet")
 
     def wait_for_operation(self, operation_name):
@@ -185,7 +206,7 @@ class CloudHandlerGCP(CloudHandler):
             
         return images
     
-    def create_instance(self, machine_params):
+    def create_instance(self, machine_params=dict(), wait_for_monkey_client=False):
         all_params = self.merge_params(self.machine_defaults, machine_params)
         all_params["zone"] = self.machine_defaults["zone"] if "zone" in self.machine_defaults else self.zones[0]
         logger.info(json.dumps(all_params, indent=2))
@@ -337,7 +358,6 @@ summary below
             script_file = all_params["startup-script-file"]
             try:
                 startup_script = open(script_file, 'r').read()
-                logger.debug(metadata_items)
                 for metadata_set in metadata_items:
                     startup_script.replace("${}".format(metadata_set["key"]), metadata_set["value"])
                 # print(startup_script)
@@ -361,6 +381,19 @@ summary below
                 'key': 'startup-script',
                 'value': startup_script
             })
+
+        # Add os-login to metadata
+        # metadata_items.append({
+        #     'key': 'enable-oslogin',
+        #     'value': 'TRUE'
+        # })
+
+        # Add project and region to env metadata items
+        metadata_items.append({
+            'key': 'MONKEY_PROJECT_ZONE',
+            'value': project_zone_string
+        })
+
             
         config['metadata'] = {'items': metadata_items}
         # logger.debug(json.dumps(config, indent=2))
@@ -369,27 +402,57 @@ summary below
             zone=instance_zone,
             body=config).execute()
 
+        operation_name = result.get('name', None)
+
         return_result = {
             'machine_name': instance_name,
             'machine_project': self.project,
             'machine_zone': instance_zone,
-            'operation_name': result.get('name', None),
+            'operation_name': operation_name,
         }
         print(return_result)
+        instance = MonkeyInstanceGCP.from_creation_operation(\
+                compute_api=self.compute_api, \
+                machine_name=instance_name, \
+                machine_zone=instance_zone, \
+                machine_project=self.project, \
+                operation_name=result.get('name', None))
+        if wait_for_monkey_client:
+            instance = instance.result()
+            print("Got instance, appending in foreground")
+            self.instances.append(instance)
+            return instance
+        self.add_instance_background(instance)
         return return_result
 
-    def wait_for_operation(self, operation_name):
-        logger.info('Waiting for operation to finish...')
-        while True:
+    @threaded
+    def add_instance_background(self, instance):
+        instance = instance.result()
+        print("Got instance, appending in background")
+        self.instances.append(instance)
+        print("appending in background complete")
+
+
+
+    def wait_for_operation(self, operation_name, timeout=40, silent=True):
+        
+        if not silent:
+            logger.info('Waiting for operation to finish...')
+        
+        start = time.time()
+        while time.time() - start < timeout:
             result = self.compute_api.zoneOperations().get(
                 project=self.project,
                 zone=self.zones[0],
                 operation=operation_name).execute()
-            logger.debug(result)
+            if not silent:
+                logger.debug(result)
             if result['status'] == 'DONE':
-                logger.info("Operation {} done.".format(operation_name))
+                if not silent:
+                    logger.info("Operation {} done.".format(operation_name))
                 if 'error' in result:
                     raise Exception(result['error'])
                 return result
+            time.sleep(2)
 
-            time.sleep(1)
+        raise TimeoutError("Waited for the operation to complete more than maximum timeout: {}".format(timeout))
