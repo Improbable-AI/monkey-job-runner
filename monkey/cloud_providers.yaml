@@ -34,7 +34,8 @@ defaults:
           monkey-job: true
         name-prefix: "monkey-"
         metadata:
-            # For all metadata items, a replace for $KEY will be run over the startup script
+            # All metadata items will also be loaded in as environment variables
+            # Ensure they are named properly to be exported
             GCP_USER: "averylamp"
 
     gcp:

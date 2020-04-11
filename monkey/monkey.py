@@ -12,17 +12,15 @@ from cloud.cloud_handler import CloudHandler, CloudHandlerGCP
 
 class Monkey():
 
-    instances = []
-    handlers = []
+    providers = []
 
     def __init__(self):
         super().__init__()
         logger.info("Monkey Initializing")
-        self.instances = []
-        self.handlers = []
-        self.instantiate_handlers()
+        self.providers = []
+        self.instantiate_providers()
         
-    def instantiate_handlers(self):
+    def instantiate_providers(self):
         providers = dict()
         try:
             with open("cloud_providers.yaml", 'r') as providers_file:
@@ -43,7 +41,7 @@ class Monkey():
             try:
                 handler = CloudHandler.create_cloud_handler(provider_info=provider, default_params=default_params)
                 if handler.is_valid():
-                    self.handlers.append(handler)
+                    self.providers.append(handler)
                 else:
                     raise ValueError("Instantiated Handler is not valid: {}".format(handler))
             except Exception as e:
@@ -52,7 +50,7 @@ class Monkey():
 
     def create_instance(self, provider, machine_params=dict()):
         logger.info("Creating Instance")
-        matched_providers = [handler for handler in self.handlers if handler.name == provider]
+        matched_providers = [handler for handler in self.providers if handler.name == provider]
         if len(matched_providers) != 1:
             logger.error("{} matched providers found.  Only one should have matched".format(len(matched_providers)))
             return None
@@ -61,7 +59,7 @@ class Monkey():
     
     def wait_for_operation(self, provider, operation_name):
         logger.info("Waiting for operation")
-        matched_providers = [handler for handler in self.handlers if handler.name == provider]
+        matched_providers = [handler for handler in self.providers if handler.name == provider]
         if len(matched_providers) != 1:
             logger.error("{} matched providers found.  Only one should have matched".format(len(matched_providers)))
             return None
@@ -70,8 +68,8 @@ class Monkey():
 
     def get_instance_list(self):
         logger.info("Getting full instance list")
-        return {handler.name : handler.list_instances() for handler in self.handlers}
+        return {handler.name : handler.list_instances() for handler in self.providers}
     
     def get_image_list(self):
         logger.info("Getting full image list")
-        return {handler.name : handler.list_images() for handler in self.handlers}
+        return {handler.name : handler.list_images() for handler in self.providers}
