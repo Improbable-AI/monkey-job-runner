@@ -12,6 +12,7 @@
         gcp_project: "{{ (lookup('file', gcp_cred_file) | from_json).project_id }}"
 
 
+
   tasks:
     - name: Print out host ip
       debug:
@@ -24,6 +25,10 @@
   gather_facts: no
 
   pre_tasks:
+    - name: Display all variables/facts known for a host
+      debug:
+        var: hostvars[inventory_hostname]
+        verbosity: 1
     - name: Import default vars
       include_vars:
         file: create_job_vars.yml
@@ -31,9 +36,15 @@
       set_fact:
         ansible_user: "sa_{{ (lookup('file', gcp_cred_file) | from_json).client_id }}"
         gcp_project: "{{ (lookup('file', gcp_cred_file) | from_json).project_id }}"
+    - name: Wait for connection
+      wait_for_connection:
     - name: Setup host
       setup:
-
+      register: result
+      until: result is not failed
+      ignore_errors: yes
+      retries: 3
+      delay: 3
   tasks:
     - name: Finished installing monkey client
       debug:

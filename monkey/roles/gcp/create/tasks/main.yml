@@ -1,19 +1,4 @@
 ---
-# - name: Create an instance
-#   hosts: localhost
-#   gather_facts: no
-#   vars:
-#     gcp_project: monkey-274001
-#     gcp_cred_kind: serviceaccount
-#     gcp_cred_file: /Users/avery/Developer/projects/monkey-project/monkey/gcp-service-key-personal.json
-#     zone: us-east1-b
-#     region: us-east1
-#     firewall_rule: monkey-ansible-firewall
-#     uid: varb
-#     ansible_ssh_private_key_file: /Users/avery/Developer/projects/monkey-project/monkey/keys/ssh-key-monkey
-#     ansible_user: sa_103396616159205704462
-    # user: sa_103396616159205704462
-
   # tasks:
 - name: Include GCP variables
   include_vars:
@@ -39,27 +24,6 @@
     target_tags:
       - "{{ firewall_rule }}"
     state: present
-# - name: create a network
-#   gcp_compute_network:
-#     name: "network-instance-{{ uid }}"
-#     project: "{{ gcp_project }}"
-#     auth_kind: "{{ gcp_cred_kind }}"
-#     service_account_file: "{{ gcp_cred_file }}"
-#     scopes:
-#       - https://www.googleapis.com/auth/compute
-#     state: present
-#   register: network
-# - name: create za address
-#   gcp_compute_address:
-#     name: "address-instance-{{ uid }}"
-#     region: "{{ region }}"
-#     project: "{{ gcp_project }}"
-#     auth_kind: "{{ gcp_cred_kind }}"
-#     service_account_file: "{{ gcp_cred_file }}"
-#     scopes:
-#       - https://www.googleapis.com/auth/compute
-#     state: present
-#   register: address
 - name: create a instance
   gcp_compute_instance:
     state: present
@@ -74,7 +38,6 @@
           source_image: "projects/ubuntu-os-cloud/global/images/family/ubuntu-1804-lts"
           
     network_interfaces:
-    #   - network: "{{ network }}"
       - access_configs:
           - name: "External NAT"
             type: "ONE_TO_ONE_NAT"
@@ -97,9 +60,6 @@
       items:
         - "{{ firewall_rule }}"
   register: instance
-- name:  Debug firewall
-  debug:
-    msg: Firewall rule name "{{ firewall_rule }}"
 - name: Assert public ip address
   set_fact:
     public_ip: "{{ instance.networkInterfaces.0.accessConfigs.0.natIP }}"
@@ -110,7 +70,7 @@
   wait_for: 
     host: "{{ public_ip }}"
     port: 22
-    timeout: 120
+    timeout: 60
 
 - name: Get keyscan host key
   set_fact:
