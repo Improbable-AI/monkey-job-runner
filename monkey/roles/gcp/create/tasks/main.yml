@@ -111,16 +111,6 @@
     host: "{{ public_ip }}"
     port: 22
     timeout: 120
-# - name: Pause to ensure ssh is available
-#   pause:
-#     seconds: 5
-#     prompt: Waiting to make sure ssh is available
-
-- name: Add host to groupname
-  add_host: 
-    name: "{{ public_ip }}"
-    groups:
-      - "gcp"
 
 - name: Get keyscan host key
   set_fact:
@@ -138,15 +128,10 @@
     state: present
     line: "{{ host_key }}"
 
-
-
-# - name: Manage new instances
-#   hosts: gcp
-#   connection: ssh
-#   become: yes
-#   vars:
-#     host_key_checking: False
-#     user: sa_103396616159205704462
-#     ansible_ssh_private_key_file: /Users/avery/Developer/projects/monkey-project/monkey/keys/ssh-key-monkey
-#     ansible_user: sa_103396616159205704462
-
+- name: Add host to groupname
+  add_host: 
+    name: "{{ public_ip }}"
+    groups:
+      - "new_host"
+    ansible_user: "{{ ansible_user }}"
+    ansible_ssh_private_key_file: "{{ ansible_ssh_private_key_file }}"

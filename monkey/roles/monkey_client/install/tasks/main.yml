@@ -5,22 +5,22 @@
     path: /startup-script.lock
     state: touch 
 
-- name: Gets metadata keys and exports them
-  shell: |
-    all_metadata_keys=$(curl -s http://metadata/computeMetadata/v1/instance/attributes/ -H "Metadata-Flavor: Google")
-    for key in $all_metadata_keys;
-    do
-        value=$(curl -s http://metadata/computeMetadata/v1/instance/attributes/$key -H "Metadata-Flavor: Google")
-        pattern=" |'|\n"
-        if [[ "$value" =  *[[:space:]]* ]]    # Checks for spaces
-        then
-            echo "Skipping env variable for: $key"
-        else
-            echo "Adding env variable for: $key"
-            echo "$key=$value"
-            export $key="$value" || echo "Failed to export $key"
-        fi
-    done
+# - name: Gets metadata keys and exports them
+#   shell: |
+#     all_metadata_keys=$(curl -s http://metadata/computeMetadata/v1/instance/attributes/ -H "Metadata-Flavor: Google")
+#     for key in $all_metadata_keys;
+#     do
+#         value=$(curl -s http://metadata/computeMetadata/v1/instance/attributes/$key -H "Metadata-Flavor: Google")
+#         pattern=" |'|\n"
+#         if [[ "$value" =  *[[:space:]]* ]]    # Checks for spaces
+#         then
+#             echo "Skipping env variable for: $key"
+#         else
+#             echo "Adding env variable for: $key"
+#             echo "$key=$value"
+#             export $key="$value" || echo "Failed to export $key"
+#         fi
+#     done
 - name: get os gcsutil string
   shell: echo gcsfuse-$(lsb_release -c -s)
   register: gsfuse_name

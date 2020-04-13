@@ -1,23 +1,43 @@
 ---
 - hosts: localhost
-  vars: 
-    gcp_cred_kind: serviceaccount
-    gcp_cred_file: /Users/avery/Developer/projects/monkey-project/monkey/gcp-service-key-personal.json
-    zone: us-east1-b
-    region: us-east1
-    firewall_rule: monkey-ansible-firewall
-    uid: vara
-    ansible_ssh_private_key_file: /Users/avery/Developer/projects/monkey-project/monkey/keys/ssh-key-monkey
-
+  name: Create the GCP Machine
+  
   pre_tasks:
-    - name: Get gcp user from private key
+    - name: Import default vars
+      include_vars:
+        file: create_job_vars.yml
+    - name: Get variables from gcp private key
       set_fact:
         ansible_user: "sa_{{ (lookup('file', gcp_cred_file) | from_json).client_id }}"
         gcp_project: "{{ (lookup('file', gcp_cred_file) | from_json).project_id }}"
-    - name: Print out ansible user
+
+
+  tasks:
+    - name: Print out host ip
       debug:
-        msg: "User {{ ansible_user }}"
-  
+        msg: "IP {{ public_ip }}"
   roles:
     - gcp/create
+
+- hosts: new_host
+  name: Configure New Host with Monkey Client
+  gather_facts: no
+
+  pre_tasks:
+    - name: Import default vars
+      include_vars:
+        file: create_job_vars.yml
+    - name: Get variables from gcp private key
+      set_fact:
+        ansible_user: "sa_{{ (lookup('file', gcp_cred_file) | from_json).client_id }}"
+        gcp_project: "{{ (lookup('file', gcp_cred_file) | from_json).project_id }}"
+    - name: Setup host
+      setup:
+
+  tasks:
+    - name: Finished installing monkey client
+      debug:
+        msg: "Finished installing monkey client"
+
+  roles:
     - monkey_client/install
