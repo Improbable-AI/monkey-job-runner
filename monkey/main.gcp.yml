@@ -1,0 +1,10 @@
+plugin: gcp_compute
+zones:
+  - us-east1-b
+projects:
+  - mit-mic
+filters:
+  - machineType = n1-standard-1
+auth_kind: serviceaccount
+service_account_file: /Users/avery/Developer/projects/monkey-project/monkey/gcp-service-key.json 
+

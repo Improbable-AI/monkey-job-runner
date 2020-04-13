@@ -22,3 +22,15 @@ providers:
         credentials-key": "gcp-service-key.json"  # (optional), defaults
 
 ```
+
+
+
+
+### Updated GCP
+
+To use monkey with GCP you need to create a service account and create ssh keys that can be used for the os-login service
+
+To do so
+
+https://alex.dzyoba.com/blog/gcp-ansible-service-account/
+
