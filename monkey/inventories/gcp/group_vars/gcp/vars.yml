@@ -1,12 +1,2 @@
 ---
-gcp_project: monkey-274001
-gcp_cred_kind: serviceaccount
-gcp_cred_file: /Users/avery/Developer/projects/monkey-project/monkey/gcp-service-key-personal.json
-zone: us-east1-b
-region: us-east1
-firewall_rule: monkey-ansible-firewall
-uid: varb
-ansible_ssh_private_key_file: /Users/avery/Developer/projects/monkey-project/monkey/keys/ssh-key-monkey
-ansible_user: sa_103396616159205704462
-user: sa_103396616159205704462
 

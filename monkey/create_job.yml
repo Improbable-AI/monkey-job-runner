@@ -6,7 +6,7 @@
     zone: us-east1-b
     region: us-east1
     firewall_rule: monkey-ansible-firewall
-    uid: varb
+    uid: vara
     ansible_ssh_private_key_file: /Users/avery/Developer/projects/monkey-project/monkey/keys/ssh-key-monkey
 
   pre_tasks:

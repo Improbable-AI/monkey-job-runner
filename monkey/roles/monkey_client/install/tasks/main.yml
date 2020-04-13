@@ -1,5 +1,6 @@
 ---
 - name: Creates startup script lock
+  become: true
   file:
     path: /startup-script.lock
     state: touch 
@@ -17,7 +18,7 @@
         else
             echo "Adding env variable for: $key"
             echo "$key=$value"
-            # export $key="$value" || echo "Failed to export $key"
+            export $key="$value" || echo "Failed to export $key"
         fi
     done
 - name: get os gcsutil string
@@ -29,17 +30,20 @@
 
     
 - name: add gcloud repository
+  become: true
   apt_repository:
     repo: deb http://packages.cloud.google.com/apt {{ gsfuse_name.stdout }} main
     state: present
 
 - name: add gcloud apt key
-  apt_key: 
+  become: true
+  apt_key:
     url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
     state: present
     
 
 - name: apt update install gcsfuse
+  become: true
   apt:
     update_cache: yes
     name: gcsfuse
