@@ -9,6 +9,7 @@
     - name: Get variables from gcp private key
       set_fact:
         ansible_user: "sa_{{ (lookup('file', gcp_cred_file) | from_json).client_id }}"
+        gcp_service_email: "{{ (lookup('file', gcp_cred_file) | from_json).client_email }}"
         gcp_project: "{{ (lookup('file', gcp_cred_file) | from_json).project_id }}"
 
 
@@ -18,7 +19,10 @@
       debug:
         msg: "IP {{ public_ip }}"
   roles:
+    - gcp/setup_keys
     - gcp/create
+
+
 
 - hosts: new_host
   name: Configure New Host with Monkey Client
@@ -43,6 +47,7 @@
       register: result
       until: result is not failed
       ignore_errors: yes
+      ignore_unreachable: yes
       retries: 3
       delay: 3
   tasks:

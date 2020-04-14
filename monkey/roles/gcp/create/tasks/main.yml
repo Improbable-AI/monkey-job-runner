@@ -94,4 +94,4 @@
     groups:
       - "new_host"
     ansible_user: "{{ ansible_user }}"
-    ansible_ssh_private_key_file: "{{ ansible_ssh_private_key_file }}"
+    ansible_ssh_private_key_file: "{{ gcp_ssh_private_key_file }}"
