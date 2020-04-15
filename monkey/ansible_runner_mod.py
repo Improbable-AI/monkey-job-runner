@@ -1,6 +1,6 @@
 import ansible_runner
 
-r = ansible_runner.run(playbook='create_job.yml', private_data_dir='project')
+r = ansible_runner.run(playbook='create_job.yml', private_data_dir='ansible')
 
 print(r)
 for each_host_event in r.events:
