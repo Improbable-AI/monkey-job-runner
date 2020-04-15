@@ -1,0 +1,1 @@
+{"event": "verbose", "uuid": "d7d56b2e-bc21-49d8-b905-6bc877f1cab5", "counter": 1, "stdout": "\u001b[0;31mERROR! the playbook: project/create_job.yml could not be found\u001b[0m", "start_line": 0, "end_line": 1, "runner_ident": "91ab33db-4a02-47dc-a4ec-ed7a8a7b0575"}

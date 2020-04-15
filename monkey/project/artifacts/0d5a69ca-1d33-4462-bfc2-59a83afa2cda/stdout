@@ -1,0 +1,246 @@
+[1;35m[WARNING]: No inventory was parsed, only implicit localhost is available[0m
+[1;35m[0m[1;35m[WARNING]: provided hosts list is empty, only localhost is available. Note that[0m
+[1;35mthe implicit localhost does not match 'all'[0m
+[1;35m[0m[1;35m[
+
+PLAY [Create the GCP Machine] **************************************************
+
+TASK [Gathering Facts] *********************************************************
+[0;32mok: [localhost][0m
+[0;32m[
+
+TASK [Import default vars] *****************************************************
+[0;32mok: [localhost][0m
+[0;32m[
+
+TASK [Get variables from gcp private key] **************************************
+[0;32mok: [localhost][0m
+[0;32m[
+
+TASK [gcp/setup_keys : Check for existing key] *********************************
+[0;33mchanged: [localhost][0m
+[0;33m[
+
+TASK [gcp/setup_keys : Check for existing key] *********************************
+[0;31mfatal: [localhost]: FAILED! => {"changed": false, "msg": "file (keys/gcp) is absent, cannot continue", "path": "keys/gcp"}[0m
+[0;31m[0m[0;36m...ignoring[0m
+[0;36m[
+
+TASK [gcp/setup_keys : Printout existing private] ******************************
+[0;32mok: [localhost] => {[0m
+[0;32m    "msg": {[0m
+[0;32m        "changed": false,[0m
+[0;32m        "failed": true,[0m
+[0;32m        "msg": "file (keys/gcp) is absent, cannot continue",[0m
+[0;32m        "path": "keys/gcp"[0m
+[0;32m    }[0m
+[0;32m}[0m
+[0;32m[
+
+TASK [gcp/setup_keys : Set private key path] ***********************************
+[0;32mok: [localhost][0m
+[0;32m[
+
+TASK [gcp/setup_keys : Create openssh key] *************************************
+[0;33mchanged: [localhost][0m
+[0;33m[
+
+TASK [gcp/setup_keys : Store current gcloud account] ***************************
+[0;33mchanged: [localhost][0m
+[0;33m[
+
+TASK [gcp/setup_keys : Printout og gcloud account] *****************************
+[0;32mok: [localhost] => {[0m
+[0;32m    "msg": "Previous account: averylamp@gmail.com"[0m
+[0;32m}[0m
+[0;32m[
+
+TASK [gcp/setup_keys : Switch to service account] ******************************
+[0;33mchanged: [localhost][0m
+[0;33m[
+
+TASK [gcp/setup_keys : Register new ssh key with service account os-login] *****
+[0;33mchanged: [localhost][0m
+[0;33m[
+
+TASK [gcp/setup_keys : Switch back to old gcp account if needed] ***************
+[0;33mchanged: [localhost][0m
+[0;33m[
+
+TASK [gcp/create : Include GCP variables] **************************************
+[0;32mok: [localhost][0m
+[0;32m[
+
+TASK [gcp/create : create a firewall rule] *************************************
+[0;32mok: [localhost][0m
+[0;32m[
+
+TASK [gcp/create : create a instance] ******************************************
+[0;32mok: [localhost][0m
+[0;32m[
+
+TASK [gcp/create : Assert public ip address] ***********************************
+[0;32mok: [localhost][0m
+[0;32m[
+
+TASK [gcp/create : Debug public ip] ********************************************
+[0;32mok: [localhost] => {[0m
+[0;32m    "msg": "public ip \"34.74.210.154\""[0m
+[0;32m}[0m
+[0;32m[
+
+TASK [gcp/create : Wait for SSH to come up] ************************************
+[0;32mok: [localhost][0m
+[0;32m[
+
+TASK [gcp/create : Get keyscan host key] ***************************************
+# 34.74.210.154:22 SSH-2.0-OpenSSH_7.6p1 Ubuntu-4ubuntu0.3
+[0;32mok: [localhost][0m
+[0;32m[
+
+TASK [gcp/create : Remove old known hosts] *************************************
+[0;32mok: [localhost][0m
+[0;32m[
+
+TASK [gcp/create : Add to known hosts] *****************************************
+[0;33mchanged: [localhost][0m
+[0;33m[
+
+TASK [gcp/create : Add host to groupname] **************************************
+[0;33mchanged: [localhost][0m
+[0;33m[
+
+TASK [Print out host ip] *******************************************************
+[0;32mok: [localhost] => {[0m
+[0;32m    "msg": "IP 34.74.210.154"[0m
+[0;32m}[0m
+[0;32m[
+
+PLAY [Configure New Host with Monkey Client] ***********************************
+
+TASK [Display all variables/facts known for a host] ****************************
+[0;36mskipping: [34.74.210.154][0m
+[0;36m[
+
+TASK [Import default vars] *****************************************************
+[0;32mok: [34.74.210.154][0m
+[0;32m[
+
+TASK [Get variables from gcp private key] **************************************
+[0;32mok: [34.74.210.154][0m
+[0;32m[
+
+TASK [Wait for connection] *****************************************************
+[0;32mok: [34.74.210.154][0m
+[0;32m[
+
+TASK [Setup host] **************************************************************
+[0;32mok: [34.74.210.154][0m
+[0;32m[
+
+TASK [monkey_client/install : Creates startup script lock] *********************
+[0;33mchanged: [34.74.210.154][0m
+[0;33m[
+
+TASK [monkey_client/install : get os gcsutil string] ***************************
+[0;33mchanged: [34.74.210.154][0m
+[0;33m[
+
+TASK [monkey_client/install : debug os gcsutil string] *************************
+[0;32mok: [34.74.210.154] => {[0m
+[0;32m    "msg": "deb http://packages.cloud.google.com/apt gcsfuse-bionic main"[0m
+[0;32m}[0m
+[0;32m[
+
+TASK [monkey_client/install : add gcloud repository] ***************************
+[0;33mchanged: [34.74.210.154][0m
+[0;33m[
+
+TASK [monkey_client/install : add gcloud apt key] ******************************
+[0;33mchanged: [34.74.210.154][0m
+[0;33m[
+
+TASK [monkey_client/install : apt update install gcsfuse python3 nginx] ********
+[0;33mchanged: [34.74.210.154][0m
+[0;33m[
+
+TASK [monkey_client/install : Install virtualenv via pip] **********************
+[0;33mchanged: [34.74.210.154][0m
+[0;33m[
+
+TASK [monkey_client/install : Clone Monkey client repo] ************************
+[0;33mchanged: [34.74.210.154][0m
+[0;33m[
+
+TASK [monkey_client/install : Install monkey-client modules into virtualenv] ***
+[0;33mchanged: [34.74.210.154][0m
+[0;33m[
+
+TASK [monkey_client/install : template systemd service config] *****************
+[0;33mchanged: [34.74.210.154][0m
+[0;33m[
+
+TASK [monkey_client/install : start systemd app service] ***********************
+[0;33mchanged: [34.74.210.154][0m
+[0;33m[
+
+TASK [monkey_client/install : template nginx site config] **********************
+[0;33mchanged: [34.74.210.154][0m
+[0;33m[
+
+TASK [monkey_client/install : remove default nginx site config] ****************
+[0;33mchanged: [34.74.210.154][0m
+[0;33m[
+
+TASK [monkey_client/install : enable nginx site] *******************************
+[0;33mchanged: [34.74.210.154][0m
+[0;33m[
+
+TASK [monkey_client/install : restart nginx] ***********************************
+[0;33mchanged: [34.74.210.154][0m
+[0;33m[
+
+TASK [monkey_client/install : get url] *****************************************
+[0;33mchanged: [34.74.210.154][0m
+[0;33m[
+
+TASK [monkey_client/install : read html] ***************************************
+[0;33mchanged: [34.74.210.154][0m
+[0;33m[
+
+TASK [monkey_client/install : Printout results] ********************************
+[0;32mok: [34.74.210.154] => {[0m
+[0;32m    "msg": {[0m
+[0;32m        "changed": true,[0m
+[0;32m        "cmd": "cat /tmp/index.html",[0m
+[0;32m        "delta": "0:00:00.003629",[0m
+[0;32m        "end": "2020-04-15 09:34:00.410769",[0m
+[0;32m        "failed": false,[0m
+[0;32m        "rc": 0,[0m
+[0;32m        "start": "2020-04-15 09:34:00.407140",[0m
+[0;32m        "stderr": "",[0m
+[0;32m        "stderr_lines": [],[0m
+[0;32m        "stdout": "pong!",[0m
+[0;32m        "stdout_lines": [[0m
+[0;32m            "pong!"[0m
+[0;32m        ][0m
+[0;32m    }[0m
+[0;32m}[0m
+[0;32m[
+
+TASK [monkey_client/install : check for pong in html] **************************
+[0;32mok: [34.74.210.154] => {[0m
+[0;32m    "msg": "NGINX serving monkey-client"[0m
+[0;32m}[0m
+[0;32m[
+
+TASK [Finished installing monkey client] ***************************************
+[0;32mok: [34.74.210.154] => {[0m
+[0;32m    "msg": "Finished installing monkey client"[0m
+[0;32m}[0m
+[0;32m[
+
+PLAY RECAP *********************************************************************
+[0;33m34.74.210.154[0m              : [0;32mok=24  [0m [0;33mchanged=16  [0m unreachable=0    failed=0    [0;36mskipped=1   [0m rescued=0    ignored=0   
+[0;33mlocalhost[0m                  : [0;32mok=24  [0m [0;33mchanged=8   [0m unreachable=0    failed=0    skipped=0    rescued=0    [1;35mignored=1   [0m
+

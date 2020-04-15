@@ -1,0 +1,50 @@
+[1;35m[WARNING]: No inventory was parsed, only implicit localhost is available[0m
+[1;35m[0m[1;35m[WARNING]: provided hosts list is empty, only localhost is available. Note that[0m
+[1;35mthe implicit localhost does not match 'all'[0m
+[1;35m[0m[1;35m[
+
+PLAY [Create the GCP Machine] **************************************************
+
+TASK [Gathering Facts] *********************************************************
+[0;32mok: [localhost][0m
+[0;32m[
+
+TASK [Import default vars] *****************************************************
+[0;32mok: [localhost][0m
+[0;32m[
+
+TASK [Get variables from gcp private key] **************************************
+[0;32mok: [localhost][0m
+[0;32m[
+
+TASK [gcp/setup_keys : Check for existing key] *********************************
+[0;32mok: [localhost][0m
+[0;32m[
+
+TASK [gcp/setup_keys : Check for existing key] *********************************
+[0;31mfatal: [localhost]: FAILED! => {"changed": false, "msg": "file (keys/gcp) is absent, cannot continue", "path": "keys/gcp"}[0m
+[0;31m[0m[0;36m...ignoring[0m
+[0;36m[
+
+TASK [gcp/setup_keys : Printout existing private] ******************************
+[0;32mok: [localhost] => {[0m
+[0;32m    "msg": {[0m
+[0;32m        "changed": false,[0m
+[0;32m        "failed": true,[0m
+[0;32m        "msg": "file (keys/gcp) is absent, cannot continue",[0m
+[0;32m        "path": "keys/gcp"[0m
+[0;32m    }[0m
+[0;32m}[0m
+[0;32m[
+
+TASK [gcp/setup_keys : Set private key path] ***********************************
+[0;32mok: [localhost][0m
+[0;32m[
+
+TASK [gcp/setup_keys : Create openssh key] *************************************
+[0;31mfatal: [localhost]: FAILED! => {"changed": false, "msg": "The directory keys does not exist or the file is not a directory", "name": "keys"}[0m
+[0;31m[
+
+PLAY RECAP *********************************************************************
+[0;31mlocalhost[0m                  : [0;32mok=7   [0m changed=0    unreachable=0    [0;31mfailed=1   [0m skipped=0    rescued=0    [1;35mignored=1   [0m
+

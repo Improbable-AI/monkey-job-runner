@@ -1,0 +1,92 @@
+[1;35m[WARNING]: No inventory was parsed, only implicit localhost is available[0m
+[1;35m[0m[1;35m[WARNING]: provided hosts list is empty, only localhost is available. Note that[0m
+[1;35mthe implicit localhost does not match 'all'[0m
+[1;35m[0m[1;35m[
+
+PLAY [Create the GCP Machine] **************************************************
+
+TASK [Gathering Facts] *********************************************************
+[0;32mok: [localhost][0m
+[0;32m[
+
+TASK [Import default vars] *****************************************************
+[0;32mok: [localhost][0m
+[0;32m[
+
+TASK [Get variables from gcp private key] **************************************
+[0;32mok: [localhost][0m
+[0;32m[
+
+TASK [gcp/setup_keys : Check for existing key] *********************************
+[0;33mchanged: [localhost][0m
+[0;33m[
+
+TASK [gcp/setup_keys : Check for existing key] *********************************
+[0;31mfatal: [localhost]: FAILED! => {"changed": false, "msg": "file (keys/gcp) is absent, cannot continue", "path": "keys/gcp"}[0m
+[0;31m[0m[0;36m...ignoring[0m
+[0;36m[
+
+TASK [gcp/setup_keys : Printout existing private] ******************************
+[0;32mok: [localhost] => {[0m
+[0;32m    "msg": {[0m
+[0;32m        "changed": false,[0m
+[0;32m        "failed": true,[0m
+[0;32m        "msg": "file (keys/gcp) is absent, cannot continue",[0m
+[0;32m        "path": "keys/gcp"[0m
+[0;32m    }[0m
+[0;32m}[0m
+[0;32m[
+
+TASK [gcp/setup_keys : Set private key path] ***********************************
+[0;32mok: [localhost][0m
+[0;32m[
+
+TASK [gcp/setup_keys : Create openssh key] *************************************
+[0;33mchanged: [localhost][0m
+[0;33m[
+
+TASK [gcp/setup_keys : Store current gcloud account] ***************************
+[0;33mchanged: [localhost][0m
+[0;33m[
+
+TASK [gcp/setup_keys : Printout og gcloud account] *****************************
+[0;32mok: [localhost] => {[0m
+[0;32m    "msg": "Previous account: averylamp@gmail.com"[0m
+[0;32m}[0m
+[0;32m[
+
+TASK [gcp/setup_keys : Switch to service account] ******************************
+[0;33mchanged: [localhost][0m
+[0;33m[
+
+TASK [gcp/setup_keys : Register new ssh key with service account os-login] *****
+[0;33mchanged: [localhost][0m
+[0;33m[
+
+TASK [gcp/setup_keys : Switch back to old gcp account if needed] ***************
+[0;33mchanged: [localhost][0m
+[0;33m[
+
+TASK [gcp/create : Include GCP variables] **************************************
+[0;32mok: [localhost][0m
+[0;32m[
+
+TASK [gcp/create : create a firewall rule] *************************************
+[0;32mok: [localhost][0m
+[0;32m[
+
+TASK [gcp/create : create a instance] ******************************************
+[0;33mchanged: [localhost][0m
+[0;33m[
+
+TASK [gcp/create : Assert public ip address] ***********************************
+[0;32mok: [localhost][0m
+[0;32m[
+
+TASK [gcp/create : Debug public ip] ********************************************
+[0;32mok: [localhost] => {[0m
+[0;32m    "msg": "public ip \"34.74.210.154\""[0m
+[0;32m}[0m
+[0;32m[
+
+TASK [gcp/create : Wait for SSH to come up] ************************************
