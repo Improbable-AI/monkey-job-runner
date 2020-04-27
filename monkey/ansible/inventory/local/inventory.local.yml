@@ -1,0 +1,9 @@
+---
+all:
+  children:
+    monkey_local:
+      children:
+        seacow:
+          hosts:
+            seacow.averylamp.me:
+              ansible_port: 13022
