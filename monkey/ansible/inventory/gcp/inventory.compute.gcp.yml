@@ -16,6 +16,3 @@ auth_kind: serviceaccount
 service_account_file: /Users/avery/Developer/projects/monkey-project/monkey/gcp-service-key-personal.json
 compose:
   ansible_host: networkInterfaces[0].accessConfigs[0].natIP
-  test_file: service_account_file
-  test_user: lookup('file', service_account_file) | from_json)
-  ansible_ssh_private_key_file:  a | default("/Users/avery/Developer/projects/monkey-project/monkey/ansible/keys/gcp", true)
