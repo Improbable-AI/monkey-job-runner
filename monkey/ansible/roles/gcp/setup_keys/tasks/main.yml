@@ -40,4 +40,26 @@
       when: prev_gcloud_account.stdout != gcp_service_email
       command: "gcloud config set account {{ prev_gcloud_account.stdout }}"
 
-      
+    - name: Debug printout playbook
+      debug:
+        msg: "{{ playbook_dir }}"
+    - name: Remove old ansible_user if existing
+      lineinfile:
+        dest: "{{ playbook_dir }}/inventory/group_vars/monkey_gcp.yml"
+        create: yes
+        state: absent
+        regexp: "ansible_*"
+    - name: Add ansible user to inventory file
+      lineinfile:
+        dest: "{{ playbook_dir }}/inventory/group_vars/monkey_gcp.yml"
+        create: yes
+        state: present
+        line: "ansible_user: sa_{{ (lookup('file', gcp_cred_file) | from_json).client_id }}"
+    - name: Add ansible private key to inventory file
+      lineinfile:
+        dest: "{{ playbook_dir }}/inventory/group_vars/monkey_gcp.yml"
+        create: yes
+        state: present
+        line: "ansible_ssh_private_key_file: {{playbook_dir}}/{{ gcp_ssh_private_key_file }}"
+
+

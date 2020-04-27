@@ -1,0 +1,4 @@
+---
+monkey_group: "monkey_gcp"
+ansible_user: sa_103396616159205704462
+ansible_ssh_private_key_file: /Users/avery/Developer/projects/monkey-project/monkey/ansible/keys/gcp
