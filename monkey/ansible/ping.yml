@@ -1,9 +1,0 @@
----
-- hosts: localhost
-  name: Pings a selected server
-  
-  tasks:
-    - name: Pings Hostname
-      shell: "echo $HOST: pong"
-
-

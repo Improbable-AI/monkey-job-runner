@@ -1,10 +1,12 @@
 import ansible_runner
-
-r = ansible_runner.run(playbook='gcp_create_job.yml', private_data_dir='ansible')
-
-print(r)
-for each_host_event in r.events:
-    print(each_host_event['event'])
+# import  logging 
+# logging.basicConfig()
+# logging.getLogger().setLevel(logging.DEBUG)
+# logger = logging.getLogger(__name__)
 
 
-print(r.stats)
+def ping_host(hostname):
+    r = ansible_runner.run(module='command', module_args="echo Hostname: {{inventory_hostname}}: pong", private_data_dir='ansible', host_pattern=hostname, quiet=True)
+    status, code = r.status, r.rc
+    return status == "successful" and code == 0
+
