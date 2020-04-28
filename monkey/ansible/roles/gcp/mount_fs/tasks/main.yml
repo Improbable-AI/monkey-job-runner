@@ -1,0 +1,51 @@
+---
+  # tasks:
+- name: Default fs name
+  set_fact:
+    gcp_storage_name: "{{ gcp_storage_name | default('monkeyfs', true) }}"
+    gcp_project: "{{ (lookup('file', gcp_cred_file) | from_json).project_id }}"
+    monkeyfs_path: "{{monkeyfs_path | default('/monkeyfs', true)}}"
+- name: Printout fs name
+  debug:
+    msg: "Mounting FS: {{ gcp_storage_name }}"
+
+- name: Printout host
+  shell: "echo $HOST deleting fs: {{gcp_storage_name}}"
+
+- name: Create Mountpoint
+  ignore_errors: true
+  become: true
+  file:
+    path: "{{monkeyfs_path}}"
+    state: directory
+    owner: "{{ ansible_user }}"
+  register: create_mountpoint
+
+- name: Debug create mountpoint
+  debug: 
+    msg: "Mountpoint {{create_mountpoint.failed}}"
+- name: Mount fs to Mountpoint
+  when: "{{create_mountpoint.failed == False}}"
+  command:
+    cmd: "gcsfuse monkeyfs {{monkeyfs_path}}"
+
+
+- name: Create Run Dir 
+  file:
+    path: "{{monkeyfs_path}}/jobs/{{monkey_job_uid}}/in"
+    state: directory
+
+- name: Create Run Dir 
+  file:
+    path: "{{monkeyfs_path}}/jobs/{{monkey_job_uid}}/out"
+    state: directory
+
+- name: Create Run Dir 
+  file:
+    path: "{{monkeyfs_path}}/jobs/{{monkey_job_uid}}/data"
+    state: directory
+
+- name: Create Run Dir 
+  file:
+    path: "{{monkeyfs_path}}/jobs/{{monkey_job_uid}}/logs"
+    state: directory

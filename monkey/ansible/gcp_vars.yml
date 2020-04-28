@@ -17,11 +17,15 @@ firewall_rule: monkey-ansible-firewall
 
 # UID is the unique id that the machine is going to be created with.  
 # Currently does not check for exting machines with the same uid
-uid: varb
+monkey_job_uid: monkey-varb
 
 ###########
 # Optional
 ###########
 
 # Will generate a new key with default name keys/gcp if not provided
-gcp_ssh_private_key_path: 
+gcp_ssh_private_key_path:  # Defaults to keys/gcp
+gcp_storage_name:  # Defaults to monkeyfs
+
+
+monkeyfs_path: # Defaults to /monkeyfs
