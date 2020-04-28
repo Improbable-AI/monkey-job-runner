@@ -35,7 +35,7 @@ def threaded(fn):
 class CloudHandler():
 
     credentials = None
-    zones = None
+    zone = None
     project = None
     name = None
     provider_type = None
@@ -51,17 +51,17 @@ class CloudHandler():
         return base
 
     @staticmethod
-    def create_cloud_handler(provider_info, default_params):
+    def create_cloud_handler(provider_info):
         provider_type = provider_info["type"]
         if provider_type == "gcp":
-            return CloudHandlerGCP(provider_info, default_params)
+            return CloudHandlerGCP(provider_info)
         else:
             raise ValueError("{} type for provider not supported yet".format(provider_type))
 
     def __init__(self, provider_info, default_params):
         super().__init__()
         self.name = provider_info["name"]
-        self.zones = provider_info["zones"]
+        self.zone = provider_info["zone"]
         self.project = provider_info["project"]
 
         if "all" in default_params:
@@ -87,74 +87,41 @@ class CloudHandler():
 
     def is_valid(self):
         return not(self.credentials == None or \
-            self.zones == None or \
+            self.zone == None or \
             self.project == None or \
             self.name == None or \
             self.provider_type == None)
 
     def __str__(self):
-        return "Name: {}, provider: {}, zones: {}, project: {}"\
-            .format(self.name, self.provider_type, ", ".join(self.zones), self.project)
+        return "Name: {}, provider: {}, zone: {}, project: {}"\
+            .format(self.name, self.provider_type,self.zone, self.project)
 
 class CloudHandlerGCP(CloudHandler):
 
     compute_api = None
-    firewall_rule_name = 'monkey-firewall'
-    monkey_required_ports = ['9991']
-
-    def __init__(self, provider_info, default_params):
-        super().__init__(provider_info, default_params)
+    credentials = None
+    
+    def __init__(self, provider_info):
+        super().__init__(provider_info)
         self.provider_type = "gcp"
         # Overrides if type is the same
-        if "gcp" in default_params:
-            self.machine_defaults = self.merge_params(self.machine_defaults, default_params["gcp"])
-        # Overrides if name matches
-        if self.name in default_params:
-            self.machine_defaults = self.merge_params(self.machine_defaults, default_params[self.name])
+        # if "gcp" in default_params:
+        #     self.machine_defaults = self.merge_params(self.machine_defaults, default_params["gcp"])
+        # # Overrides if name matches
+        # if self.name in default_params:
+        #     self.machine_defaults = self.merge_params(self.machine_defaults, default_params[self.name])
 
         logger.info("GCP Cloud Handler Instantiating {}".format(self))
-        credentials_key_name = "gcp-service-key.json"
-        if "credentials-key" in provider_info:
-            credentials_key_name = provider_info["credentials-key"]
-        self.credentials = service_account.Credentials.from_service_account_file(credentials_key_name)
+        if "gcp_cred_file" not in provider_info:
+            logger.error("Failed to provide gcp_cred_file for service account")
+            raise ValueError("Failed to provide gcp_cred_file for service account")
+        
+        self.credentials = service_account.Credentials.from_service_account_file(provider_info["gcp_cred_file"])
         self.compute_api = googleapiclient.discovery.build('compute', 'v1', credentials=self.credentials, cache_discovery=False)
-        self.check_for_firewall_rule()
-
-    def check_for_firewall_rule(self):
-        result = self.compute_api.firewalls().list(project=self.project).execute()
-        result = result.get('items', [])
-        firewall_rule_found = False
-        for item in result:
-            if item.get('name', None) == self.firewall_rule_name:
-                firewall_rule_found = True
-                break 
-        if not firewall_rule_found:
-            logger.info("Creating Firewall Rule")
-            self.create_firewall_rule()
-
-    def create_firewall_rule(self):
-        firewall_rule = {
-            'name': self.firewall_rule_name,
-            'description': 'Monkey Job runner monkey-client firewall rule.  Allows for connection to monkey-client',
-            'allowed': [
-                {
-                    'IPProtocol': 'tcp',
-                    'ports': self.monkey_required_ports,
-                },
-                {
-                    'IPProtocol': 'udp',
-                    'ports': self.monkey_required_ports,
-                }
-            ],
-            'targetTags':[
-                self.firewall_rule_name
-            ]
-        }
-        result = self.compute_api.firewalls().insert(project=self.project, body=firewall_rule).execute()
 
 
     def is_valid(self):
-        return super().is_valid() and self.compute_api is not None
+        return super().is_valid() and self.credentials is not None
      
     def check_connection(self):
         try:
@@ -207,6 +174,7 @@ class CloudHandlerGCP(CloudHandler):
         return images
     
     def create_instance(self, machine_params=dict(), wait_for_monkey_client=False):
+        
         all_params = self.merge_params(self.machine_defaults, machine_params)
         all_params["zone"] = self.machine_defaults["zone"] if "zone" in self.machine_defaults else self.zones[0]
         logger.info(json.dumps(all_params, indent=2))

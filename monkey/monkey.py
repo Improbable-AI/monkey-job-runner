@@ -14,32 +14,30 @@ class Monkey():
 
     providers = []
 
-    def __init__(self):
+    def __init__(self, providers_path="providers.yaml"):
         super().__init__()
         logger.info("Monkey Initializing")
         self.providers = []
-        self.instantiate_providers()
+        self.instantiate_providers(providers_path=providers_path)
         
-    def instantiate_providers(self):
+    def instantiate_providers(self, providers_path="providers.yaml"):
         providers = dict()
         try:
-            with open("cloud_providers.yaml", 'r') as providers_file:
+            with open(providers_path, 'r') as providers_file:
                 providers_yaml = yaml.load(providers_file, Loader=yaml.FullLoader)
                 providers = providers_yaml["providers"]
-                default_params = providers_yaml["defaults"]
-                # print("Found Providers {}".format(list(providers.keys())))                
         except:
-            logger.error("Could not read cloud_providers.yaml for configured providers")
+            logger.error("Could not read providers.yaml for configured providers")
 
         if len(providers) == 0:
-            logger.error("Could not find any providers in cloud_providers.yaml.  Please make sure it is filled out")
-            raise ValueError("No cloud providers found")
+            logger.error("Could not find any providers in providers.yaml.  Please make sure it is filled out")
+            raise ValueError("No providers found")
         else:
             logger.info("Found Providers: {}".format(([p["name"] for p in providers])))
 
         for provider in providers:
             try:
-                handler = CloudHandler.create_cloud_handler(provider_info=provider, default_params=default_params)
+                handler = CloudHandler.create_cloud_handler(provider_info=provider)
                 if handler.is_valid():
                     self.providers.append(handler)
                 else:
