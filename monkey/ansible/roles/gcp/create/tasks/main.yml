@@ -27,7 +27,7 @@
 - name: create a instance
   gcp_compute_instance:
     state: present
-    name: "monkey-{{ uid }}"
+    name: "{{ monkey_job_uid }}"
     machine_type: n1-standard-1
     disks:
       - auto_delete: true
