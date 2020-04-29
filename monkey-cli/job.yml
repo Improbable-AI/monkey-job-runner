@@ -1,0 +1,8 @@
+---
+
+cmd: python test.py
+# Automatically will copy cwd recursively to input
+cwd: /Users/avery/Developer/projects/monkey-project/monkey/samples/simple
+
+env:
+  TEST_ENV: "Heres a test value"
