@@ -11,9 +11,13 @@ logger = logging.getLogger(__name__)
 from google.oauth2 import service_account
 import googleapiclient.discovery
 
+from core.monkey_instance import MonkeyInstanceGCP
+
 from threading import Thread
 from concurrent.futures import Future
-
+from ansible.parsing.dataloader import DataLoader
+from ansible.inventory.manager import InventoryManager
+from ansible.vars.manager import VariableManager
 # Creates backgound decorators @threaded.  To block and get the result, use .result()
 def call_with_future(fn, future, args, kwargs):
     try:
@@ -133,16 +137,18 @@ class MonkeyProviderGCP(MonkeyProvider):
 
     def list_instances(self):
         instances = []
-        try:
-            result = self.compute_api.instances().list(project=self.project, zone=self.zone).execute()
-            print(result)
-            result = result['items'] if 'items' in result else None
-            if result:
-                instances += [inst["name"] for inst in result]
-        except: 
-            pass
+
+        loader = DataLoader()
+        inventory = InventoryManager(loader=loader, sources="/Users/avery/Developer/projects/monkey-project/monkey-core/ansible/inventory")
+        variable_manager = VariableManager(loader=loader, inventory=inventory)
+        host_list = inventory.get_groups_dict()["monkey_gcp"]
+        for host in host_list:
+            h = inventory.get_host(host)
+            host_vars = h.get_vars()
+            inst = MonkeyInstanceGCP(ansible_info=host_vars)
+            instances.append(inst)
         return instances
-    
+   
     def list_jobs(self):
         jobs = []
         for zone in self.zones:

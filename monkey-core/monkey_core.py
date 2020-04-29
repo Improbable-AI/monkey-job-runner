@@ -29,7 +29,8 @@ def get_list_instances():
     print("Looking up instances for providers: {}".format(providers))
     res = dict()
     for provider_name in providers:
-        res[provider_name] = monkey.get_list_instances(provider_name=provider_name)
+        instances = monkey.get_list_instances(provider_name=provider_name)
+        res[provider_name] = [x.get_json() for x in instances]
     
     print(res)
     return jsonify(res)

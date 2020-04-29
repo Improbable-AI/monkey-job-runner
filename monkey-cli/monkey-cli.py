@@ -51,11 +51,12 @@ class MonkeyCLI(Cmd):
         r = requests.get(MONKEY_CORE_URL + "list/instances", params={"providers": providers})
         if printout:
             res = r.json()
-            print("Listing Instances available")
+            print("Listing Instances available\n")
             for key, value in res.items():
                 print("Instance list for: {}".format(key))
-                print("\n".join(value))
-                print("Total: {}".format(len(value)))
+                for inst in value:
+                    print("Name: {}, IP: {}, State: {}".format(inst["name"], inst["ip_address"], inst["state"]))
+                print("Total: {}\n".format(len(value)))
         return r.json()
 
     def list_jobs(self, providers, printout=False):

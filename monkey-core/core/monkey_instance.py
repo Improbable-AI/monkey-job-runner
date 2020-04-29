@@ -36,16 +36,17 @@ def threaded(fn):
 
 class MonkeyInstance():
 
-    machine_name = None
+    name = None
     machine_zone = None
     machine_project = None
     creation_time = None
     destruction_time = None
     ip_address = None
+    state = None
 
-    def __init__(self, machine_name, machine_zone, machine_project, ip_address):
+    def __init__(self, name, machine_zone, machine_project, ip_address):
         super().__init__()
-        self.machine_name = machine_name
+        self.name = name
         self.machine_zone = machine_zone
         self.machine_project = machine_project
         self.ip_address = ip_address
@@ -69,97 +70,39 @@ class MonkeyInstance():
 
 class MonkeyInstanceGCP(MonkeyInstance):
 
-    compute_api = None
+    ansible_info = None
 
     def __str__(self):
         return """Monkey GCP Instance
-ip: {}
-machine_name: {}
-        """.format(self.ip_address, self.machine_name)
+machine_name: {}, ip: {}, state: {}
+        """.format(self.ip_address, self.machine_name, self.state)
+
+    def get_json(self):
+        return {
+            "name": self.name,
+            "ip_address": self.ip_address,
+            "state": self.state, 
+            "machine_zone": self.machine_zone, 
+            "machine_project": self.machine_project, 
+        }
 
     # Passes compute_api in order to restart instances
-    def __init__(self, compute_api=None,  machine_name=None, machine_zone=None, machine_project=None, ip_address=None):
-        super().__init__(machine_name=machine_name, machine_zone=machine_zone, machine_project=machine_project, ip_address=ip_address)
-        self.compute_api = compute_api
+    def __init__(self, ansible_info):
+        name = ansible_info["name"]
+        machine_zone = ansible_info["zone"]
+        machine_project = ansible_info["project"]
+        # Look for public IP
+        network_interfaces = ansible_info.get("networkInterfaces", [])
+        access_configs = next(iter(network_interfaces), dict()).get("accessConfigs", [])
+        self.ip_address = next(iter(access_configs), dict()).get("natIP", None)
 
-    @classmethod
-    @threaded
-    def from_creation_operation(cls, compute_api=None, machine_name=None, machine_zone=None, machine_project=None, operation_name=None):
-        assert compute_api is not None, "Compute API missing"
-        assert operation_name is not None, "Operation Name missing"
-        MonkeyInstanceGCP.wait_for_operation(compute_api=compute_api, machine_project=machine_project, machine_zone=machine_zone, operation_name=operation_name, silent=False)
-        ip_address = MonkeyInstanceGCP.get_ip_address(compute_api=compute_api, machine_name=machine_name, machine_zone=machine_zone, machine_project=machine_project)
-        assert ip_address is not None, "Was not able to get a public ip address"
-        return cls(compute_api=compute_api, machine_name=machine_name, machine_zone=machine_zone, machine_project=machine_project, ip_address=ip_address)
+        super().__init__(name=name, machine_zone=machine_zone, machine_project=machine_project, ip_address=self.ip_address)
+        self.ansible_info = ansible_info
+        self.state = ansible_info["status"]
+
+
     
-    @classmethod
-    def wait_for_operation(cls, compute_api=None, machine_project=None, machine_zone=None, operation_name=None, timeout=40, silent=True):
-        assert compute_api is not None, "Compute API missing"
-        assert operation_name is not None, "Operation Name missing"
-        if not silent:
-            logger.info('Waiting for operation to finish...')
-        
-        start = time.time()
-        while time.time() - start < timeout:
-            result = compute_api.zoneOperations().get(
-                project=machine_project,
-                zone=machine_zone,
-                operation=operation_name).execute()
-            if not silent:
-                logger.debug(result)
-            if result['status'] == 'DONE':
-                if not silent:
-                    logger.info("Operation {} done.".format(operation_name))
-                if 'error' in result:
-                    raise Exception(result['error'])
-                return result
-            time.sleep(2)
-
-        raise TimeoutError("Waited for the operation to complete more than maximum timeout: {}".format(timeout))
-    
-    @classmethod
-    def get_ip_address(cls,compute_api=None, machine_name=None, machine_zone=None, machine_project=None):
-        assert compute_api is not None
-        print("Getting IP Address")
-        result = compute_api.instances().get(
-            project=machine_project,
-            zone=machine_zone,
-            instance=machine_name
-        ).execute()
-        print(result)
-        network_interfaces = result.get("networkInterfaces",[])
-        assert len(network_interfaces) > 0, "No Network Interfaces found"
-        access_configs = network_interfaces[0].get("accessConfigs", [])
-        assert len(access_configs) > 0, "Access configs not found"
-        public_ip = access_configs[0].get("natIP", None)
-        return public_ip
 
 
-    @classmethod
-    def from_ip_address(cls, ip_address=None, timeout=200):
-        if ip_address is None:
-            return None
-        print("Instantiating with ip: {}".format(ip_address))
-        start = time.time()
-        print(start)
-        print("Elapsed", (time.time() - start))
-        print(timeout)
-        while (time.time() - start) < timeout:
-            r = requests.get("http://{}:9991/info".format(ip_address))
-            if r.status_code == 200:
-                response_json = r.json()
-                print(response_json)
-                try:
-                    machine_name = response_json['machine_name']
-                    machine_zone = response_json['machine_zone']
-                    machine_project = response_json['machine_project']
-                    return cls(machine_name=machine_name, machine_zone=machine_zone, machine_project=machine_project, ip_address=ip_address)
-                except Exception as e:
-                    print("Failed to parse expected info from {}:\n{}"\
-                        .format(ip_address, json.dumps(response_json, indent=2)))
 
-            else:
-                print("Failed to get response from {}".format(ip_address))
-            time.sleep(5)
 
-        return None
