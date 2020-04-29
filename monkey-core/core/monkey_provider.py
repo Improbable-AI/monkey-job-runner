@@ -135,6 +135,7 @@ class MonkeyProviderGCP(MonkeyProvider):
         instances = []
         try:
             result = self.compute_api.instances().list(project=self.project, zone=self.zone).execute()
+            print(result)
             result = result['items'] if 'items' in result else None
             if result:
                 instances += [inst["name"] for inst in result]

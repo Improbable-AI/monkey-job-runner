@@ -8,11 +8,6 @@ import requests
 
 MONKEY_CORE_URL = "http://localhost:9990/"
 
-class MonkeyCLIDispatcher():
-    
-    def __init__(self):
-        super().__init__()
-    
 
 class MonkeyCLI(Cmd):
 
@@ -44,26 +39,19 @@ class MonkeyCLI(Cmd):
         return self.monkey.create_instance(provider= provider, machine_params=machine_overrides)        
 
     def list_providers(self, printout=False):
-        if printout:
-            print('''
-Listing Providers available
-                ''')
         providers = []
         r = requests.get(MONKEY_CORE_URL + "list/providers")
         if printout:
+            print("Listing Providers available")
             print("\n".join(r.json()))
             print("Total: {}".format(len(r.json())))
         return r.json()
 
     def list_instances(self, providers, printout=False):
-        if printout:
-            print('''
-Listing Providers available
-                ''')
-
         r = requests.get(MONKEY_CORE_URL + "list/instances", params={"providers": providers})
         if printout:
             res = r.json()
+            print("Listing Instances available")
             for key, value in res.items():
                 print("Instance list for: {}".format(key))
                 print("\n".join(value))
@@ -71,22 +59,37 @@ Listing Providers available
         return r.json()
 
     def list_jobs(self, providers, printout=False):
+        r = requests.get(MONKEY_CORE_URL + "list/jobs", params={"providers": providers})
         if printout:
-            print('''
-Listing Jobs available
-                ''')
-        print(providers)
-        jobs = []
-        for handler in self.monkey.handlers:
-            if handler.name in providers:
-                jobs += handler.list_jobs()
+            res = r.json()
+            print("Listing Jobs available")
+            for key, value in res.items():
+                print("Job list for: {}".format(key))
+                print("\n".join(value))
+                print("Total: {}".format(len(value)))
+        return r.json()
 
-        if printout:
-            print('''
-Found Jobs:
-{}            
-        '''.format(',\n'.join(jobs)))
-        return jobs
+    def get_list_parser(self, subparser):
+        list_parser = subparser.add_parser("list", help="List jobs on the specified provider")
+        list_subparser = list_parser.add_subparsers(description="List command options", dest="list_option")
+        list_jobs_parser = list_subparser.add_parser("jobs", help="List the jobs on the given provider")
+        list_providers_parser = list_subparser.add_parser("providers", help="List the jobs on the given provider")
+        list_instances_parser = list_subparser.add_parser("instances", help="List the jobs on the given provider")
+        list_jobs_parser.add_argument('-p','--provider', dest='providers', type=str, required=False, default=[],
+                         help='The provider you wish to use.  Should be defined in providers.yaml')
+        list_instances_parser.add_argument('-p','--provider', dest='providers', type=str, required=False, default=[],
+                         help='The provider you wish to use.  Should be defined in providers.yaml')
+        return list_parser, list_subparser
+    
+    def get_create_parser(self, subparser):
+        create_parser = subparser.add_parser("create", help="Create an instance on the specified provider")
+        create_subparser = create_parser.add_subparsers(description="Create command options", dest="create_option")
+        create_instance_parser = create_subparser.add_parser("instance", help="Creates an instance with given provider and overrides")
+        create_instance_parser.add_argument('-p','--provider', dest='provider', type=str, required=True,
+                         help='The provider you wish to use.  Should be defined in cloud_providers.yaml')
+        # create_instance_parser.add_argument('machine_params', type=str, nargs=argparse.REMAINDER,
+        #                  help='Any other machine overrides to replace values found in cloud_providers.yaml')
+        return create_parser, create_subparser
 
     def parse_args(self, input_args, printout=True):
         print("Parsing args: {}".format(input_args))
@@ -97,25 +100,9 @@ Found Jobs:
         run_parser = subparser.add_parser("run", help="Run a job on the specified provider")
         run_parser.add_argument("job_name", help="Which job to run, include the job name, which can be found in jobs.yaml")
         
-        
-        create_parser = subparser.add_parser("create", help="Create an instance on the specified provider")
-        create_subparser = create_parser.add_subparsers(description="Create command options", dest="create_option")
-        create_instance_parser = create_subparser.add_parser("instance", help="Creates an instance with given provider and overrides")
-        create_instance_parser.add_argument('-p','--provider', dest='provider', type=str, required=True,
-                         help='The provider you wish to use.  Should be defined in cloud_providers.yaml')
-        # create_instance_parser.add_argument('machine_params', type=str, nargs=argparse.REMAINDER,
-        #                  help='Any other machine overrides to replace values found in cloud_providers.yaml')
+        create_parser, create_subparser = self.get_create_parser(subparser=subparser)
 
-
-        list_parser = subparser.add_parser("list", help="List jobs on the specified provider")
-        list_subparser = list_parser.add_subparsers(description="List command options", dest="list_option")
-        list_jobs_parser = list_subparser.add_parser("jobs", help="List the jobs on the given provider")
-        list_providers_parser = list_subparser.add_parser("providers", help="List the jobs on the given provider")
-        list_instances_parser = list_subparser.add_parser("instances", help="List the jobs on the given provider")
-        list_jobs_parser.add_argument('-p','--provider', dest='providers', type=str, required=False, default=[],
-                         help='The provider you wish to use.  Should be defined in providers.yaml')
-        list_instances_parser.add_argument('-p','--provider', dest='providers', type=str, required=False, default=[],
-                         help='The provider you wish to use.  Should be defined in providers.yaml')
+        list_parser, list_subparser = self.get_list_parser(subparser=subparser)
 
         info_parser = subparser.add_parser("info", help="Infoon the specified item")
         info_subparser = info_parser.add_subparsers(description="Info options", dest="info_option")

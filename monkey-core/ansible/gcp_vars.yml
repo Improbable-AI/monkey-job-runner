@@ -6,7 +6,7 @@
 # Service account credentials
 gcp_cred_kind: serviceaccount
 # Put the path to your credentials location
-gcp_cred_file: /Users/avery/Developer/projects/monkey-project/monkey/gcp-service-key-personal.json
+gcp_cred_file: /Users/avery/Developer/projects/monkey-project/monkey-core/gcp-service-key-personal.json
 
 # These parameters must be valid zones and regions for now and are not defaulted
 zone: us-east1-b
@@ -17,7 +17,7 @@ firewall_rule: monkey-ansible-firewall
 
 # UID is the unique id that the machine is going to be created with.  
 # Currently does not check for exting machines with the same uid
-monkey_job_uid: monkey-varb
+monkey_job_uid: monkey-vara
 
 ###########
 # Optional

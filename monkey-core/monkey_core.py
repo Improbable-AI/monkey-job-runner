@@ -26,6 +26,7 @@ def get_list_instances():
     if len(providers) == 0:
         providers = [x["name"] for x in monkey.get_list_providers()]
     
+    print("Looking up instances for providers: {}".format(providers))
     res = dict()
     for provider_name in providers:
         res[provider_name] = monkey.get_list_instances(provider_name=provider_name)
