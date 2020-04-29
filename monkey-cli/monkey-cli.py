@@ -134,6 +134,7 @@ class MonkeyCLI(Cmd):
                 return False
         elif args.command == "list":
             if args.list_option == "jobs":
+                raise NotImplementedError("Not implemented yet")
                 return self.list_jobs(providers=args.providers, printout=printout)
             elif args.list_option == "instances":
                 return self.list_instances(providers=args.providers, printout=printout)
