@@ -40,6 +40,8 @@ cd monkey-core
 python monkey_core.py
 ```
 
+Monkey core also depends on the mongodb for persistent storage.  To install and start a mongodb service for monkey usage, run `docker-compose create; docker-compose start`
+
 Interface with Monkey-CLI
 ```
 cd monkey-cli
@@ -47,4 +49,5 @@ cd monkey-cli
 ```
 To change the connection or url for monkey-core
 `mokney-cli/monkey.py` has the variable MONKEY_CORE_URL which has the endpoint for the monkey-core server.
+
 

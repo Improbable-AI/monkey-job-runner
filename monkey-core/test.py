@@ -1,11 +1,23 @@
-from ansible.parsing.dataloader import DataLoader
-from ansible.inventory.manager import InventoryManager
-from ansible.vars.manager import VariableManager
+from mongoengine import *
+connect("monkeydb", 
+    host="localhost", 
+    port=27017, 
+    username="monkeycore", 
+    password="bananas", 
+    authentication_source="monkeydb")
+class Page(DynamicDocument):
+    title = StringField(max_length=200, required=True)
 
-loader = DataLoader()
-inventory = InventoryManager(loader=loader, sources="ansible/inventory")
-variable_manager = VariableManager(loader=loader, inventory=inventory)
-print(inventory.groups)
+
+
+# from ansible.parsing.dataloader import DataLoader
+# from ansible.inventory.manager import InventoryManager
+# from ansible.vars.manager import VariableManager
+
+# loader = DataLoader()
+# inventory = InventoryManager(loader=loader, sources="ansible/inventory")
+# variable_manager = VariableManager(loader=loader, inventory=inventory)
+# print(inventory.groups)
 
 
 # print(inventory)
@@ -33,9 +45,9 @@ print(inventory.groups)
 #             seen.add(subgroup.name)
 #     return results
 
-a = format_group(inventory.groups["monkey_gcp"])
-print(a)
-for host in a["monkey_gcp"]["hosts"]:
-  h = inventory.get_host(host)
-  print(h.get_vars())
-  # print(hosts)
+# a = format_group(inventory.groups["monkey_gcp"])
+# print(a)
+# for host in a["monkey_gcp"]["hosts"]:
+#   h = inventory.get_host(host)
+#   print(h.get_vars())
+# print(hosts)
