@@ -137,7 +137,7 @@ class MonkeyProviderGCP(MonkeyProvider):
 
     def list_instances(self):
         instances = []
-
+        # MARK(alamp): AnsibleInternalAPI
         loader = DataLoader()
         inventory = InventoryManager(loader=loader, sources="/Users/avery/Developer/projects/monkey-project/monkey-core/ansible/inventory")
         variable_manager = VariableManager(loader=loader, inventory=inventory)
@@ -290,8 +290,8 @@ summary below
         if 'monkey-identifier' in all_params:
             all_labels['monkey-identifier'] = all_params['monkey-identifier']
         else:
-            logger.error("You must have a the monkey-identifier set for each user in cloud_providers.yaml")
-            raise ValueError("You must have a the monkey-identifier set for each user in cloud_providers.yaml")
+            logger.error("You must have a the monkey-identifier set for each user in providers.yml")
+            raise ValueError("You must have a the monkey-identifier set for each user in providers.yml")
             return
 
         # Tags the machine

@@ -71,7 +71,7 @@ The monkey framework has one main object for each provider, the `CloudHandler` o
 
 #### Configuring the Monkey Framework 
 
-The monkey framework is configured from a singular `cloud_providers.yaml` file.  The details on configuration options can be found in `CLOUD_PROVDIERS.md`.
+The monkey framework is configured from a singular `providers.yml` file.  The details on configuration options can be found in `PROVDIERS.md`.
 
 
 #### Running a job

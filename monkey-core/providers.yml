@@ -2,8 +2,6 @@
 providers:
 - name: "gcp"
   type: "gcp"
-  # Make sure to include all zones that you will be using.
-  # The first zone will be the default for creating instances
   zone: "us-east1-b"
   project: "monkey-274001"
   region: us-east1

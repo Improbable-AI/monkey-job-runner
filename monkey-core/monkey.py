@@ -14,23 +14,23 @@ class Monkey():
 
     providers = []
 
-    def __init__(self, providers_path="providers.yaml"):
+    def __init__(self, providers_path="providers.yml"):
         super().__init__()
         logger.info("Monkey Initializing")
         self.providers = []
         self.instantiate_providers(providers_path=providers_path)
         
-    def instantiate_providers(self, providers_path="providers.yaml"):
+    def instantiate_providers(self, providers_path="providers.yml"):
         providers = dict()
         try:
             with open(providers_path, 'r') as providers_file:
                 providers_yaml = yaml.load(providers_file, Loader=yaml.FullLoader)
                 providers = providers_yaml["providers"]
         except:
-            logger.error("Could not read providers.yaml for configured providers")
+            logger.error("Could not read providers.yml for configured providers")
 
         if len(providers) == 0:
-            logger.error("Could not find any providers in providers.yaml.  Please make sure it is filled out")
+            logger.error("Could not find any providers in providers.yml.  Please make sure it is filled out")
             raise ValueError("No providers found")
         else:
             logger.info("Found Providers: {}".format(([p["name"] for p in providers])))

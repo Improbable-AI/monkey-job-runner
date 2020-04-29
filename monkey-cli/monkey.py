@@ -77,9 +77,9 @@ class MonkeyCLI(Cmd):
         list_providers_parser = list_subparser.add_parser("providers", help="List the jobs on the given provider")
         list_instances_parser = list_subparser.add_parser("instances", help="List the jobs on the given provider")
         list_jobs_parser.add_argument('-p','--provider', dest='providers', type=str, required=False, default=[],
-                         help='The provider you wish to use.  Should be defined in providers.yaml')
+                         help='The provider you wish to use.  Should be defined in providers.yml')
         list_instances_parser.add_argument('-p','--provider', dest='providers', type=str, required=False, default=[],
-                         help='The provider you wish to use.  Should be defined in providers.yaml')
+                         help='The provider you wish to use.  Should be defined in providers.yml')
         return list_parser, list_subparser
     
     def get_create_parser(self, subparser):
@@ -87,9 +87,9 @@ class MonkeyCLI(Cmd):
         create_subparser = create_parser.add_subparsers(description="Create command options", dest="create_option")
         create_instance_parser = create_subparser.add_parser("instance", help="Creates an instance with given provider and overrides")
         create_instance_parser.add_argument('-p','--provider', dest='provider', type=str, required=True,
-                         help='The provider you wish to use.  Should be defined in cloud_providers.yaml')
+                         help='The provider you wish to use.  Should be defined in cloud_providers.yml')
         # create_instance_parser.add_argument('machine_params', type=str, nargs=argparse.REMAINDER,
-        #                  help='Any other machine overrides to replace values found in cloud_providers.yaml')
+        #                  help='Any other machine overrides to replace values found in providers.yml')
         return create_parser, create_subparser
 
     def parse_args(self, input_args, printout=True):
