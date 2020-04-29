@@ -11,9 +11,6 @@ logger = logging.getLogger(__name__)
 from google.oauth2 import service_account
 import googleapiclient.discovery
 
-from cloud.monkey_instance import MonkeyInstanceGCP
-
-
 from threading import Thread
 from concurrent.futures import Future
 
@@ -32,14 +29,13 @@ def threaded(fn):
         return future
     return wrapper
 
-class CloudHandler():
+class MonkeyProvider():
 
     credentials = None
     zone = None
     project = None
     name = None
     provider_type = None
-    machine_defaults = dict()
     instances = []
 
     def merge_params(self, base, additional):
@@ -54,18 +50,15 @@ class CloudHandler():
     def create_cloud_handler(provider_info):
         provider_type = provider_info["type"]
         if provider_type == "gcp":
-            return CloudHandlerGCP(provider_info)
+            return MonkeyProviderGCP(provider_info)
         else:
             raise ValueError("{} type for provider not supported yet".format(provider_type))
 
-    def __init__(self, provider_info, default_params):
+    def __init__(self, provider_info):
         super().__init__()
         self.name = provider_info["name"]
         self.zone = provider_info["zone"]
         self.project = provider_info["project"]
-
-        if "all" in default_params:
-            self.machine_defaults = default_params["all"]
 
     def list_instances(self):
         raise NotImplementedError("This is not implemented yet")
@@ -96,7 +89,12 @@ class CloudHandler():
         return "Name: {}, provider: {}, zone: {}, project: {}"\
             .format(self.name, self.provider_type,self.zone, self.project)
 
-class CloudHandlerGCP(CloudHandler):
+    def get_dict(self):
+        return {
+            "name": self.name,
+            "type": self.provider_type
+        }
+class MonkeyProviderGCP(MonkeyProvider):
 
     compute_api = None
     credentials = None
@@ -135,14 +133,13 @@ class CloudHandlerGCP(CloudHandler):
 
     def list_instances(self):
         instances = []
-        for zone in self.zones:
-            try:
-                result = self.compute_api.instances().list(project=self.project, zone=zone).execute()
-                result = result['items'] if 'items' in result else None
-                if result:
-                    instances += [inst["name"] for inst in result]
-            except: 
-                pass
+        try:
+            result = self.compute_api.instances().list(project=self.project, zone=self.zone).execute()
+            result = result['items'] if 'items' in result else None
+            if result:
+                instances += [inst["name"] for inst in result]
+        except: 
+            pass
         return instances
     
     def list_jobs(self):

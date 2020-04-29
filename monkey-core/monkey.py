@@ -6,8 +6,8 @@ logger = logging.getLogger(__name__)
 logging.getLogger("googleapiclient.discovery").setLevel(logging.WARNING)
 logging.getLogger("google_auth_httplib2").setLevel(logging.WARNING)
 
-from cloud.cloud_instance import CloudInstance, CloudInstanceType
-from cloud.cloud_handler import CloudHandler, CloudHandlerGCP
+# from cloud.cloud_instance import CloudInstance, CloudInstanceType
+from core.monkey_provider import MonkeyProvider
 
 
 class Monkey():
@@ -37,13 +37,15 @@ class Monkey():
 
         for provider in providers:
             try:
-                handler = CloudHandler.create_cloud_handler(provider_info=provider)
+                logger.info("Try initializing: {}".format(provider))
+                handler = MonkeyProvider.create_cloud_handler(provider_info=provider)
                 if handler.is_valid():
                     self.providers.append(handler)
                 else:
                     raise ValueError("Instantiated Handler is not valid: {}".format(handler))
             except Exception as e:
                 logger.error("Could not instantiate provider \n{}".format(e))
+
 
 
     def create_instance(self, provider, machine_params=dict()):
@@ -64,9 +66,16 @@ class Monkey():
         matched_provider = matched_providers[0]
         return matched_provider.wait_for_operation(operation_name)
 
-    def get_instance_list(self):
+
+    def get_list_providers(self):
+        return [x.get_dict() for x in self.providers]
+
+    def get_list_instances(self, provider_name):
         logger.info("Getting full instance list")
-        return {handler.name : handler.list_instances() for handler in self.providers}
+        for provider in self.providers:
+            if provider.name == provider_name:
+                return provider.list_instances()
+        return []
     
     def get_image_list(self):
         logger.info("Getting full image list")

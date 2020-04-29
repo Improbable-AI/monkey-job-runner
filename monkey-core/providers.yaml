@@ -8,6 +8,6 @@ providers:
   project: "mit-mic"
   region: us-east1
   gcp_cred_kind: serviceaccount
-  gcp_cred_file: /Users/avery/Developer/projects/monkey-project/monkey/gcp-service-key-personal.json
+  gcp_cred_file: /Users/avery/Developer/projects/monkey-project/monkey-core/gcp-service-key-personal.json
 
 

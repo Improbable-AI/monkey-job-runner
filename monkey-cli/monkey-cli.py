@@ -1,18 +1,22 @@
 #!/usr/bin/env python
-from monkey import Monkey
 import time
 import argparse
 import sys
 import json
 from cmd import Cmd
+import requests
 
+MONKEY_CORE_URL = "http://localhost:9990/"
+
+class MonkeyCLIDispatcher():
+    
+    def __init__(self):
+        super().__init__()
+    
 
 class MonkeyCLI(Cmd):
 
     prompt = 'monkey> '
-    monkey = Monkey()
-    history = []
-    history_index = 0
 
     def __init__(self):
         super().__init__()
@@ -45,11 +49,26 @@ class MonkeyCLI(Cmd):
 Listing Providers available
                 ''')
         providers = []
-        for handler in self.monkey.handlers:
-            if printout:
-                print("{}".format(handler))
-            providers.append(handler.name)
-        return providers
+        r = requests.get(MONKEY_CORE_URL + "list/providers")
+        if printout:
+            print("\n".join(r.json()))
+            print("Total: {}".format(len(r.json())))
+        return r.json()
+
+    def list_instances(self, providers, printout=False):
+        if printout:
+            print('''
+Listing Providers available
+                ''')
+
+        r = requests.get(MONKEY_CORE_URL + "list/instances", params={"providers": providers})
+        if printout:
+            res = r.json()
+            for key, value in res.items():
+                print("Instance list for: {}".format(key))
+                print("\n".join(value))
+                print("Total: {}".format(len(value)))
+        return r.json()
 
     def list_jobs(self, providers, printout=False):
         if printout:
@@ -69,7 +88,7 @@ Found Jobs:
         '''.format(',\n'.join(jobs)))
         return jobs
 
-    def parse_args(self, input_args):
+    def parse_args(self, input_args, printout=True):
         print("Parsing args: {}".format(input_args))
         parser = argparse.ArgumentParser(description='Parses monkey commands')
 
@@ -92,8 +111,11 @@ Found Jobs:
         list_subparser = list_parser.add_subparsers(description="List command options", dest="list_option")
         list_jobs_parser = list_subparser.add_parser("jobs", help="List the jobs on the given provider")
         list_providers_parser = list_subparser.add_parser("providers", help="List the jobs on the given provider")
-        list_jobs_parser.add_argument('-p','--providers', dest='providers', type=str, required=False, nargs="*", default=None,
-                         help='The provider you wish to use.  Should be defined in cloud_providers.yaml')
+        list_instances_parser = list_subparser.add_parser("instances", help="List the jobs on the given provider")
+        list_jobs_parser.add_argument('-p','--provider', dest='providers', type=str, required=False, default=[],
+                         help='The provider you wish to use.  Should be defined in providers.yaml')
+        list_instances_parser.add_argument('-p','--provider', dest='providers', type=str, required=False, default=[],
+                         help='The provider you wish to use.  Should be defined in providers.yaml')
 
         info_parser = subparser.add_parser("info", help="Infoon the specified item")
         info_subparser = info_parser.add_subparsers(description="Info options", dest="info_option")
@@ -124,30 +146,17 @@ Found Jobs:
                 return False
         elif args.command == "list":
             if args.list_option == "jobs":
-                if args.providers is not None:
-                    self.list_jobs(providers=args.providers, printout=True)
-                else:
-                    self.list_jobs(providers=self.list_providers(), printout=True)
+                return self.list_jobs(providers=args.providers, printout=printout)
+            elif args.list_option == "instances":
+                return self.list_instances(providers=args.providers, printout=printout)
             elif args.list_option == "providers":
-                return self.list_providers(printout=True)
+                return self.list_providers(printout=printout)
             else:
                 list_parser.print_help()
                 return False
         else:
             parser.print_help()
             return False
-
-
-        # parser.add_argument('command', help='Subcommand to run')
-        # args = parser.parse_args(input_args[1:2])
-        # if not hasattr(args, "command"):
-        #     print('Unrecognized command')
-        #     parser.print_help()
-        #     exit(1)
-        # # use dispatch pattern to invoke method with same name
-        # print(getattr(args, "command"))
-        # command = getattr(args, "command")
-        # getattr(self, command)(input_args[2:])
 
         return args
 
