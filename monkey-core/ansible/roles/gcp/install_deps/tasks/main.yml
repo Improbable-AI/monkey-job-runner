@@ -3,10 +3,15 @@
 - name: Check for existing swapfile
   shell: test -f /swapfile
   changed_when: false
+  ignore_errors: true
   register: swapfile_test
 
+- name:
+  debug:
+    msg: "Swapfile test: {{ swapfile_test }}"
+
 - name: Create and mount swapfile
-  when: swapfile_test.changed
+  when: swapfile_test.failed
   block:
     - name: Create swap file
       become: true
