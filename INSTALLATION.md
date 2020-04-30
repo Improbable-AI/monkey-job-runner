@@ -42,6 +42,9 @@ python monkey_core.py
 
 Monkey core also depends on the mongodb for persistent storage.  To install and start a mongodb service for monkey usage, run `docker-compose create; docker-compose start`
 
+To debug and view the database, use mongodb compass https://www.mongodb.com/products/compass
+DB_URL = `mongodb://monkeycore:bananas@localhost:27017/monkeydb`
+
 Interface with Monkey-CLI
 ```
 cd monkey-cli

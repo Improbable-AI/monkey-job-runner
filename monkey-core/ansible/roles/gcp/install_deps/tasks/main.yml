@@ -1,0 +1,41 @@
+---
+
+- name: Check for existing swapfile
+  shell: test -f /swapfile
+  changed_when: false
+  register: swapfile_test
+
+- name: Create and mount swapfile
+  when: swapfile_test.changed
+  block:
+    - name: Create swap file
+      become: true
+      command: dd if=/dev/zero of=/swapfile bs=1024 count=512k
+              creates=/swapfile
+
+    - name: Change swap file permissions
+      become: true
+      file: 
+        path: /swapfile
+        owner: root
+        group: root
+        mode: 0600
+
+    - name: Make swap file
+      become: true
+      command: mkswap /swapfile
+
+
+    - name: Write swap entry in fstab
+      become: true
+      mount:
+        src: /swapfile
+        path: /swapfile
+        fstype: swap
+        opts: sw
+        state: present
+
+    - name: Mount swap
+      become: true
+      command: "swapon /swapfile"
+

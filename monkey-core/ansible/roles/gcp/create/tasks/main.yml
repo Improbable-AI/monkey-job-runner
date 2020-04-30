@@ -29,6 +29,8 @@
     state: present
     name: "{{ monkey_job_uid }}"
     machine_type: n1-standard-1
+    status: "RUNNING"
+    deletion_protection: no
     disks:
       - auto_delete: true
         boot: true
@@ -60,9 +62,17 @@
       items:
         - "{{ firewall_rule }}"
   register: instance
+  delay: 5
+  # Sometimes doesn't imediately return natIP so retry
+  until: "'natIP' in instance.networkInterfaces.0.accessConfigs.0"
 - name: Assert public ip address
   set_fact:
     public_ip: "{{ instance.networkInterfaces.0.accessConfigs.0.natIP }}"
+  register: found_public_ip
+  until: found_public_ip is not failed
+  delay: 5
+  retries: 10
+
 - name:  Debug public ip
   debug:
     msg: public ip "{{ public_ip }}"
@@ -70,7 +80,11 @@
   wait_for: 
     host: "{{ public_ip }}"
     port: 22
-    timeout: 60
+    timeout: 15
+  register: wait_for_ssh
+  delay: 2
+  until: wait_for_ssh is not failed
+  retries: 10
 
 - name: Get keyscan host key
   set_fact:

@@ -56,4 +56,5 @@
         msg: "Finished installing monkey client"
 
   roles:
+    - gcp/install_deps
     - monkey_client/install
