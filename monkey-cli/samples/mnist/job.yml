@@ -20,13 +20,25 @@ install:
   - conda
 
 code:
-  name: "MNIST code"
   # Path of the codebase.  Use . for cwd, use relative dir for directory
   path: "."
   # Patterns to ignore from the code
   ignore:
     - "data**"
     - "output**"
+
+# Define folders to persist throughout runs.  Should include your output or checkpoint directory
+# Any defined persist folder will be kept in persistent storage and applied over the codebase at start
+# Persisted folders will be unpacked in the order they are listed
+persist:
+  - name: output
+    # Must be a relative dir
+    path: output
+
+    ignore:
+    - "output/testfile"
+
+
 
 data:
   - name: mnist-data

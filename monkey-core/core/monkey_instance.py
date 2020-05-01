@@ -182,5 +182,8 @@ name: {}, ip: {}, state: {}
             success, msg = self.setup_data_item(data_item=data_item, provider_info=provider_info)
             if success == False:
                 return success, msg
+        
+        print("Success in unpacking all datasets")
+        
 
         return True, "Setup job correctly"

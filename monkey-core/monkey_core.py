@@ -13,6 +13,7 @@ import tempfile
 import yaml
 import concurrent.futures
 from datetime import datetime
+import tarfile
 date_format = "monkey-%y-%m-%d-"
 instance_number = 1
 last_date = datetime.now().strftime(date_format)
@@ -117,6 +118,30 @@ def upload_codebase():
     os.makedirs(create_folder_path, exist_ok= True)
     FileStorage(request.stream).save(os.path.join(create_folder_path, "code.tar"))
     print("Saved file to: {}".format(os.path.join(create_folder_path, "code.tar")))
+    return jsonify({
+            "msg": "Successfully uploaded codebase",
+            "success": True
+        })
+
+@application.route('/upload/persist', methods=["POST"])
+def upload_persist():
+    print("Received upload persist request")
+    job_uid = request.args.get('job_uid', None)
+    if job_uid is None:
+        return jsonify({
+            "msg": "Did not provide job_uid or name",
+            "success": False
+        })
+    create_folder_path = os.path.join(MONKEY_FS, "jobs", job_uid)
+    os.makedirs(create_folder_path, exist_ok= True)
+
+    with tempfile.NamedTemporaryFile(suffix=".tmp") as temp_file:
+        print(temp_file.name)
+        FileStorage(request.stream).save(temp_file.name)
+        persist_tar = tarfile.open(temp_file.name, "r")
+        print(persist_tar.list())
+        persist_tar.extractall(path=create_folder_path)
+
     return jsonify({
             "msg": "Successfully uploaded codebase",
             "success": True

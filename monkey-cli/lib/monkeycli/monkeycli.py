@@ -121,7 +121,39 @@ class MonkeyCLI(Cmd):
         print()
         dataset_filename = "data" + compression_suffix
         return dataset_checksum, dataset_filename
-    
+
+    def upload_persisted_folder(self, persist, job_uid):
+        print("Uploading persisted_folder...")
+        persist_name = persist["name"]
+        code_path = persist["path"]
+        ignore_filters = persist.get("ignore", [])
+
+        all_files = set([y.strip("/") for y in [x.strip(".") for x in glob.glob(code_path + "/**", recursive=True)]])
+        filenames = (n for n in all_files 
+                    if not any(fnmatch.fnmatch(n, ignore) for ignore in ignore_filters))
+        all_files = sorted(list(filenames))
+        print("Persisting: ", all_files)
+        if "" in all_files:
+            all_files.remove("")
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".tar") as dir_tmp:
+            code_tar = tarfile.open(dir_tmp.name, "w")
+            for file in all_files:
+                code_tar.add(file)
+            code_tar.close()
+            try:
+                with open(dir_tmp.name, "rb") as compressed_persist:
+                    r = requests.post(self.build_url("upload/persist"),
+                                    data=compressed_persist,
+                                    params={"job_uid":job_uid}, 
+                                    allow_redirects=True)
+                    success = r.json()["success"]
+                    print("Upload Codebase:", "Successful" if success else "FAILED")
+            except:
+                print("Upload failure")
+            if success == False:
+                raise ValueError("Failed to upload codebase")
+        print()
+
     def upload_codebase(self, code, job_uid):
         print("Uploading codebase...")
         code_path = code["path"]
@@ -183,6 +215,11 @@ class MonkeyCLI(Cmd):
             dataset_checksum, dataset_filename = self.check_or_upload_dataset(dataset=dataset)
             dataset["dataset_checksum"] = dataset_checksum
             dataset["dataset_filename"] = dataset_filename
+
+        # Upload persisted folder
+        for persist_dir in job_yaml.get("persist", []):
+            self.upload_persisted_folder(persist= persist_dir, job_uid=job_uid)
+
 
         # Upload codebase
         if "code" not in job_yaml:
