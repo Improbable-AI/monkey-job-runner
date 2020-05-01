@@ -65,6 +65,8 @@ class Monkey():
         job_uid = job_yml["job_uid"]
         created_host, creation_success = found_provider.create_instance(machine_params={"monkey_job_uid": job_uid})
         print("Created Host:", created_host)
+        if creation_success == False:
+            return False, "Failed to create and virtualize instance properly"
 
         # Run install scripts
         for install_item in job_yml.get("install", []):

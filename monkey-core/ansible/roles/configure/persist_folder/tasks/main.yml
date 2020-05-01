@@ -1,0 +1,8 @@
+---
+- name: Printout command
+  debug:
+    msg: "while true; do gsutil -m rsync -r {{ persist_folder_path }} {{ bucket_path }}; sleep 15; done"
+- name: Persist folder by running async rsync
+  command: "while true; do gsutil -m rsync -r {{ persist_folder_path }} {{ bucket_path }}; sleep 15; done"
+  async: 2592000               # 60*60*24*30 – 1 month
+  poll: 0

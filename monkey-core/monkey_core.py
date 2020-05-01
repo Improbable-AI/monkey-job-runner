@@ -15,7 +15,7 @@ import concurrent.futures
 from datetime import datetime
 import tarfile
 date_format = "monkey-%y-%m-%d-"
-instance_number = 1
+instance_number = 0
 last_date = datetime.now().strftime(date_format)
 
 lock = threading.Lock()
@@ -38,7 +38,7 @@ def get_job_uid():
         else:
             print("Would be instance",last_date + str(instance_number + 1))
             pass
-            # instance_number += 1
+            instance_number += 1
         return last_date + str(instance_number)
 
 @application.route('/list/providers')
@@ -136,10 +136,8 @@ def upload_persist():
     os.makedirs(create_folder_path, exist_ok= True)
 
     with tempfile.NamedTemporaryFile(suffix=".tmp") as temp_file:
-        print(temp_file.name)
         FileStorage(request.stream).save(temp_file.name)
         persist_tar = tarfile.open(temp_file.name, "r")
-        print(persist_tar.list())
         persist_tar.extractall(path=create_folder_path)
 
     return jsonify({

@@ -50,7 +50,7 @@
       ignore_errors: yes
       ignore_unreachable: yes
       retries: 3
-      delay: 3
+      delay: 1
   tasks:
     - name: Finished installing monkey client
       debug:

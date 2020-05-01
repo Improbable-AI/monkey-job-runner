@@ -15,6 +15,8 @@ import shutil
 import fnmatch
 import glob
 import tarfile
+from termcolor import colored, cprint 
+
 class MonkeyCLI(Cmd):
 
     prompt = 'monkey> '
@@ -147,7 +149,7 @@ class MonkeyCLI(Cmd):
                                     params={"job_uid":job_uid}, 
                                     allow_redirects=True)
                     success = r.json()["success"]
-                    print("Upload Codebase:", "Successful" if success else "FAILED")
+                    print("Upload Codebase:", colored("Successful", "green") if success else colored("FAILED", "red"))
             except:
                 print("Upload failure")
             if success == False:
@@ -177,7 +179,7 @@ class MonkeyCLI(Cmd):
                                     params={"job_uid":job_uid}, 
                                     allow_redirects=True)
                     success = r.json()["success"]
-                    print("Upload Codebase:", "Successful" if success else "FAILED")
+                    print("Upload Codebase:", colored("Successful", "green") if success else colored("FAILED", "red"))
             except:
                 print("Upload failure")
             if success == False:
@@ -185,7 +187,7 @@ class MonkeyCLI(Cmd):
         print()
     
     def submit_job(self, job):
-        print("Submitting Job: {}".format(job["job_uid"]))
+        print("Submitting Job: {}".format(colored(job["job_uid"], "green")))
         r = requests.get(self.build_url("submit/job"), json=job)
         print(r.json()["msg"])
         
@@ -195,7 +197,7 @@ class MonkeyCLI(Cmd):
 
     def run_job(self, cmd, job_yaml_file="job.yml", job_uid= None, foreground=False, printout=False):
         if printout:
-            print("\nMonkey running:\n{}".format(cmd))
+            print("\nMonkey running:\n{}".format(colored(cmd, "green")))
 
         # Parse job.yml
         try:
@@ -208,7 +210,7 @@ class MonkeyCLI(Cmd):
             job_uid = self.get_job_uid()
         job_yaml["job_uid"] = job_uid
         job_yaml["cmd"] = cmd
-        print("Creating job with id: ", job_uid, "\n")
+        print("Creating job with id: ", colored(job_uid, "green"), "\n")
 
         # Check Data
         for dataset in job_yaml.get("data", []):

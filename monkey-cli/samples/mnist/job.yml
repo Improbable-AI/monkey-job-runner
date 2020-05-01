@@ -35,8 +35,8 @@ persist:
     # Must be a relative dir
     path: output
 
-    ignore:
-    - "output/testfile"
+    # ignore:
+    # - "output/testfile"
 
 
 
