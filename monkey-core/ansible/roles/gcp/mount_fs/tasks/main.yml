@@ -9,9 +9,6 @@
   debug:
     msg: "Mounting FS: {{ gcp_storage_name }}"
 
-- name: Printout host
-  shell: "echo $HOST deleting fs: {{gcp_storage_name}}"
-
 - name: Create Mountpoint
   ignore_errors: true
   become: true
@@ -25,27 +22,7 @@
   debug: 
     msg: "Mountpoint {{create_mountpoint.failed}}"
 - name: Mount fs to Mountpoint
-  when: "{{create_mountpoint.failed == False}}"
+  when: create_mountpoint is not failed
   command:
     cmd: "gcsfuse monkeyfs {{monkeyfs_path}}"
 
-
-- name: Create Run Dir 
-  file:
-    path: "{{monkeyfs_path}}/jobs/{{monkey_job_uid}}/in"
-    state: directory
-
-- name: Create Run Dir 
-  file:
-    path: "{{monkeyfs_path}}/jobs/{{monkey_job_uid}}/out"
-    state: directory
-
-- name: Create Run Dir 
-  file:
-    path: "{{monkeyfs_path}}/jobs/{{monkey_job_uid}}/data"
-    state: directory
-
-- name: Create Run Dir 
-  file:
-    path: "{{monkeyfs_path}}/jobs/{{monkey_job_uid}}/logs"
-    state: directory

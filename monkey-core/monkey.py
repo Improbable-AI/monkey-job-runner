@@ -47,29 +47,46 @@ class Monkey():
                 logger.error("Could not instantiate provider \n{}".format(e))
 
 
+    # Unimplemented
+    def submit_job(self, job_yml):
+        print("Monkey job yml submitted:", job_yml)
+        providers = job_yml.get("providers", [])
+        if len(providers) == 0:
+            return False, "No providers found"
+        provider, provider_name = providers[0], providers[0]["name"]
+        found_provider = None
+        for p in self.providers:
+            if p.name == provider_name:
+                found_provider = p
 
-    def create_instance(self, provider, machine_params=dict()):
-        logger.info("Creating Instance")
-        matched_providers = [handler for handler in self.providers if handler.name == provider]
-        if len(matched_providers) != 1:
-            logger.error("{} matched providers found.  Only one should have matched".format(len(matched_providers)))
-            return None
-        matched_provider = matched_providers[0]
-        return matched_provider.create_instance(machine_params)
-    
-    def wait_for_operation(self, provider, operation_name):
-        logger.info("Waiting for operation")
-        matched_providers = [handler for handler in self.providers if handler.name == provider]
-        if len(matched_providers) != 1:
-            logger.error("{} matched providers found.  Only one should have matched".format(len(matched_providers)))
-            return None
-        matched_provider = matched_providers[0]
-        return matched_provider.wait_for_operation(operation_name)
+        if found_provider is None:
+            return False, "No matching provider found"
+
+        job_uid = job_yml["job_uid"]
+        created_host, creation_success = found_provider.create_instance(machine_params={"monkey_job_uid": job_uid})
+        print("Created Host:", created_host)
+
+        # Run install scripts
+        for install_item in job_yml.get("install", []):
+            print("Installing item: ", install_item)
+            success = created_host.install_dependency(install_item)
+            if success == False:
+                print("Failed to install dependency " + install_item)
+                return False, "Failed to install dependency " + install_item
+
+        success, msg = created_host.setup_job(job_yml, provider_info=found_provider.get_dict())
+        if success == False:
+            print("Failed to setup host:", msg)
+            return success, msg
+
+        return True, "Job submitted successfully"
 
 
+    # Fully implemented 
     def get_list_providers(self):
         return [x.get_dict() for x in self.providers]
 
+    # Fully implemented 
     def get_list_instances(self, provider_name):
         logger.info("Getting full instance list")
         for provider in self.providers:
@@ -77,6 +94,7 @@ class Monkey():
                 return provider.list_instances()
         return []
     
+    # Unimplemented
     def get_image_list(self):
         logger.info("Getting full image list")
         return {handler.name : handler.list_images() for handler in self.providers}

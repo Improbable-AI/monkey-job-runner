@@ -4,12 +4,20 @@ application = Flask(__name__)
 import os
 import time
 import threading
+import copy
 
 from monkey import Monkey
 import werkzeug
 from werkzeug.datastructures import FileStorage
 import tempfile
 import yaml
+import concurrent.futures
+from datetime import datetime
+date_format = "monkey-%y-%m-%d-"
+instance_number = 1
+last_date = datetime.now().strftime(date_format)
+
+lock = threading.Lock()
 monkey = Monkey()
 
 MONKEY_FS = "/Users/avery/Developer/projects/monkey-project/monkey-core/monkeyfs"
@@ -20,7 +28,17 @@ def ping():
 
 @application.route('/get/job_uid')
 def get_job_uid():
-    return "monkey-varb"
+    with lock:
+        global date_format, instance_number, last_date
+        new_date = datetime.now().strftime(date_format)
+        if new_date != last_date:
+            last_date = new_date
+            instance_number = 1
+        else:
+            print("Would be instance",last_date + str(instance_number + 1))
+            pass
+            # instance_number += 1
+        return last_date + str(instance_number)
 
 @application.route('/list/providers')
 def get_list_providers():
@@ -65,14 +83,26 @@ def check_dataset():
     dataset_path = os.path.join(MONKEY_FS, "data", dataset_name, dataset_checksum)
     
     return jsonify({
-        "msg": "Found existing dataset" if os.path.isdir(dataset_path) else "Need to upload dataset",
+        "msg": "Found existing dataset.  Continuing..." if os.path.isdir(dataset_path) else "Need to upload dataset...",
         "found": os.path.isdir(dataset_path),
     })
 
 @application.route('/submit/job')
 def submit_job():
+    job_args = copy.deepcopy(request.get_json())
+    print("Received job to submit:", job_args["job_uid"])
+
+    foreground = job_args["foreground"]
+    print("Foreground", foreground)
+
+    success, msg = monkey.submit_job(job_args)
+    res = {
+        "msg": msg,
+        "success": success
+    }
     
-    print("Received job to submit:", request.args)
+    print("returning:", res)
+    return jsonify(res)
 
 @application.route('/upload/codebase', methods=["POST"])
 def upload_codebase():

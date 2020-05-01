@@ -17,7 +17,6 @@ firewall_rule: monkey-ansible-firewall
 
 # UID is the unique id that the machine is going to be created with.  
 # Currently does not check for exting machines with the same uid
-monkey_job_uid: monkey-varb
 
 ###########
 # Optional
