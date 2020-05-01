@@ -1,0 +1,45 @@
+---
+run:
+
+  # env_type can be conda or pip
+  env_type: conda
+  # env_file should be the conda environment or pip environment
+  # for conda to generate: conda env export
+  # for pip to generate:   pip freeze
+  env_file: requirements.yml
+
+  # The command to run, will be overwritten by monkey run ***
+  cmd: python mnist.py
+
+  # Any additional environment variables specified
+  env:
+    - TEST_ENV: "HELLO"
+
+  # Terminate the instance after finishing
+  terminate: true
+
+install:
+  - conda
+
+code:
+  - name: "MNIST code"
+    type: copy
+
+    path: "."
+    
+    # Patterns to ignore from the code
+    ignore:
+      - data
+
+data:
+  - name: mnist-data
+
+    # Options are copy or mount,  mount will mount the bucket, copy will copy the data to the machine locally (more performant)
+    type: copy
+
+    # Path should be a relative directory
+    path: data
+
+    # optional compression type. (Must have compression packages available on machine)  Options: tar (default), gztar, zip 
+    compression: gztar
+

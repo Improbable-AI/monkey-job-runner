@@ -6,8 +6,13 @@ import time
 import threading
 
 from monkey import Monkey
-
+import werkzeug
+from werkzeug.datastructures import FileStorage
+import tempfile
+import yaml
 monkey = Monkey()
+
+MONKEY_FS = "/Users/avery/Developer/projects/monkey-project/monkey-core/monkeyfs"
 
 @application.route('/ping')
 def ping():
@@ -41,7 +46,55 @@ def get_list_jobs():
     print(providers_list)
     return jsonify(providers_list)
 
+@application.route('/check/dataset')
+def check_dataset():
+    print("Checking dataset: {}".format(request.args))
+    dataset_name = request.args.get('dataset_name', None)
+    dataset_checksum = request.args.get('dataset_checksum', None)
+    
+    if dataset_name is None or dataset_checksum is None:
+        return jsonify({
+            "msg": "Did not provide dataset_name or dataset_checksum",
+            "found": False
+        })
 
+    dataset_path = os.path.join(MONKEY_FS, "data", dataset_name, dataset_checksum)
+    
+    return jsonify({
+        "msg": "Found existing dataset" if os.path.isdir(dataset_path) else "Need to upload dataset",
+        "found": os.path.isdir(dataset_path),
+    })
+
+@application.route('/upload/dataset', methods=["POST"])
+def upload_dataset():
+    print("Received upload dataset request")
+    dataset_name = request.args.get('dataset_name', None)
+    dataset_checksum = request.args.get('dataset_checksum', None)
+    dataset_path = request.args.get('dataset_path', None)
+    dataset_extension = request.args.get('dataset_extension', None)
+    dataset_yaml = {
+        "dataset_name": dataset_name,
+        "dataset_checksum": dataset_checksum,
+        "dataset_path": dataset_path,
+        "dataset_extension": dataset_extension,
+    }
+    print(dataset_name, dataset_checksum, dataset_path)
+    if dataset_name is None or dataset_checksum is None or dataset_path is None or dataset_extension is None:
+        return jsonify({
+            "msg": "Did not provide dataset_name or dataset_checksum or dataset_path or dataset_extension",
+            "success": False
+        })
+    create_folder_path = os.path.join(MONKEY_FS, "data", dataset_name, dataset_checksum)
+    doc_yaml_path = os.path.join(create_folder_path, "dataset.yaml")
+    os.makedirs(create_folder_path, exist_ok= True)
+    FileStorage(request.stream).save(os.path.join(create_folder_path, "data" + dataset_extension))
+    print("Saved file to: {}".format(os.path.join(create_folder_path, "data" + dataset_extension)))
+    with open(doc_yaml_path, "w") as doc_yaml_file:
+        yaml.dump(dataset_yaml, doc_yaml_file)
+    return jsonify({
+            "msg": "Did not provide dataset_name or dataset_checksum or dataset_path",
+            "success": False
+        })
 
 @application.route('/state')
 def get_state():
