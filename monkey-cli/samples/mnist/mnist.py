@@ -23,6 +23,7 @@ def save_progress(network=None, optimizer=None, losses=None):
             json.dump(losses, f)
 
 def load_progress(network, optimizer, losses):
+    os.makedirs(DIR_ROOT, exist_ok= True)
     try:
         network.load_state_dict(torch.load(os.path.join(DIR_ROOT, 'model.pth')))
         optimizer.load_state_dict(torch.load(os.path.join(DIR_ROOT, 'optimizer.pth')))

@@ -79,16 +79,16 @@ class MonkeyCLI(Cmd):
                 print("Total: {}".format(len(value)))
         return r.json()
 
-    def check_or_upload_dataset(self, dataset):
+    def check_or_upload_dataset(self, dataset, compression_type = "tar"):
+        print("Uploading dataset...")
         dataset_name = dataset["name"]
         dataset_path = dataset["path"]
         dataset_checksum = dirhash(dataset_path)
         print("Dataset checksum: {}".format(dataset_checksum))
-        compression_type = "tar"
-        compression_suffix = ".tar"
-        if dataset.get("compression", None) is not None:
+        
+        if dataset.get("compression", "tar"):
             compression_map = {"tar": ".tar", "gztar":".tar.gz", "zip":".zip"}
-            compression_type = dataset["compression"]
+            compression_type = dataset.get("compression", "tar")
             compression_suffix = compression_map[compression_type]
         
         dataset_params = {
@@ -102,7 +102,7 @@ class MonkeyCLI(Cmd):
         print(msg)
         if dataset_found == False:
             with tempfile.NamedTemporaryFile() as dir_tmp:
-                print("Compressing Dataset")
+                print("Compressing Dataset...")
                 shutil.make_archive(dir_tmp.name, compression_type, dataset_path)
                 compressed_name = dir_tmp.name + compression_suffix
                 print(compressed_name)
@@ -119,9 +119,11 @@ class MonkeyCLI(Cmd):
                 finally:
                     os.remove(compressed_name)
         print()
+        dataset_filename = "data" + compression_suffix
+        return dataset_checksum, dataset_filename
     
     def upload_codebase(self, code, job_uid):
-        print(code)
+        print("Uploading codebase...")
         code_path = code["path"]
         ignore_filters = code.get("ignore", [])
 
@@ -131,9 +133,7 @@ class MonkeyCLI(Cmd):
         all_files = sorted(list(filenames))
         if "" in all_files:
             all_files.remove("")
-        print(all_files)
         with tempfile.NamedTemporaryFile(delete=False, suffix=".tar") as dir_tmp:
-            print(dir_tmp.name)
             code_tar = tarfile.open(dir_tmp.name, "w")
             for file in all_files:
                 code_tar.add(file)
@@ -145,19 +145,23 @@ class MonkeyCLI(Cmd):
                                     params={"job_uid":job_uid}, 
                                     allow_redirects=True)
                     success = r.json()["success"]
-                    print("Upload Codebase Success: ", success)
+                    print("Upload Codebase:", "Successful" if success else "FAILED")
             except:
                 print("Upload failure")
+            if success == False:
+                raise ValueError("Failed to upload codebase")
         print()
     
     def submit_job(self, job):
         print("Submitting Job: {}".format(job["job_uid"]))
-
+        r = requests.get(self.build_url("submit/job"), json=job)
+        print(r.json()["msg"])
+        
     def get_job_uid(self):
         r = requests.get(self.build_url("get/job_uid"))
         return r.text
 
-    def run_job(self, cmd, job_yaml_file="job.yml", printout=False):
+    def run_job(self, cmd, job_yaml_file="job.yml", job_uid= None, foreground=False, printout=False):
         if printout:
             print("\nMonkey running:\n{}".format(cmd))
 
@@ -168,21 +172,25 @@ class MonkeyCLI(Cmd):
         except:
             print("Unable to parse job.yml, path: {}".format(job_yaml_file))
             raise ValueError("Could not read job file")
-
-        job_uid = self.get_job_uid()
+        if job_uid is None:
+            job_uid = self.get_job_uid()
         job_yaml["job_uid"] = job_uid
-        print("Creating job with id: ", job_uid)
+        job_yaml["cmd"] = cmd
+        print("Creating job with id: ", job_uid, "\n")
 
         # Check Data
         for dataset in job_yaml.get("data", []):
-            print("\nChecking for dataset: {}".format(dataset["name"]))
-            self.check_or_upload_dataset(dataset=dataset)
+            dataset_checksum, dataset_filename = self.check_or_upload_dataset(dataset=dataset)
+            dataset["dataset_checksum"] = dataset_checksum
+            dataset["dataset_filename"] = dataset_filename
 
         # Upload codebase
         if "code" not in job_yaml:
             print("Please define your codebase in the yaml")
             raise ValueError("code undefined in job.yml")
-
+        
+        print("Foreground: ", foreground)
+        job_yaml["foreground"] = foreground
         self.upload_codebase(code=job_yaml["code"], job_uid=job_uid)
 
         # Submit job
@@ -220,6 +228,10 @@ class MonkeyCLI(Cmd):
         run_parser = subparser.add_parser("run", help="Run a job on the specified provider")
         run_parser.add_argument("--job_file","-j", required=False, default="job.yml", dest="job_yaml_file", 
                                 help="Optionial specification of job.yml file")
+        run_parser.add_argument("--foreground","-f", required=False, default=False, dest="foreground", 
+                                help="Run in foreground or detach when successfully sent")
+        run_parser.add_argument("--job_uid","-juid", required=False, default=None, dest="job_uid", 
+                                help="Run in foreground or detach when successfully sent")
         
         create_parser, create_subparser = self.get_create_parser(subparser=subparser)
 
@@ -236,7 +248,8 @@ class MonkeyCLI(Cmd):
         except:
             return False
         if args.command == "run":
-            return self.run_job(cmd=" ".join(remaining_args), job_yaml_file=args.job_yaml_file, printout=printout)
+            return self.run_job(cmd=" ".join(remaining_args), job_yaml_file=args.job_yaml_file, 
+                                job_uid=args.job_uid, foreground=args.foreground, printout=printout)
             pass
         elif args.command == "create":
             if args.create_option == "instance":

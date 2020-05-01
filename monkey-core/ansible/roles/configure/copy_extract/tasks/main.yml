@@ -1,0 +1,52 @@
+---
+
+
+
+# - name: Check for conda installation
+#   stat:
+#     path: "{{installation_location}}"
+#   register: conda_installed
+
+# - name: Proceed with conda installation
+#   when: conda_installed.stat.exists == false
+#   block:
+#     - name: Download Miniconda
+#       get_url:
+#         url: https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+#         dest: /tmp/install-miniconda.sh
+#         sha256sum: 957d2f0f0701c3d1335e3b39f235d197837ad69a944fa6f5d8ad2c686b69df3b
+#         mode: 0550
+#     - name: Create conda folder
+#       become: True
+#       file:
+#         path: /opt/miniconda3
+#         state: directory
+#         owner: "{{ ansible_user }}"
+#         mode: 755
+#         recurse: yes
+      
+#     - name: Run the installer
+#       shell: /tmp/install-miniconda.sh -b -u -p /opt/miniconda3
+
+#     - name: Remove the installer
+#       file:
+#         state: absent
+#         path: /tmp/install-miniconda.sh
+
+#     - name: Add miniconda bin to path
+#       become: True
+#       shell: echo 'export PATH=/opt/miniconda3/bin:$PATH' >> /etc/profile
+
+#     - name: conda - read permission for all
+#       become: True
+#       file:
+#         path: /opt/miniconda3
+#         mode: +r
+#         recurse: yes
+
+#     - name: conda - execution permission for all
+#       become: True
+#       file:
+#         path: /opt/miniconda3/bin
+#         mode: +x
+#         recurse: yes

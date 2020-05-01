@@ -42,6 +42,7 @@
         gcp_project: "{{ (lookup('file', gcp_cred_file) | from_json).project_id }}"
     - name: Wait for connection
       wait_for_connection:
+      delay: 2
     - name: Setup host
       setup:
       register: result
@@ -53,8 +54,11 @@
   tasks:
     - name: Finished installing monkey client
       debug:
-        msg: "Finished installing monkey client"
-
+        msg: "Finished installing monkey client: {{ inventory_hostname }}"
+    
+    - name: Setting name
+      set_fact:
+        new_gcp_host: "{{ inventory_hostname}}"
   roles:
     - gcp/install_deps
     - monkey_client/install

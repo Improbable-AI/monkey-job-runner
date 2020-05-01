@@ -1,4 +1,7 @@
 ---
+#  Unique name to separate the project
+name: mnist
+
 run:
 
   # env_type can be conda or pip
@@ -7,14 +10,9 @@ run:
   # for conda to generate: conda env export
   # for pip to generate:   pip freeze
   env_file: environment.yml
-
-  # The command to run, will be overwritten by monkey run ***
-  cmd: python mnist.py
-
   # Any additional environment variables specified
   env:
     - TEST_ENV: "HELLO"
-
   # Terminate the instance after finishing
   terminate: true
 
@@ -23,10 +21,8 @@ install:
 
 code:
   name: "MNIST code"
-
   # Path of the codebase.  Use . for cwd, use relative dir for directory
   path: "."
-  
   # Patterns to ignore from the code
   ignore:
     - "data**"
@@ -34,19 +30,17 @@ code:
 
 data:
   - name: mnist-data
-
     # Options are copy or mount,  mount will mount the bucket, copy will copy the data to the machine locally (more performant)
+    # only copy is supported for now
     type: copy
-
     # Path should be a relative directory
     path: data
-
     # optional compression type. (Must have compression packages available on machine)  Options: tar (default), gztar
     compression: gztar
 
 providers:
   # Specifications of GCP machines to run on
-  - type: gcp
+  - name: gcp
     machine_type: n1-standard-1
     disk_size_gb: 10
     disk_type: pd-standard
