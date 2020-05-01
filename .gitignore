@@ -3,3 +3,4 @@ __pycache__
 *.pyc
 *key*.json
 .vscode/
+*.DS_Store

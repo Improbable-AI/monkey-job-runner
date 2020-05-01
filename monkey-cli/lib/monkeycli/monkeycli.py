@@ -5,13 +5,20 @@ import sys
 import json
 from cmd import Cmd
 import requests
-
+import yaml
 MONKEY_CORE_URL = "http://localhost:9990/"
-
+from checksumdir import dirhash
+from urllib.parse import urljoin
+import tempfile
+import os
+import shutil
 
 class MonkeyCLI(Cmd):
 
     prompt = 'monkey> '
+
+    def build_url(self, path):
+        return urljoin(MONKEY_CORE_URL, path.strip("/"))
 
     def __init__(self):
         super().__init__()
@@ -40,7 +47,7 @@ class MonkeyCLI(Cmd):
 
     def list_providers(self, printout=False):
         providers = []
-        r = requests.get(MONKEY_CORE_URL + "list/providers")
+        r = requests.get(self.build_url("list/providers"))
         if printout:
             print("Listing Providers available")
             print("\n".join(r.json()))
@@ -48,7 +55,7 @@ class MonkeyCLI(Cmd):
         return r.json()
 
     def list_instances(self, providers, printout=False):
-        r = requests.get(MONKEY_CORE_URL + "list/instances", params={"providers": providers})
+        r = requests.get(self.build_url("list/instances"), params={"providers": providers})
         if printout:
             res = r.json()
             print("Listing Instances available\n")
@@ -60,7 +67,7 @@ class MonkeyCLI(Cmd):
         return r.json()
 
     def list_jobs(self, providers, printout=False):
-        r = requests.get(MONKEY_CORE_URL + "list/jobs", params={"providers": providers})
+        r = requests.get(self.build_url("list/jobs"), params={"providers": providers})
         if printout:
             res = r.json()
             print("Listing Jobs available")
@@ -69,6 +76,68 @@ class MonkeyCLI(Cmd):
                 print("\n".join(value))
                 print("Total: {}".format(len(value)))
         return r.json()
+
+    def check_or_upload_dataset(self, dataset):
+        dataset_name = dataset["name"]
+        dataset_path = dataset["path"]
+        dataset_checksum = dirhash(dataset_path)
+        print("Dataset checksum: {}".format(dataset_checksum))
+        compression_type = "tar"
+        compression_suffix = ".tar"
+        if dataset.get("compression", None) is not None:
+            compression_map = {"tar": ".tar", "gztar":".tar.gz", "zip":".zip"}
+            compression_type = dataset["compression"]
+            compression_suffix = compression_map[compression_type]
+        
+        dataset_params = {
+            "dataset_name": dataset_name,
+            "dataset_checksum": dataset_checksum,
+            "dataset_path": dataset_path,
+            "dataset_extension": compression_suffix
+        }
+        r = requests.get(self.build_url("check/dataset"), params= dataset_params)
+        dataset_found, msg = r.json().get("found", False), r.json().get("msg", "")
+        print(msg)
+        if dataset_found == False:
+            with tempfile.NamedTemporaryFile() as dir_tmp:
+                print("Compressing Dataset")
+                shutil.make_archive(dir_tmp.name, compression_type, dataset_path)
+                compressed_name = dir_tmp.name + compression_suffix
+                print(compressed_name)
+                try:
+                    with open(compressed_name, "rb") as compressed_dataset:
+                        r = requests.post(self.build_url("upload/dataset/"),
+                                        data=compressed_dataset,
+                                        params=dataset_params, 
+                                        allow_redirects=True)
+                        success = r.json()["success"]
+                        print("Upload Dataset Success: ", success)
+                except:
+                    print("Upload failure")
+                finally:
+                    os.remove(compressed_name)
+        
+
+
+    def run_job(self, cmd, job_yaml_file="job.yml", printout=False):
+        if printout:
+            print("\nMonkey running:\n{}".format(cmd))
+
+        # Parse job.yml
+        try:
+            with open(job_yaml_file, 'r') as job_file:
+                job_yaml = yaml.load(job_file, Loader=yaml.FullLoader)
+        except:
+            print("Unable to parse job.yml, path: {}".format(job_yaml_file))
+            raise ValueError("Could not read job file")
+
+        # Check Data
+        for dataset in job_yaml.get("data", []):
+            print("\nChecking for dataset: {}".format(dataset["name"]))
+            self.check_or_upload_dataset(dataset=dataset)
+
+
+
 
     def get_list_parser(self, subparser):
         list_parser = subparser.add_parser("list", help="List jobs on the specified provider")
@@ -99,7 +168,8 @@ class MonkeyCLI(Cmd):
         subparser = parser.add_subparsers(help="Monkey Commands", dest="command")
 
         run_parser = subparser.add_parser("run", help="Run a job on the specified provider")
-        run_parser.add_argument("job_name", help="Which job to run, include the job name, which can be found in jobs.yaml")
+        run_parser.add_argument("--job_file","-j", required=False, default="job.yml", dest="job_yaml_file", 
+                                help="Optionial specification of job.yml file")
         
         create_parser, create_subparser = self.get_create_parser(subparser=subparser)
 
@@ -116,6 +186,7 @@ class MonkeyCLI(Cmd):
         except:
             return False
         if args.command == "run":
+            return self.run_job(cmd=" ".join(remaining_args), job_yaml_file=args.job_yaml_file, printout=printout)
             pass
         elif args.command == "create":
             if args.create_option == "instance":

@@ -1,7 +1,6 @@
 import os, json, argparse
 
 # Or better: make a custom docker image with dependencies already installed
-os.system('conda install -yc conda-forge matplotlib')
 
 import torch
 import torchvision
@@ -12,7 +11,7 @@ import torch.optim as optim
 
 torch.backends.cudnn.enabled = False
 
-DIR_ROOT = '/mnist-backup' # All saved data goes in this directory
+DIR_ROOT = 'output' # All saved data goes in this directory
 
 def save_progress(network=None, optimizer=None, losses=None):
     if network is not None:
@@ -138,7 +137,7 @@ def run(n_epochs=3,
     # Prepare data
     train_loader = torch.utils.data.DataLoader(
         torchvision.datasets.MNIST(
-            os.path.join(DIR_ROOT, 'data'),
+            "data",
             train=True,
             download=True,
             transform=torchvision.transforms.Compose([
@@ -149,7 +148,7 @@ def run(n_epochs=3,
         shuffle=True)
     test_loader = torch.utils.data.DataLoader(
         torchvision.datasets.MNIST(
-            os.path.join(DIR_ROOT, 'data'),
+            "data",
             train=False,
             download=True,
             transform=torchvision.transforms.Compose([

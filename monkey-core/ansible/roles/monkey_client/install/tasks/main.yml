@@ -8,9 +8,6 @@
 - name: get os gcsutil string
   shell: echo gcsfuse-$(lsb_release -c -s)
   register: gsfuse_name
-- name: debug os gcsutil string
-  debug:
-    msg: deb http://packages.cloud.google.com/apt {{ gsfuse_name.stdout }} main
 - name: add gcloud repository
   become: true
   apt_repository:
@@ -45,15 +42,11 @@
     name: virtualenv
     executable: pip3
 
+
 - name: Clone Monkey client repo
   git:
     repo: https://github.com/Averylamp/monkey-client.git
     dest: "/home/{{ ansible_user }}/monkey-client"
-# - name: Ensure virtualenv directory exists
-#   become: yes
-#   file:
-#     path: "/home/{{ ansible_user }}/monkey-client/venv"
-#     state: directory
 
 - name: Install monkey-client modules into virtualenv
   pip:
@@ -62,58 +55,76 @@
     virtualenv_python: python3
 
 
-- name: template systemd service config
-  become: true
-  template:
-    src: templates/monkey-client.service.j2
-    dest: /etc/systemd/system/monkey-client.service
-- name: start systemd app service
-  become: true
-  systemd: 
-    name: monkey-client.service 
-    state: restarted 
-    enabled: yes
-- name: template nginx site config
-  become: true
-  template:
-    src: templates/monkey-client-nginx.j2
-    dest: /etc/nginx/sites-available/monkey-client
-- name: remove default nginx site config
-  become: true
-  file: 
-    path: /etc/nginx/sites-enabled/default 
-    state: absent
-- name: enable nginx site
-  become: true
-  file:
-    src: /etc/nginx/sites-available/monkey-client
-    dest: /etc/nginx/sites-enabled/default
-    state: link
-    force: yes
-- name: restart nginx
-  become: true
-  systemd: name=nginx state=restarted enabled=yes
-
-- name: get url
-  get_url:
-    url: "http://{{inventory_hostname}}:9991/ping"
-    dest: /tmp/index.html
-- name: read html
-  shell: cat /tmp/index.html
-  register: html_contents
-- name: Printout results
-  debug: 
-    msg: "{{ html_contents }}"
-- name: check for pong in html
-  when: html_contents.stdout.find('pong!') != -1
-  debug:
-    msg: "NGINX serving monkey-client"
-
-  
-# - name: Start monkey client
-#   become: true
-#   shell: /monkey/monkey-client/start.sh 2>&1 | tee /monkey/log/monkey-client.log &
-#   poll: 0
-#   async: 2592000 # 60*60*24*30 – 1 month
- 
+- name: Check for monkey-client installation
+  ignore_errors: true
+  block:
+    - name: get url
+      get_url:
+        url: "http://{{inventory_hostname}}:9991/ping"
+        dest: /tmp/index.html
+      register: get_pong_url
+    - name: read html
+      when: get_pong_url is not failed
+      shell: cat /tmp/index.html
+      register: html_contents
+    - name: Printout results
+      when: get_pong_url is not failed
+      debug: 
+        msg: "{{ html_contents }}"
+    - name: check for pong in html
+      when: 
+        - get_pong_url is not failed
+        - html_contents.stdout.find('pong!') != -1
+      debug:
+        msg: "NGINX serving monkey-client"
       
+
+- name: Install monkey-client
+  when: get_pong_url.failed
+  block:
+    - name: template systemd service config
+      become: true
+      template:
+        src: templates/monkey-client.service.j2
+        dest: /etc/systemd/system/monkey-client.service
+    - name: start systemd app service
+      become: true
+      systemd: 
+        name: monkey-client.service 
+        state: restarted 
+        enabled: yes
+    - name: template nginx site config
+      become: true
+      template:
+        src: templates/monkey-client-nginx.j2
+        dest: /etc/nginx/sites-available/monkey-client
+    - name: remove default nginx site config
+      become: true
+      file: 
+        path: /etc/nginx/sites-enabled/default 
+        state: absent
+    - name: enable nginx site
+      become: true
+      file:
+        src: /etc/nginx/sites-available/monkey-client
+        dest: /etc/nginx/sites-enabled/default
+        state: link
+        force: yes
+    - name: restart nginx
+      become: true
+      systemd: name=nginx state=restarted enabled=yes
+
+    - name: get url
+      get_url:
+        url: "http://{{inventory_hostname}}:9991/ping"
+        dest: /tmp/index.html
+    - name: read html
+      shell: cat /tmp/index.html
+      register: html_contents
+    - name: Printout results
+      debug: 
+        msg: "{{ html_contents }}"
+    - name: check for pong in html
+      when: html_contents.stdout.find('pong!') != -1
+      debug:
+        msg: "NGINX serving monkey-client"
