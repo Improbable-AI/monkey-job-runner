@@ -5,9 +5,9 @@ After=network.target
 [Service]
 User={{ ansible_user }}
 Group=www-data
-WorkingDirectory=/home/{{ ansible_user }}/monkey-client
-Environment="PATH=/home/{{ ansible_user }}/monkey-client/venv/bin"
-ExecStart=/home/{{ ansible_user }}/monkey-client/venv/bin/gunicorn --workers 3 --bind unix:monkey-client.sock -m 007 wsgi:application
+WorkingDirectory=/home/{{ ansible_user }}/.monkey-client
+Environment="PATH=/home/{{ ansible_user }}/.monkey-client/venv/bin"
+ExecStart=/home/{{ ansible_user }}/.monkey-client/venv/bin/gunicorn --workers 3 --bind unix:monkey-client.sock -m 007 wsgi:application
 
 [Install]
 WantedBy=multi-user.target

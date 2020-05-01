@@ -18,6 +18,10 @@ MONKEY_FS = "/Users/avery/Developer/projects/monkey-project/monkey-core/monkeyfs
 def ping():
     return 'pong!'
 
+@application.route('/get/job_uid')
+def get_job_uid():
+    return "monkey-varb"
+
 @application.route('/list/providers')
 def get_list_providers():
     providers_list = monkey.get_list_providers()
@@ -65,6 +69,29 @@ def check_dataset():
         "found": os.path.isdir(dataset_path),
     })
 
+@application.route('/submit/job')
+def submit_job():
+    
+    print("Received job to submit:", request.args)
+
+@application.route('/upload/codebase', methods=["POST"])
+def upload_codebase():
+    print("Received upload codebase request")
+    job_uid = request.args.get('job_uid', None)
+    if job_uid is None:
+        return jsonify({
+            "msg": "Did not provide job_uid",
+            "success": False
+        })
+    create_folder_path = os.path.join(MONKEY_FS, "jobs", job_uid)
+    os.makedirs(create_folder_path, exist_ok= True)
+    FileStorage(request.stream).save(os.path.join(create_folder_path, "code.tar"))
+    print("Saved file to: {}".format(os.path.join(create_folder_path, "code.tar")))
+    return jsonify({
+            "msg": "Successfully uploaded codebase",
+            "success": True
+        })
+
 @application.route('/upload/dataset', methods=["POST"])
 def upload_dataset():
     print("Received upload dataset request")
@@ -92,8 +119,8 @@ def upload_dataset():
     with open(doc_yaml_path, "w") as doc_yaml_file:
         yaml.dump(dataset_yaml, doc_yaml_file)
     return jsonify({
-            "msg": "Did not provide dataset_name or dataset_checksum or dataset_path",
-            "success": False
+            "msg": "Successfully uploaded dataset",
+            "success": True
         })
 
 @application.route('/state')
