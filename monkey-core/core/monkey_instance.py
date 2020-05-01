@@ -180,7 +180,7 @@ name: {}, ip: {}, state: {}
 
         print("Output folder: ", monkeyfs_output_folder)
         print("Input folder: ", persist_folder_path)
-        runner = ansible_runner.run(host_pattern=self.name, private_data_dir="ansible", module="include_role", module_args="name=configure/persist_folder", 
+        runner = ansible_runner.run_async(host_pattern=self.name, private_data_dir="ansible", module="include_role", module_args="name=configure/persist_folder", 
                                     extravars={
                                         "persist_folder_path": persist_folder_path,
                                         "bucket_path": monkeyfs_output_folder,

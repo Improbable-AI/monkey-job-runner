@@ -157,7 +157,7 @@ class MonkeyCLI(Cmd):
         print()
 
     def upload_codebase(self, code, job_uid):
-        print("Uploading codebase...")
+        print("Uploading Codebase...")
         code_path = code["path"]
         ignore_filters = code.get("ignore", [])
 
@@ -257,6 +257,10 @@ class MonkeyCLI(Cmd):
         # create_instance_parser.add_argument('machine_params', type=str, nargs=argparse.REMAINDER,
         #                  help='Any other machine overrides to replace values found in providers.yml')
         return create_parser, create_subparser
+
+    def run(self, cmd):
+        print(["run"] + cmd.split(" "))
+        self.parse_args(["run"] + cmd.split(" "), printout=True)
 
     def parse_args(self, input_args, printout=True):
         print("Parsing args: {}".format(input_args))

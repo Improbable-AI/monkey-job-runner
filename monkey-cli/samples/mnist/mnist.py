@@ -116,6 +116,7 @@ def run(n_epochs=3,
         momentum=0.5,
         save_interval=10,
         random_seed=1):
+    print("mnist learning rate: ", learning_rate)
     torch.manual_seed(random_seed)
 
     # Initialize, and load any progress from previous runs

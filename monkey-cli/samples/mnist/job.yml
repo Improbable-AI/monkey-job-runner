@@ -38,8 +38,6 @@ persist:
     # ignore:
     # - "output/testfile"
 
-
-
 data:
   - name: mnist-data
     # Options are copy or mount,  mount will mount the bucket, copy will copy the data to the machine locally (more performant)
