@@ -12,7 +12,9 @@ from urllib.parse import urljoin
 import tempfile
 import os
 import shutil
-
+import fnmatch
+import glob
+import tarfile
 class MonkeyCLI(Cmd):
 
     prompt = 'monkey> '
@@ -116,8 +118,44 @@ class MonkeyCLI(Cmd):
                     print("Upload failure")
                 finally:
                     os.remove(compressed_name)
-        
+        print()
+    
+    def upload_codebase(self, code, job_uid):
+        print(code)
+        code_path = code["path"]
+        ignore_filters = code.get("ignore", [])
 
+        all_files = set([y.strip("/") for y in [x.strip(".") for x in glob.glob(code_path + "/**", recursive=True)]])
+        filenames = (n for n in all_files 
+                    if not any(fnmatch.fnmatch(n, ignore) for ignore in ignore_filters))
+        all_files = sorted(list(filenames))
+        if "" in all_files:
+            all_files.remove("")
+        print(all_files)
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".tar") as dir_tmp:
+            print(dir_tmp.name)
+            code_tar = tarfile.open(dir_tmp.name, "w")
+            for file in all_files:
+                code_tar.add(file)
+            code_tar.close()
+            try:
+                with open(dir_tmp.name, "rb") as compressed_codebase:
+                    r = requests.post(self.build_url("upload/codebase"),
+                                    data=compressed_codebase,
+                                    params={"job_uid":job_uid}, 
+                                    allow_redirects=True)
+                    success = r.json()["success"]
+                    print("Upload Codebase Success: ", success)
+            except:
+                print("Upload failure")
+        print()
+    
+    def submit_job(self, job):
+        print("Submitting Job: {}".format(job["job_uid"]))
+
+    def get_job_uid(self):
+        r = requests.get(self.build_url("get/job_uid"))
+        return r.text
 
     def run_job(self, cmd, job_yaml_file="job.yml", printout=False):
         if printout:
@@ -131,12 +169,24 @@ class MonkeyCLI(Cmd):
             print("Unable to parse job.yml, path: {}".format(job_yaml_file))
             raise ValueError("Could not read job file")
 
+        job_uid = self.get_job_uid()
+        job_yaml["job_uid"] = job_uid
+        print("Creating job with id: ", job_uid)
+
         # Check Data
         for dataset in job_yaml.get("data", []):
             print("\nChecking for dataset: {}".format(dataset["name"]))
             self.check_or_upload_dataset(dataset=dataset)
 
+        # Upload codebase
+        if "code" not in job_yaml:
+            print("Please define your codebase in the yaml")
+            raise ValueError("code undefined in job.yml")
 
+        self.upload_codebase(code=job_yaml["code"], job_uid=job_uid)
+
+        # Submit job
+        self.submit_job(job=job_yaml)
 
 
     def get_list_parser(self, subparser):

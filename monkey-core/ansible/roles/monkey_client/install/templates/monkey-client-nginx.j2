@@ -3,6 +3,6 @@ server {
 
     location / {
         include proxy_params;
-        proxy_pass http://unix:/home/{{ ansible_ssh_user }}/monkey-client/monkey-client.sock;
+        proxy_pass http://unix:/home/{{ ansible_ssh_user }}/.monkey-client/monkey-client.sock;
     }
 }
