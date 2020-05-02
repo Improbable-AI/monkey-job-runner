@@ -72,6 +72,12 @@
         dest: /etc/nginx/sites-enabled/default
         state: link
         force: yes
+    - name: Add .log to text/plain 
+      become: true
+      lineinfile:
+        line: "    text/plain                            txt log logs;"
+        regex: "text/plain"
+        path: /etc/nginx/mime.types
     - name: restart nginx
       become: true
       systemd: name=nginx state=restarted enabled=yes

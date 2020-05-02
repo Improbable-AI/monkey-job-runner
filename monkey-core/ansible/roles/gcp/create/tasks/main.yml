@@ -30,7 +30,7 @@
   gcp_compute_instance:
     state: present
     name: "{{ monkey_job_uid }}"
-    machine_type: n1-standard-1
+    machine_type: n1-standard-2
     status: "RUNNING"
     deletion_protection: no
     labels:
@@ -95,7 +95,7 @@
   gcp_compute_instance:
     state: present
     name: "{{ monkey_job_uid }}"
-    machine_type: n1-standard-1
+    machine_type: n1-standard-2
     status: "TERMINATED"
     zone: "{{ zone }}"
     deletion_protection: no
@@ -108,7 +108,7 @@
   gcp_compute_instance:
     state: present
     name: "{{ monkey_job_uid }}"
-    machine_type: n1-standard-1
+    machine_type: n1-standard-2
     status: "RUNNING"
     deletion_protection: no
     labels:

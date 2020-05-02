@@ -115,6 +115,9 @@ def upload_codebase():
         })
     create_folder_path = os.path.join(MONKEY_FS, "jobs", job_uid)
     os.makedirs(os.path.join(create_folder_path, "logs"), exist_ok= True)
+    if not os.path.exists(os.path.join(create_folder_path, "logs", "run.log")):
+        with open(os.path.join(create_folder_path, "logs", "run.log"), "w") as f:
+            pass
     FileStorage(request.stream).save(os.path.join(create_folder_path, "code.tar"))
     print("Saved file to: {}".format(os.path.join(create_folder_path, "code.tar")))
     return jsonify({

@@ -280,6 +280,7 @@ name: {}, ip: {}, state: {}
 
     def execute_command(self, cmd,  run_yml):
         print("Executing cmd: ", cmd)
+        print("Environment Variables:", run_yml.get("env", dict()))
         final_command = ". ~/.profile; " + cmd +  " 2>&1 | tee logs/run.log"
         runner = ansible_runner.run(host_pattern=self.name, private_data_dir="ansible", 
                                     module="include_role", module_args="name=run/cmd", 
@@ -310,5 +311,7 @@ name: {}, ip: {}, state: {}
         success, msg = self.execute_command(cmd=job["cmd"], run_yml=job["run"])
         if success == False:
             return success, msg
+
+        print("\n\nRan job:", job_uid, " SUCCESSFULLY!\n\n")
 
         return True, "Job completed"
