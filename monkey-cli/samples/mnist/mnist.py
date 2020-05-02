@@ -10,7 +10,8 @@ import torch.nn.functional as F
 import torch.optim as optim
 
 torch.backends.cudnn.enabled = False
-
+test_env = os.environ.get("TEST_ENV")
+print("TEST_ENV=", test_env)
 DIR_ROOT = 'output' # All saved data goes in this directory
 
 def save_progress(network=None, optimizer=None, losses=None):
@@ -173,3 +174,4 @@ if __name__ == '__main__':
     parser.add_argument('--learning-rate', type=float, default=0.01)
     parser.add_argument('--random-seed', type=int, default=1)
     run(**parser.parse_args().__dict__)
+    print("DONE!")

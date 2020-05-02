@@ -255,7 +255,7 @@ name: {}, ip: {}, state: {}
                 return success, msg
 
         return True, "Successfully setup the job"
-        
+
     def setup_dependency_manager(self, run_yml):
         env_type = run_yml["env_type"]
         env_file = run_yml["env_file"]
@@ -263,8 +263,9 @@ name: {}, ip: {}, state: {}
         print("Env file: ", env_file)
 
         if env_type == "conda":
-            runner = ansible_runner.run(host_pattern=self.name, private_data_dir="ansible", module="include_role", module_args="name=run/setup_conda", 
-                                    extravars={
+            runner = ansible_runner.run(host_pattern=self.name, private_data_dir="ansible", 
+                                        module="include_role", module_args="name=run/setup_conda", 
+                                        extravars={
                                         "environment_file": env_file,
                                         })
         elif env_file == "pip":
@@ -275,12 +276,22 @@ name: {}, ip: {}, state: {}
         if len(runner.stats.get("failures")) != 0:
               return False, "Failed to initialize environment manager"
 
+        return True, "Successfully created dependency manager and stored initialization in .profile"
+
+    def execute_command(self, cmd,  run_yml):
+        print("Executing cmd: ", cmd)
+        final_command = ". ~/.profile; " + cmd +  " 2>&1 | tee logs/run.log"
+        runner = ansible_runner.run(host_pattern=self.name, private_data_dir="ansible", 
+                                    module="include_role", module_args="name=run/cmd", 
+                                    extravars={
+                                        "run_command": cmd
+                                    },
+                                    envvars=run_yml.get("env", dict()))
+
+        if len(runner.stats.get("failures")) != 0:
+              return False, "Failed to run command properly: " + cmd
         
-
-        pass
-
-    def execute_command(self, run_yml):
-        pass
+        return True, "Successfully ran job"
 
     def run_job(self, job, provider_info=dict()):
         print("Running job: ", job)
@@ -295,6 +306,9 @@ name: {}, ip: {}, state: {}
         success, msg = self.setup_dependency_manager(job["run"])
         if success == False:
             return success, msg
-        
 
-        return True, "Setup job correctly"
+        success, msg = self.execute_command(cmd=job["cmd"], run_yml=job["run"])
+        if success == False:
+            return success, msg
+
+        return True, "Job completed"
