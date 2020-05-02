@@ -3,7 +3,6 @@
 name: mnist
 
 run:
-
   # env_type can be conda or pip
   env_type: conda
   # env_file should be the conda environment or pip environment
@@ -15,6 +14,8 @@ run:
     - TEST_ENV: "HELLO"
   # Terminate the instance after finishing
   terminate: true
+  # Install Script (Optional)
+  install_script:
 
 install:
   - conda
@@ -55,4 +56,5 @@ providers:
     disk_size_gb: 10
     disk_type: pd-standard
     source_image: "projects/ubuntu-os-cloud/global/images/family/ubuntu-1804-lts"
+    preemptible: true
   

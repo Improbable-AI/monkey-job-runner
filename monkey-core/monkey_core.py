@@ -7,7 +7,6 @@ import threading
 import copy
 
 from monkey import Monkey
-import werkzeug
 from werkzeug.datastructures import FileStorage
 import tempfile
 import yaml
@@ -96,7 +95,7 @@ def submit_job():
     foreground = job_args["foreground"]
     print("Foreground", foreground)
 
-    success, msg = monkey.submit_job(job_args)
+    success, msg = monkey.submit_job(job_args, foreground=foreground)
     res = {
         "msg": msg,
         "success": success
@@ -114,7 +113,7 @@ def upload_codebase():
             "msg": "Did not provide job_uid",
             "success": False
         })
-    create_folder_path = os.path.join(MONKEY_FS, "jobs", job_uid)
+    create_folder_path = os.path.join(MONKEY_FS, "jobs", job_uid, "logs")
     os.makedirs(create_folder_path, exist_ok= True)
     FileStorage(request.stream).save(os.path.join(create_folder_path, "code.tar"))
     print("Saved file to: {}".format(os.path.join(create_folder_path, "code.tar")))
@@ -189,6 +188,8 @@ def get_logs():
                 yield log_file.read()
                 time.sleep(1)
     return application.response_class(logs(), mimetype='text/plain')
+
+
 
 
 

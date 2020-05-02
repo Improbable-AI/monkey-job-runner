@@ -2,7 +2,7 @@
 
 - name: Check for conda installation
   stat:
-    path: /opt/miniconda3
+    path: ~/.miniconda3
   register: conda_installed
 
 - name: Proceed with conda installation
@@ -17,14 +17,14 @@
     - name: Create conda folder
       become: True
       file:
-        path: /opt/miniconda3
+        path: ~/.miniconda3
         state: directory
         owner: "{{ ansible_user }}"
         mode: 755
         recurse: yes
       
     - name: Run the installer
-      shell: /tmp/install-miniconda.sh -b -u -p /opt/miniconda3
+      shell: /tmp/install-miniconda.sh -b -u -p ~/.miniconda3
 
     - name: Remove the installer
       file:
@@ -33,18 +33,4 @@
 
     - name: Add miniconda bin to path
       become: True
-      shell: echo 'export PATH=/opt/miniconda3/bin:$PATH' >> /etc/profile
-
-    - name: conda - read permission for all
-      become: True
-      file:
-        path: /opt/miniconda3
-        mode: +r
-        recurse: yes
-
-    - name: conda - execution permission for all
-      become: True
-      file:
-        path: /opt/miniconda3/bin
-        mode: +x
-        recurse: yes
+      shell: echo 'export PATH=/opt/miniconda3/bin:$PATH' >> ~/.profile

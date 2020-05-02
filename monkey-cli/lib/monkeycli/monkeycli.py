@@ -149,7 +149,7 @@ class MonkeyCLI(Cmd):
                                     params={"job_uid":job_uid}, 
                                     allow_redirects=True)
                     success = r.json()["success"]
-                    print("Upload Codebase:", colored("Successful", "green") if success else colored("FAILED", "red"))
+                    print("Upload Persisted Folder:", colored("Successful", "green") if success else colored("FAILED", "red"))
             except:
                 print("Upload failure")
             if success == False:
@@ -228,7 +228,6 @@ class MonkeyCLI(Cmd):
             print("Please define your codebase in the yaml")
             raise ValueError("code undefined in job.yml")
         
-        print("Foreground: ", foreground)
         job_yaml["foreground"] = foreground
         self.upload_codebase(code=job_yaml["code"], job_uid=job_uid)
 

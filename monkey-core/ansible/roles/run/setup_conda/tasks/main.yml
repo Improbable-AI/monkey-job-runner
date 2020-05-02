@@ -1,0 +1,25 @@
+---
+- name: sh
+  shell: env
+  register: env
+- name: debug
+  debug:
+    msg: "{{ env }}"
+
+- name: Conda init bash
+  shell: . /etc/profile && conda init bash
+
+- name: Read conda environment file
+  slurp:
+    src: "{{ environment_file }}"
+  register: env_file_contents
+
+- name: Get Environment name
+  set_fact:
+    environment_name: "{{ ((env_file_contents['content'] | b64decode) | from_yaml).name }}"
+
+- name: Create conda environment
+  shell: ". /etc/profile && conda env create -f {{ environment_file }}"
+  ignore_errors: true
+  
+- name: Add activation of conda environment to /etc/profile
