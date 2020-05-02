@@ -5,7 +5,7 @@ logger = logging.getLogger(__name__)
 
 logging.getLogger("googleapiclient.discovery").setLevel(logging.WARNING)
 logging.getLogger("google_auth_httplib2").setLevel(logging.WARNING)
-
+import threading
 # from cloud.cloud_instance import CloudInstance, CloudInstanceType
 from core.monkey_provider import MonkeyProvider
 
@@ -47,8 +47,7 @@ class Monkey():
                 logger.error("Could not instantiate provider \n{}".format(e))
 
 
-    # Unimplemented
-    def submit_job(self, job_yml):
+    def submit_job(self, job_yml, foreground = True):
         print("Monkey job yml submitted:", job_yml)
         providers = job_yml.get("providers", [])
         if len(providers) == 0:
@@ -62,9 +61,19 @@ class Monkey():
         if found_provider is None:
             return False, "No matching provider found"
 
+        if foreground:
+            return self.run_job(provider=found_provider, job_yml=job_yml)
+        else:
+            t = threading.Thread(target=self.run_job, args=(found_provider, job_yml))
+            t.start()
+            return True, "Running in background"
+
+    def run_job(self, provider, job_yml):
         job_uid = job_yml["job_uid"]
-        created_host, creation_success = found_provider.create_instance(machine_params={"monkey_job_uid": job_uid})
+        created_host, creation_success = provider.create_instance(machine_params={"monkey_job_uid": job_uid})
         print("Created Host:", created_host)
+        if creation_success == False:
+            return False, "Failed to create and virtualize instance properly"
 
         # Run install scripts
         for install_item in job_yml.get("install", []):
@@ -74,12 +83,17 @@ class Monkey():
                 print("Failed to install dependency " + install_item)
                 return False, "Failed to install dependency " + install_item
 
-        success, msg = created_host.setup_job(job_yml, provider_info=found_provider.get_dict())
+        success, msg = created_host.setup_job(job_yml, provider_info=provider.get_dict())
         if success == False:
             print("Failed to setup host:", msg)
             return success, msg
 
-        return True, "Job submitted successfully"
+        success, msg = created_host.run_job(job_yml, provider_info=provider.get_dict())
+        if success == False:
+            print("Failed to run job:", msg)
+            return success, msg
+        
+        return True, "Job ran successfully"
 
 
     # Fully implemented 

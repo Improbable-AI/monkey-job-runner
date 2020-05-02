@@ -15,6 +15,8 @@ import shutil
 import fnmatch
 import glob
 import tarfile
+from termcolor import colored, cprint 
+
 class MonkeyCLI(Cmd):
 
     prompt = 'monkey> '
@@ -121,9 +123,43 @@ class MonkeyCLI(Cmd):
         print()
         dataset_filename = "data" + compression_suffix
         return dataset_checksum, dataset_filename
-    
+
+    def upload_persisted_folder(self, persist, job_uid):
+        print("Uploading persisted_folder...")
+        persist_name = persist["name"]
+        code_path = persist["path"]
+        ignore_filters = persist.get("ignore", [])
+
+        all_files = set([y.strip("/") for y in [x.strip(".") for x in glob.glob(code_path + "/**", recursive=True)]])
+        filenames = (n for n in all_files 
+                    if not any(fnmatch.fnmatch(n, ignore) for ignore in ignore_filters))
+        all_files = sorted(list(filenames))
+        print("Persisting: ", all_files)
+        if "" in all_files:
+            all_files.remove("")
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".tar") as dir_tmp:
+            code_tar = tarfile.open(dir_tmp.name, "w")
+            code_tar.add(persist_name)
+            # for file in all_files:
+            #     code_tar.add(file)
+            code_tar.close()
+            success = False
+            try:
+                with open(dir_tmp.name, "rb") as compressed_persist:
+                    r = requests.post(self.build_url("upload/persist"),
+                                    data=compressed_persist,
+                                    params={"job_uid":job_uid}, 
+                                    allow_redirects=True)
+                    success = r.json()["success"]
+                    print("Upload Persisted Folder:", colored("Successful", "green") if success else colored("FAILED", "red"))
+            except:
+                print("Upload failure")
+            if success == False:
+                raise ValueError("Failed to upload codebase")
+        print()
+
     def upload_codebase(self, code, job_uid):
-        print("Uploading codebase...")
+        print("Uploading Codebase...")
         code_path = code["path"]
         ignore_filters = code.get("ignore", [])
 
@@ -138,6 +174,7 @@ class MonkeyCLI(Cmd):
             for file in all_files:
                 code_tar.add(file)
             code_tar.close()
+            success = False
             try:
                 with open(dir_tmp.name, "rb") as compressed_codebase:
                     r = requests.post(self.build_url("upload/codebase"),
@@ -145,7 +182,7 @@ class MonkeyCLI(Cmd):
                                     params={"job_uid":job_uid}, 
                                     allow_redirects=True)
                     success = r.json()["success"]
-                    print("Upload Codebase:", "Successful" if success else "FAILED")
+                    print("Upload Codebase:", colored("Successful", "green") if success else colored("FAILED", "red"))
             except:
                 print("Upload failure")
             if success == False:
@@ -153,7 +190,7 @@ class MonkeyCLI(Cmd):
         print()
     
     def submit_job(self, job):
-        print("Submitting Job: {}".format(job["job_uid"]))
+        print("Submitting Job: {}".format(colored(job["job_uid"], "green")))
         r = requests.get(self.build_url("submit/job"), json=job)
         print(r.json()["msg"])
         
@@ -163,7 +200,7 @@ class MonkeyCLI(Cmd):
 
     def run_job(self, cmd, job_yaml_file="job.yml", job_uid= None, foreground=False, printout=False):
         if printout:
-            print("\nMonkey running:\n{}".format(cmd))
+            print("\nMonkey running:\n{}".format(colored(cmd, "green")))
 
         # Parse job.yml
         try:
@@ -176,7 +213,7 @@ class MonkeyCLI(Cmd):
             job_uid = self.get_job_uid()
         job_yaml["job_uid"] = job_uid
         job_yaml["cmd"] = cmd
-        print("Creating job with id: ", job_uid, "\n")
+        print("Creating job with id: ", colored(job_uid, "green"), "\n")
 
         # Check Data
         for dataset in job_yaml.get("data", []):
@@ -184,12 +221,16 @@ class MonkeyCLI(Cmd):
             dataset["dataset_checksum"] = dataset_checksum
             dataset["dataset_filename"] = dataset_filename
 
+        # Upload persisted folder
+        for persist_dir in job_yaml.get("persist", []):
+            self.upload_persisted_folder(persist= persist_dir, job_uid=job_uid)
+
+
         # Upload codebase
         if "code" not in job_yaml:
             print("Please define your codebase in the yaml")
             raise ValueError("code undefined in job.yml")
         
-        print("Foreground: ", foreground)
         job_yaml["foreground"] = foreground
         self.upload_codebase(code=job_yaml["code"], job_uid=job_uid)
 
@@ -218,6 +259,10 @@ class MonkeyCLI(Cmd):
         # create_instance_parser.add_argument('machine_params', type=str, nargs=argparse.REMAINDER,
         #                  help='Any other machine overrides to replace values found in providers.yml')
         return create_parser, create_subparser
+
+    def run(self, cmd):
+        print(["run"] + cmd.split(" "))
+        self.parse_args(["run"] + cmd.split(" "), printout=True)
 
     def parse_args(self, input_args, printout=True):
         print("Parsing args: {}".format(input_args))

@@ -42,6 +42,7 @@
         gcp_project: "{{ (lookup('file', gcp_cred_file) | from_json).project_id }}"
     - name: Wait for connection
       wait_for_connection:
+        timeout: 15
       delay: 2
     - name: Setup host
       setup:
@@ -50,7 +51,7 @@
       ignore_errors: yes
       ignore_unreachable: yes
       retries: 3
-      delay: 3
+      delay: 1
   tasks:
     - name: Finished installing monkey client
       debug:

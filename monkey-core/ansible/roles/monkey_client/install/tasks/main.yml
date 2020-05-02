@@ -5,55 +5,6 @@
     path: /startup-script.lock
     state: touch 
 
-- name: get os gcsutil string
-  shell: echo gcsfuse-$(lsb_release -c -s)
-  register: gsfuse_name
-- name: add gcloud repository
-  become: true
-  apt_repository:
-    repo: deb http://packages.cloud.google.com/apt {{ gsfuse_name.stdout }} main
-    update_cache: no
-    state: present
-    filename: gsfuse
-
-- name: add gcloud apt key
-  become: true
-  apt_key:
-    url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
-    state: present
-    
-
-- name: apt update install gcsfuse python3 nginx
-  become: true
-  apt:
-    update_cache: yes
-    name: 
-      - gcsfuse
-      - python3
-      - python3-pip
-      - python3-venv
-      - python3-dev
-      - nginx
-    state: present
-
-- name: Install virtualenv via pip
-  become: yes
-  pip:
-    name: virtualenv
-    executable: pip3
-
-
-- name: Clone Monkey client repo
-  git:
-    repo: https://github.com/Averylamp/monkey-client.git
-    dest: "/home/{{ ansible_user }}/.monkey-client"
-
-- name: Install monkey-client modules into virtualenv
-  pip:
-    requirements: "/home/{{ ansible_user }}/.monkey-client/requirements.txt"
-    virtualenv: "/home/{{ ansible_user }}/.monkey-client/venv"
-    virtualenv_python: python3
-
 
 - name: Check for monkey-client installation
   ignore_errors: true
@@ -77,11 +28,22 @@
         - html_contents.stdout.find('pong!') != -1
       debug:
         msg: "NGINX serving monkey-client"
-      
+
 
 - name: Install monkey-client
   when: get_pong_url.failed
   block:
+    - name: Clone Monkey client repo
+      git:
+        repo: https://github.com/Averylamp/monkey-client.git
+        dest: "/home/{{ ansible_user }}/.monkey-client"
+
+    - name: Install monkey-client modules into virtualenv
+      pip:
+        requirements: "/home/{{ ansible_user }}/.monkey-client/requirements.txt"
+        virtualenv: "/home/{{ ansible_user }}/.monkey-client/venv"
+        virtualenv_python: python3
+
     - name: template systemd service config
       become: true
       template:
@@ -110,6 +72,12 @@
         dest: /etc/nginx/sites-enabled/default
         state: link
         force: yes
+    - name: Add .log to text/plain 
+      become: true
+      lineinfile:
+        line: "    text/plain                            txt log logs;"
+        regex: "text/plain"
+        path: /etc/nginx/mime.types
     - name: restart nginx
       become: true
       systemd: name=nginx state=restarted enabled=yes
@@ -128,3 +96,6 @@
       when: html_contents.stdout.find('pong!') != -1
       debug:
         msg: "NGINX serving monkey-client"
+
+- name: Setup machine 
+  setup: 

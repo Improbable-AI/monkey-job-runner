@@ -196,19 +196,21 @@ class MonkeyProviderGCP(MonkeyProvider):
         if len(runner.stats.get("failures")) != 0:
             return None, False
         print(machine_params)
-        loader = DataLoader()
-        inventory = InventoryManager(loader=loader, sources="/Users/avery/Developer/projects/monkey-project/monkey-core/ansible/inventory")
-        try:
-            print("Attempting to create instance", machine_params)
-            print("UID: ",machine_params["monkey_job_uid"])
-            h = inventory.get_host(machine_params["monkey_job_uid"])
-            host_vars = h.get_vars()
-            print(host_vars)
-            inst = MonkeyInstanceGCP(ansible_info=host_vars)
-            print("Successfully created instance")
-            print(inst)
-            return inst, True
-        except Exception as e:
-            print("Failed to get host", e)
-            return None, False
+        retries = 4
+        while retries > 0:
+            loader = DataLoader()
+            inventory = InventoryManager(loader=loader, sources="/Users/avery/Developer/projects/monkey-project/monkey-core/ansible/inventory")
+            try:
+                h = inventory.get_host(machine_params["monkey_job_uid"])
+                host_vars = h.get_vars()
+                inst = MonkeyInstanceGCP(ansible_info=host_vars)
+                if inst is not None:
+                    return inst, True
+            except Exception as e:
+                print("Failed to get host", e)
+                return None, False
+            retries -= 1
+            print("Retry inventory creation for machine")
+            time.sleep(2)
+        return None, False
 

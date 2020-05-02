@@ -7,14 +7,14 @@ import threading
 import copy
 
 from monkey import Monkey
-import werkzeug
 from werkzeug.datastructures import FileStorage
 import tempfile
 import yaml
 import concurrent.futures
 from datetime import datetime
+import tarfile
 date_format = "monkey-%y-%m-%d-"
-instance_number = 1
+instance_number = 0
 last_date = datetime.now().strftime(date_format)
 
 lock = threading.Lock()
@@ -37,7 +37,7 @@ def get_job_uid():
         else:
             print("Would be instance",last_date + str(instance_number + 1))
             pass
-            # instance_number += 1
+            instance_number += 1
         return last_date + str(instance_number)
 
 @application.route('/list/providers')
@@ -95,7 +95,7 @@ def submit_job():
     foreground = job_args["foreground"]
     print("Foreground", foreground)
 
-    success, msg = monkey.submit_job(job_args)
+    success, msg = monkey.submit_job(job_args, foreground=foreground)
     res = {
         "msg": msg,
         "success": success
@@ -106,17 +106,43 @@ def submit_job():
 
 @application.route('/upload/codebase', methods=["POST"])
 def upload_codebase():
-    print("Received upload codebase request")
     job_uid = request.args.get('job_uid', None)
+    print("Received upload codebase request:", job_uid)
     if job_uid is None:
         return jsonify({
             "msg": "Did not provide job_uid",
             "success": False
         })
     create_folder_path = os.path.join(MONKEY_FS, "jobs", job_uid)
-    os.makedirs(create_folder_path, exist_ok= True)
+    os.makedirs(os.path.join(create_folder_path, "logs"), exist_ok= True)
+    if not os.path.exists(os.path.join(create_folder_path, "logs", "run.log")):
+        with open(os.path.join(create_folder_path, "logs", "run.log"), "w") as f:
+            pass
     FileStorage(request.stream).save(os.path.join(create_folder_path, "code.tar"))
     print("Saved file to: {}".format(os.path.join(create_folder_path, "code.tar")))
+    return jsonify({
+            "msg": "Successfully uploaded codebase",
+            "success": True
+        })
+
+@application.route('/upload/persist', methods=["POST"])
+def upload_persist():
+    print("Received upload persist request")
+    job_uid = request.args.get('job_uid', None)
+    if job_uid is None:
+        return jsonify({
+            "msg": "Did not provide job_uid or name",
+            "success": False
+        })
+    create_folder_path = os.path.join(MONKEY_FS, "jobs", job_uid)
+    os.makedirs(create_folder_path, exist_ok= True)
+
+    with tempfile.NamedTemporaryFile(suffix=".tmp") as temp_file:
+        FileStorage(request.stream).save(temp_file.name)
+        persist_tar = tarfile.open(temp_file.name, "r")
+        print(persist_tar.list())
+        persist_tar.extractall(path=create_folder_path)
+
     return jsonify({
             "msg": "Successfully uploaded codebase",
             "success": True
@@ -166,6 +192,8 @@ def get_logs():
                 yield log_file.read()
                 time.sleep(1)
     return application.response_class(logs(), mimetype='text/plain')
+
+
 
 
 

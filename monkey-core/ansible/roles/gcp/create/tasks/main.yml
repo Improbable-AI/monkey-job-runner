@@ -30,7 +30,7 @@
   gcp_compute_instance:
     state: present
     name: "{{ monkey_job_uid }}"
-    machine_type: n1-standard-1
+    machine_type: n1-standard-2
     status: "RUNNING"
     deletion_protection: no
     labels:
@@ -95,7 +95,7 @@
   gcp_compute_instance:
     state: present
     name: "{{ monkey_job_uid }}"
-    machine_type: n1-standard-1
+    machine_type: n1-standard-2
     status: "TERMINATED"
     zone: "{{ zone }}"
     deletion_protection: no
@@ -108,7 +108,7 @@
   gcp_compute_instance:
     state: present
     name: "{{ monkey_job_uid }}"
-    machine_type: n1-standard-1
+    machine_type: n1-standard-2
     status: "RUNNING"
     deletion_protection: no
     labels:
@@ -172,12 +172,17 @@
   retries: 5
   ignore_errors: true
   
-    
-
 
 - name: Get keyscan host key
+  command: "ssh-keyscan -trsa  {{ public_ip }}"
+  retries: 3
+  delay: 2
+  register: host_key_task
+  until: host_key_task.rc == 0
+- name: Set host key fact
   set_fact:
-    host_key: "{{ lookup('pipe', 'ssh-keyscan -trsa ' + public_ip) }}"
+    host_key: "{{ host_key_task.stdout }}"
+
 - name: Remove old known hosts
   lineinfile:
     dest: ~/.ssh/known_hosts
