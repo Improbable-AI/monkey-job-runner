@@ -254,6 +254,8 @@ name: {}, ip: {}, state: {}
             if success == False:
                 return success, msg
 
+        return True, "Successfully setup the job"
+        
     def setup_dependency_manager(self, run_yml):
         env_type = run_yml["env_type"]
         env_file = run_yml["env_file"]

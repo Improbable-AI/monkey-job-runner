@@ -32,5 +32,7 @@
         path: /tmp/install-miniconda.sh
 
     - name: Add miniconda bin to path
-      become: True
-      shell: echo 'export PATH=/opt/miniconda3/bin:$PATH' >> ~/.profile
+      shell: |
+       echo 'export PATH=~/.miniconda3/bin:$PATH' >> ~/.profile; 
+       echo 'eval "$(conda shell.bash hook)"' >> ~/.profile; 
+       echo 'export PATH=~/.miniconda3/bin:$PATH' >> ~/.bashrc

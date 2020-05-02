@@ -106,15 +106,15 @@ def submit_job():
 
 @application.route('/upload/codebase', methods=["POST"])
 def upload_codebase():
-    print("Received upload codebase request")
     job_uid = request.args.get('job_uid', None)
+    print("Received upload codebase request:", job_uid)
     if job_uid is None:
         return jsonify({
             "msg": "Did not provide job_uid",
             "success": False
         })
-    create_folder_path = os.path.join(MONKEY_FS, "jobs", job_uid, "logs")
-    os.makedirs(create_folder_path, exist_ok= True)
+    create_folder_path = os.path.join(MONKEY_FS, "jobs", job_uid)
+    os.makedirs(os.path.join(create_folder_path, "logs"), exist_ok= True)
     FileStorage(request.stream).save(os.path.join(create_folder_path, "code.tar"))
     print("Saved file to: {}".format(os.path.join(create_folder_path, "code.tar")))
     return jsonify({
@@ -137,6 +137,7 @@ def upload_persist():
     with tempfile.NamedTemporaryFile(suffix=".tmp") as temp_file:
         FileStorage(request.stream).save(temp_file.name)
         persist_tar = tarfile.open(temp_file.name, "r")
+        print(persist_tar.list())
         persist_tar.extractall(path=create_folder_path)
 
     return jsonify({

@@ -139,9 +139,11 @@ class MonkeyCLI(Cmd):
             all_files.remove("")
         with tempfile.NamedTemporaryFile(delete=False, suffix=".tar") as dir_tmp:
             code_tar = tarfile.open(dir_tmp.name, "w")
-            for file in all_files:
-                code_tar.add(file)
+            code_tar.add(persist_name)
+            # for file in all_files:
+            #     code_tar.add(file)
             code_tar.close()
+            success = False
             try:
                 with open(dir_tmp.name, "rb") as compressed_persist:
                     r = requests.post(self.build_url("upload/persist"),
@@ -172,6 +174,7 @@ class MonkeyCLI(Cmd):
             for file in all_files:
                 code_tar.add(file)
             code_tar.close()
+            success = False
             try:
                 with open(dir_tmp.name, "rb") as compressed_codebase:
                     r = requests.post(self.build_url("upload/codebase"),
