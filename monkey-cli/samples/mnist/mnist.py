@@ -11,9 +11,9 @@ import torch.optim as optim
 
 torch.backends.cudnn.enabled = False
 test_env = os.environ.get("TEST_ENV")
-print("TEST_ENV=", test_env)
+# print("TEST_ENV=", test_env)
 DIR_ROOT = 'output' # All saved data goes in this directory
-
+print("Starting mnist.py")
 def save_progress(network=None, optimizer=None, losses=None):
     if network is not None:
         torch.save(network.state_dict(), os.path.join(DIR_ROOT, 'model.pth'))

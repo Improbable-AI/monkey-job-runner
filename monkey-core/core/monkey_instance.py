@@ -202,6 +202,7 @@ name: {}, ip: {}, state: {}
                                         "persist_folder_path": logs_path,
                                         "persist_script_path": script_path,
                                         "bucket_path": monkeyfs_output_folder,
+                                        "persist_time": 3,
                                         })
                             
         if len(runner.stats.get("failures")) != 0:
