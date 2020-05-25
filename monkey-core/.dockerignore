@@ -1,0 +1,4 @@
+mongo/
+**monkeyfs/
+ansible/artifacts/
+venv/

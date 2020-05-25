@@ -8,6 +8,7 @@ import copy
 
 from monkey import Monkey
 from werkzeug.datastructures import FileStorage
+from setup.utils import get_monkey_fs
 import tempfile
 import yaml
 import concurrent.futures
@@ -28,11 +29,10 @@ UNIQUE_UIDS = True
 print("Checking for GCP MonkeyFS...")
 # TODO(alamp): make it run with multiple shared filesystems
 # TODO(alamp): dynamically search for filesystem name
-fs_output = subprocess.check_output("df | grep monkeyfs | awk '{print $9}'", shell=True).decode("utf-8")
-print(fs_output)
-if fs_output is None or fs_output == "":
-    raise LookupError("Unable to find shared mounted gcp filesyste monkeyfs")
-GCP_MONKEY_FS = fs_output.split("\n")[0]
+GCP_MONKEY_FS = get_monkey_fs()
+if GCP_MONKEY_FS is None:
+    raise LookupError("Unable to find shared mounted gcp filesystem monkeyfs")
+print("Found MonkeyFS: ", GCP_MONKEY_FS)
 
 @application.route('/ping')
 def ping():

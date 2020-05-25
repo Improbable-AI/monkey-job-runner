@@ -8,6 +8,7 @@
   debug:
     msg: "Mounting FS: {{ gcp_storage_name }}"
 
+    # TODO(alamp): Make more robust
 - name: Check for existing mount
   shell: df | grep {{ gcp_storage_name }}
   register: existing_mount
@@ -18,7 +19,6 @@
   block:
     - name: Create Mountpoint
       ignore_errors: true
-      become: true
       file:
         path: monkeyfs
         state: directory

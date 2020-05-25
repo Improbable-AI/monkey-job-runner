@@ -1,4 +1,22 @@
-import os, readline
+import os, readline, subprocess
+
+def get_monkey_fs():
+  # Check env variable MONKEYFS_PATH first
+  fs_path = os.environ.get("MONKEYFS_PATH", None)
+  if fs_path is not None:
+    # Check that the env variable is a mounted directory
+    fs_output = os.system("df {} | grep '{}'".format(fs_path, fs_path))
+    if fs_output == 0:
+      # env filepath appears in df
+      return fs_path
+  # Check for mounts
+  fs_output = subprocess.check_output("df | grep monkeyfs | awk '{print $9}'", 
+                                      shell=True).decode("utf-8")
+  if fs_output is not None and fs_output != "":
+    fs_path = fs_output.split("\n")[0]
+    return fs_path
+
+
 class Completer(object):
   
   def _listdir(self, root):
@@ -37,6 +55,3 @@ class Completer(object):
       return self._complete_path(line[-1])[state]
     return None
 
-def get_file_path(text):
-  i = input(text)
-  return os.path.abspath(i)
