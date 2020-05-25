@@ -112,4 +112,3 @@ jobs:
         export TEMP=$(df ansible/monkeyfs | grep monkeyfs | awk '{print $NF}') || true
         fusermount -u $TEMP || true
 
- 
