@@ -3,7 +3,9 @@ plugin: gcp_compute
 projects: [improbable-ai-avery-971c]
 regions: [us-east1]
 keyed_groups: [key: zone]
-groups: {monkey: "'monkey` in name", monkey_gcp: "'monkey` in name"}
+groups:
+  monkey: "'monkey' in name"
+  monkey_gcp: "'monkey' in name"
 hostnames: [name]
 filters: []
 auth_kind: serviceaccount

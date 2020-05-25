@@ -63,8 +63,8 @@ def create_gcp_provider(provider_name, yaml):
     "regions": [region_input], 
     "keyed_groups": [{"key": "zone"}],
     "groups": {
-      "monkey": "'monkey` in name",
-      "monkey_gcp": "'monkey` in name",
+      "monkey": "'monkey' in name",
+      "monkey_gcp": "'monkey' in name",
     },
     "hostnames": ["name"],
     "filters": [],
