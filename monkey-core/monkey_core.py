@@ -30,7 +30,7 @@ print("Checking for GCP MonkeyFS...")
 # TODO(alamp): make it run with multiple shared filesystems
 # TODO(alamp): dynamically search for filesystem name
 GCP_MONKEY_FS = get_monkey_fs()
-if GCP_MONKEY_FS is None:
+if GCP_MONKEY_FS is None or GCP_MONKEY_FS == "":
     raise LookupError("Unable to find shared mounted gcp filesystem monkeyfs")
 print("Found MonkeyFS: ", GCP_MONKEY_FS)
 

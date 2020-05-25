@@ -4,14 +4,17 @@ def get_monkey_fs():
   # Check env variable MONKEYFS_PATH first
   fs_path = os.environ.get("MONKEYFS_PATH", None)
   if fs_path is not None:
+    print("Found env path:", fs_path)
     # Check that the env variable is a mounted directory
     fs_output = os.system("df {} | grep '{}'".format(fs_path, fs_path))
     if fs_output == 0:
       # env filepath appears in df
       return fs_path
+    print("Did not find mount aligning with fs_path:", fs_path)
   # Check for mounts
-  fs_output = subprocess.check_output("df | grep monkeyfs | awk '{print $9}'", 
+  fs_output = subprocess.check_output("df | grep monkeyfs | awk '{print $NF}'", 
                                       shell=True).decode("utf-8")
+  print(fs_output)
   if fs_output is not None and fs_output != "":
     fs_path = fs_output.split("\n")[0]
     return fs_path

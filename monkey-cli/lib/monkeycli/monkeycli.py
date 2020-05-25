@@ -187,13 +187,15 @@ class MonkeyCLI(Cmd):
                 print("Upload failure")
             if success == False:
                 raise ValueError("Failed to upload codebase")
-        print()
     
     def submit_job(self, job):
         print("Submitting Job: {}".format(colored(job["job_uid"], "green")))
         r = requests.get(self.build_url("submit/job"), json=job)
-        print(r.json()["msg"])
-        
+        success, msg = r.json()["success"], r.json()["msg"]
+        if success == False:
+            print(msg)
+            raise RuntimeError(msg)
+
     def get_job_uid(self):
         r = requests.get(self.build_url("get/job_uid"))
         return r.text
@@ -273,7 +275,7 @@ class MonkeyCLI(Cmd):
         run_parser = subparser.add_parser("run", help="Run a job on the specified provider")
         run_parser.add_argument("--job_file","-j", required=False, default="job.yml", dest="job_yaml_file", 
                                 help="Optionial specification of job.yml file")
-        run_parser.add_argument("--foreground","-f", required=False, default=False, dest="foreground", 
+        run_parser.add_argument("--foreground","-f", required=False, action='store_true', 
                                 help="Run in foreground or detach when successfully sent")
         run_parser.add_argument("--job_uid","-juid", required=False, default=None, dest="job_uid", 
                                 help="Run in foreground or detach when successfully sent")
@@ -286,7 +288,6 @@ class MonkeyCLI(Cmd):
         info_subparser = info_parser.add_subparsers(description="Info options", dest="info_option")
         info_jobs_parser = list_subparser.add_parser("job", help="Gets the info on the specified job")
         info_providers_parser = list_subparser.add_parser("instance", help="List the info of the specified instance")
-
 
         try:
             args, remaining_args = parser.parse_known_args(input_args)

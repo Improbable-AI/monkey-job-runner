@@ -17,6 +17,15 @@
 - name: If no existing mount
   when: existing_mount is failed
   block:
+    # TODO(alamp): Ensure this works on user paths and root paths
+    - name: Create Mountpoint w/ Sudo
+      become: true
+      ignore_errors: true
+      file:
+        path: monkeyfs
+        state: directory
+        owner: "{{ ansible_user }}"
+      register: create_mountpoint
     - name: Create Mountpoint
       ignore_errors: true
       file:
@@ -34,7 +43,7 @@
       environment:
         GOOGLE_APPLICATION_CREDENTIALS: "{{ gcp_cred_file }}"
 - name: Get Mount Path
-  shell: df | grep {{gcp_storage_name}} | awk '{print $9}'
+  shell: df | grep {{gcp_storage_name}} | awk '{print $NF}'
   register: mount_path
 - name: Register Mount Path
   set_fact:

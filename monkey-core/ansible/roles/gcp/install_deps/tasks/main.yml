@@ -82,6 +82,7 @@
         - python3-venv
         - python3-dev
         - nginx
+        - tree
       state: present
   
   - name: Install virtualenv via pip

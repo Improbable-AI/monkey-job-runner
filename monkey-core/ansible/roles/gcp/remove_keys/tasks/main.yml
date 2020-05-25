@@ -48,7 +48,7 @@
         msg: "Successfully removed {{ gcloud_key_fingerprints.count }} keys"
 
     - name: Switch back to old gcp account if needed
-      when: prev_gcloud_account.stdout != gcp_service_email
+      when: 
+       - prev_gcloud_account.stdout != gcp_service_email and prev_gcloud_account.stdout != ''
       command: "gcloud config set account {{ prev_gcloud_account.stdout }}"
-
       
