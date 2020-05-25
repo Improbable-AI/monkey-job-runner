@@ -23,6 +23,8 @@ last_date = datetime.now().strftime(date_format)
 lock = threading.Lock()
 monkey = Monkey()
 
+UNIQUE_UIDS = True
+
 print("Checking for GCP MonkeyFS...")
 # TODO(alamp): make it run with multiple shared filesystems
 # TODO(alamp): dynamically search for filesystem name
@@ -48,8 +50,9 @@ def get_job_uid():
             print("Would be instance",last_date + str(instance_number + 1))
             pass
             instance_number += 1
-        return last_date + str(instance_number) + "-" + ''.join(random.choice(string.ascii_lowercase) for _ in range(3))
-
+        if UNIQUE_UIDS == True:
+            return last_date + str(instance_number) + "-" + ''.join(random.choice(string.ascii_lowercase) for _ in range(3))
+        return last_date + str(instance_number)
 
 @application.route('/list/providers')
 def get_list_providers():
