@@ -1,0 +1,4 @@
+name: Run Monkey-Core
+author: Avery Lamp
+description: |-
+  Sets up monkey-core and runs it in a github action
