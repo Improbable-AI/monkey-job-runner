@@ -1,30 +1,9 @@
 ---
-###########
-#  Required
-###########
-
-# Service account credentials
 gcp_cred_kind: serviceaccount
-# Put the path to your credentials location
-gcp_cred_file: /Users/avery/Developer/projects/monkey-project/monkey-core/gcp-service-key-personal.json
-
-# These parameters must be valid zones and regions for now and are not defaulted
-zone: us-east1-b
+gcp_cred_file: /Users/avery/Developer/projects/monkey-project/monkey-core/improbable-service-key.json
 region: us-east1
-
-# This will just be a unique string that creates a firewall to apply to all the gcp instances
+zone: us-east1-b
 firewall_rule: monkey-ansible-firewall
-
-# UID is the unique id that the machine is going to be created with.  
-# Currently does not check for exting machines with the same uid
-
-###########
-# Optional
-###########
-
-# Will generate a new key with default name keys/gcp if not provided
-gcp_ssh_private_key_path:  # Defaults to keys/gcp
-gcp_storage_name:  # Defaults to monkeyfs
-
-
-monkeyfs_path: # Defaults to /monkeyfs
+gcp_ssh_private_key_path:
+gcp_storage_name:
+monkeyfs_path:

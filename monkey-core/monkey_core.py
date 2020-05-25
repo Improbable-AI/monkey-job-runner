@@ -13,6 +13,9 @@ import yaml
 import concurrent.futures
 from datetime import datetime
 import tarfile
+import subprocess
+import random
+import string
 date_format = "monkey-%y-%m-%d-"
 instance_number = 0
 last_date = datetime.now().strftime(date_format)
@@ -20,7 +23,16 @@ last_date = datetime.now().strftime(date_format)
 lock = threading.Lock()
 monkey = Monkey()
 
-MONKEY_FS = "/Users/avery/Developer/projects/monkey-project/monkey-core/monkeyfs"
+UNIQUE_UIDS = True
+
+print("Checking for GCP MonkeyFS...")
+# TODO(alamp): make it run with multiple shared filesystems
+# TODO(alamp): dynamically search for filesystem name
+fs_output = subprocess.check_output("df | grep monkeyfs | awk '{print $9}'", shell=True).decode("utf-8")
+print(fs_output)
+if fs_output is None or fs_output == "":
+    raise LookupError("Unable to find shared mounted gcp filesyste monkeyfs")
+GCP_MONKEY_FS = fs_output.split("\n")[0]
 
 @application.route('/ping')
 def ping():
@@ -38,6 +50,8 @@ def get_job_uid():
             print("Would be instance",last_date + str(instance_number + 1))
             pass
             instance_number += 1
+        if UNIQUE_UIDS == True:
+            return last_date + str(instance_number) + "-" + ''.join(random.choice(string.ascii_lowercase) for _ in range(3))
         return last_date + str(instance_number)
 
 @application.route('/list/providers')
@@ -80,7 +94,7 @@ def check_dataset():
             "found": False
         })
 
-    dataset_path = os.path.join(MONKEY_FS, "data", dataset_name, dataset_checksum)
+    dataset_path = os.path.join(GCP_MONKEY_FS, "data", dataset_name, dataset_checksum)
     
     return jsonify({
         "msg": "Found existing dataset.  Continuing..." if os.path.isdir(dataset_path) else "Need to upload dataset...",
@@ -113,7 +127,7 @@ def upload_codebase():
             "msg": "Did not provide job_uid",
             "success": False
         })
-    create_folder_path = os.path.join(MONKEY_FS, "jobs", job_uid)
+    create_folder_path = os.path.join(GCP_MONKEY_FS, "jobs", job_uid)
     os.makedirs(os.path.join(create_folder_path, "logs"), exist_ok= True)
     if not os.path.exists(os.path.join(create_folder_path, "logs", "run.log")):
         with open(os.path.join(create_folder_path, "logs", "run.log"), "w") as f:
@@ -134,13 +148,12 @@ def upload_persist():
             "msg": "Did not provide job_uid or name",
             "success": False
         })
-    create_folder_path = os.path.join(MONKEY_FS, "jobs", job_uid)
+    create_folder_path = os.path.join(GCP_MONKEY_FS, "jobs", job_uid)
     os.makedirs(create_folder_path, exist_ok= True)
 
     with tempfile.NamedTemporaryFile(suffix=".tmp") as temp_file:
         FileStorage(request.stream).save(temp_file.name)
         persist_tar = tarfile.open(temp_file.name, "r")
-        print(persist_tar.list())
         persist_tar.extractall(path=create_folder_path)
 
     return jsonify({
@@ -167,7 +180,7 @@ def upload_dataset():
             "msg": "Did not provide dataset_name or dataset_checksum or dataset_path or dataset_extension",
             "success": False
         })
-    create_folder_path = os.path.join(MONKEY_FS, "data", dataset_name, dataset_checksum)
+    create_folder_path = os.path.join(GCP_MONKEY_FS, "data", dataset_name, dataset_checksum)
     doc_yaml_path = os.path.join(create_folder_path, "dataset.yaml")
     os.makedirs(create_folder_path, exist_ok= True)
     FileStorage(request.stream).save(os.path.join(create_folder_path, "data" + dataset_extension))
