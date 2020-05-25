@@ -23,12 +23,9 @@ if __name__ == "__main__":
   except:
     print("No providers.yml file found")
     provider_yaml = round_trip_load("---\nproviders: []")
-
-  print(provider_yaml)
   providers = provider_yaml.get("providers", [])
   if providers is None:
     providers = []
-  print(providers)
 
   print("{} providers found: {}".format(len(providers), ", ".join([x.get("name", "unknown") for x in providers])))
 

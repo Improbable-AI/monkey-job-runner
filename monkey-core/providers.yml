@@ -17,22 +17,3 @@ providers:
   gcp_ssh_private_key_path:  # Defaults to keys/gcp
   gcp_storage_name: # Defaults to monkeyfs
   monkeyfs_path: # Defaults to /monkeyfs
-# - name: gcp
-#   type: gcp1
-#   project: monkey-274001
-#   gcp_cred_kind: serviceaccount
-#   gcp_cred_file: /Users/avery/Developer/projects/monkey-project/monkey-core/gcp-service-key-personal.json
-#   region: us-east1
-#   zone: us-east1-b
-
-
-#   ###########
-#   # Optional
-#   ###########
-
-#   # Will generate a new key with default name keys/gcp if not provided
-#   gcp_ssh_private_key_path:  # Defaults to keys/gcp
-#   gcp_storage_name:  # Defaults to monkeyfs
-#   monkeyfs_path: # Defaults to /monkeyfs
-# # 
-# # GCP Provider: gcp2
