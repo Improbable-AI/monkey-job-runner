@@ -12,7 +12,7 @@ def get_monkey_fs():
       return fs_path
     print("Did not find mount aligning with fs_path:", fs_path)
   # Check for mounts
-  fs_output = subprocess.check_output("df | grep monkeyfs | awk '{print $NF}'", 
+  fs_output = subprocess.check_output("df ansible/monkeyfs | grep monkeyfs | awk '{print $NF}'", 
                                       shell=True).decode("utf-8")
   print(fs_output)
   if fs_output is not None and fs_output != "":

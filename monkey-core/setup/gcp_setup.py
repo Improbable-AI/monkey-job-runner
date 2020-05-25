@@ -130,8 +130,13 @@ def create_gcp_provider(provider_name, yaml, args):
 
 def setup_gcp_monkeyfs():
   print("\nSetting up monkeyfs...")
+  print(os.getcwd())
+  monkeyfs_path = os.path.join(os.getcwd(), "ansible/monkeyfs")
   runner = ansible_runner.run(playbook='gcp_install_fs.yml', 
                               private_data_dir='ansible',
+                              extravars={
+                                        "core_monkeyfs_path": monkeyfs_path
+                                    },
                               quiet=False)
   events = [e for e in runner.events]
   monkeyfs_path = events[len(events)-2]["event_data"]["res"]["msg"]

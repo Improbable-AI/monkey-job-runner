@@ -11,7 +11,8 @@ on:
 
 jobs:
   build:
-    runs-on: seacow
+    # runs-on: seacow
+    runs-on: ubuntu-latest
     timeout-minutes: 15
     defaults:
       run:
@@ -19,6 +20,19 @@ jobs:
         working-directory: monkey-core
 
     steps:
+    - name: Check for existing monkeyfs
+      run: | 
+        pwd
+        if command -v tree > /dev/null; then
+          tree
+        fi
+        export TEMP_1=$(df monkey-core/ansible/monkeyfs)
+        echo $TEMP_1
+        df monkey-core/ansible/monkeyfs || true
+        export TEMP_1=${TEMP_1:=" "}
+        export TEMP=$(echo $TEMP_1 | grep monkeyfs | awk '{print $NF}') || true
+        fusermount -u $TEMP || true
+      working-directory: "."
     - uses: actions/checkout@v2
     - name: Set up Python 3.6
       uses: actions/setup-python@v2
@@ -88,10 +102,14 @@ jobs:
     - name: Run mnist sample
       run: |
         python monkey_core.py &
-        sleep 4
+        sleep 5
         cd ../monkey-cli/samples/mnist
         monkey run --foreground python -u mnist.py --learning-rate 0.019
 
-    - name: Cleanup gcp key
+    - name: Cleanup and mount
       run: | 
         rm gcp_cred.json
+        export TEMP=$(df ansible/monkeyfs | grep monkeyfs | awk '{print $NF}') || true
+        fusermount -u $TEMP || true
+
+ 
