@@ -1,20 +1,19 @@
 ---
 providers:
-- name: "gcp"
-  type: "gcp"
-  zone: "us-east1-b"
-  project: "monkey-274001"
-  region: us-east1
+# 
+# GCP Provider: gcp
+- name: gcp
+  type: gcp
+  project: improbable-ai-avery-971c
   gcp_cred_kind: serviceaccount
-  gcp_cred_file: /Users/avery/Developer/projects/monkey-project/monkey-core/gcp-service-key-personal.json
+  gcp_cred_file: /Users/avery/Developer/projects/monkey-project/monkey-core/improbable-service-key.json
+  region: us-east1
+  zone: us-east1-b
 
 
-  ###########
-  # Optional
-  ###########
-
-  # Will generate a new key with default name keys/gcp if not provided
+# ###########
+# # Optional
+# ###########
   gcp_ssh_private_key_path:  # Defaults to keys/gcp
-  
-  gcp_storage_name:  # Defaults to monkeyfs
+  gcp_storage_name: # Defaults to monkeyfs
   monkeyfs_path: # Defaults to /monkeyfs

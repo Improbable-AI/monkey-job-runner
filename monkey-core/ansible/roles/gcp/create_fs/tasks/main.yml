@@ -7,7 +7,7 @@
 - name: Printout fs name
   debug:
     msg: "FS Name: {{ gcp_storage_name }}"
-- name: Check for filesystem existence
+- name: Create filesystem 
   gcp_storage_bucket:
     name: "{{ gcp_storage_name}}"
     project: "{{ gcp_project }}"
