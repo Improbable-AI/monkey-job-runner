@@ -149,7 +149,7 @@ class MonkeyProviderGCP(MonkeyProvider):
         instances = []
         # MARK(alamp): AnsibleInternalAPI
         loader = DataLoader()
-        inventory = InventoryManager(loader=loader, sources="/Users/avery/Developer/projects/monkey-project/monkey-core/ansible/inventory")
+        inventory = InventoryManager(loader=loader, sources="ansible/inventory")
         variable_manager = VariableManager(loader=loader, inventory=inventory)
         host_list = inventory.get_groups_dict()["monkey_gcp"]
         for host in host_list:
@@ -199,7 +199,7 @@ class MonkeyProviderGCP(MonkeyProvider):
         retries = 4
         while retries > 0:
             loader = DataLoader()
-            inventory = InventoryManager(loader=loader, sources="/Users/avery/Developer/projects/monkey-project/monkey-core/ansible/inventory")
+            inventory = InventoryManager(loader=loader, sources="ansible/inventory")
             try:
                 h = inventory.get_host(machine_params["monkey_job_uid"])
                 host_vars = h.get_vars()

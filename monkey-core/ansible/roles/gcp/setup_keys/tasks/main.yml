@@ -37,6 +37,7 @@
       command: "gcloud compute os-login ssh-keys add --key-file {{ existing_private.path }}.pub"
 
     - name: Switch back to old gcp account if needed
+      ignore_errors: true
       when: prev_gcloud_account.stdout != gcp_service_email
       command: "gcloud config set account {{ prev_gcloud_account.stdout }}"
 

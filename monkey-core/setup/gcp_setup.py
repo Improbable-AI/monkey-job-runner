@@ -1,8 +1,8 @@
 import os
 from ruamel.yaml import YAML, round_trip_load
-from setup.utils import get_file_path
+import ansible_runner
 
-def create_gcp_provider(provider_name, yaml):
+def create_gcp_provider(provider_name, yaml, args):
   details = round_trip_load(str({
     "name": provider_name,
     "type": "gcp",
@@ -12,7 +12,19 @@ def create_gcp_provider(provider_name, yaml):
   }))
   
   while details["project"] == "":
-    service_account_file = get_file_path("GCP Service Account File: ")
+
+    service_account_file = args.identification_file
+    passed_key = False
+    if service_account_file is not None:
+      passed_key = True
+      service_account_file = os.path.abspath(service_account_file)  
+    
+    if service_account_file is None and args.noinput == False:
+      service_account_file = input("GCP Service Account File: ")
+      service_account_file = os.path.abspath(service_account_file)  
+    elif service_account_file is None:
+      print("Please pass in an service account with -i/--identification-file")
+      exit(1)
     try:
       with open(service_account_file) as file:
         print("Loading service account...")
@@ -26,9 +38,14 @@ def create_gcp_provider(provider_name, yaml):
     except Exception as e:
       print(e)
       print("Unable to parse service account file")
+      if passed_key:
+        exit(1)
       continue
-  region_input = input("Set project region (us-east1): ") or "us-east1"
-  zone_input = input("Set project region ({}): ".format(region_input + "-b")) or region_input + "-b"
+  region_input = args.region or "us-east1"
+  zone_input = args.zone or region_input + "-b"
+  if args.noinput == False:
+    region_input = input("Set project region (us-east1): ")
+    zone_input = input("Set project region ({}): ".format(region_input + "-b")) or region_input + "-b"
   
   details["region"] = region_input
   details["zone"] = zone_input
@@ -109,6 +126,21 @@ def create_gcp_provider(provider_name, yaml):
     except:
       print("Failed to write gcp inventory file")
       exit(1)
+  setup_gcp_monkeyfs()
 
-
-gcp_inventory = None
+def setup_gcp_monkeyfs():
+  print("\nSetting up monkeyfs...")
+  print(os.getcwd())
+  monkeyfs_path = os.path.join(os.getcwd(), "ansible/monkeyfs")
+  runner = ansible_runner.run(playbook='gcp_install_fs.yml', 
+                              private_data_dir='ansible',
+                              extravars={
+                                        "core_monkeyfs_path": monkeyfs_path
+                                    },
+                              quiet=False)
+  events = [e for e in runner.events]
+  monkeyfs_path = events[len(events)-2]["event_data"]["res"]["msg"]
+  if len(runner.stats.get("failures")) != 0:
+    print("Failed installing and setting up monkeyfs")
+    exit(1)
+  print("Successfully installed and setup monkeyfs\nPath:", monkeyfs_path)
