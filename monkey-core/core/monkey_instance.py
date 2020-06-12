@@ -72,12 +72,6 @@ class MonkeyInstance():
 
     def cleanup_job(self, job, provider_info=dict()):
         raise NotImplementedError("This is not implemented yet")
-
-    def destroy_instance(self):
-        raise NotImplementedError("This is not implemented yet")
-
-    def stop_instance(self):
-        raise NotImplementedError("This is not implemented yet")
     
 
 
