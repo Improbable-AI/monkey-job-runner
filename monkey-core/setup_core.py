@@ -1,13 +1,11 @@
 import os
 import io
 import readline
+import argparse
 from ruamel.yaml import YAML, round_trip_load
 
 from setup.gcp_setup import create_gcp_provider, setup_gcp_monkeyfs
 from setup.utils import Completer, get_monkey_fs
-
-import argparse
-
 
 
 comp = Completer()
@@ -131,7 +129,6 @@ def main():
       setup_gcp_monkeyfs()
   else:
     print("Found monkeyfs: {}".format(monkeyfs))
-
 
   return 0
 
