@@ -223,6 +223,7 @@ class MonkeyProviderGCP(MonkeyProvider):
                 h = inventory.get_host(machine_params["monkey_job_uid"])
                 host_vars = h.get_vars()
                 inst = MonkeyInstanceGCP(ansible_info=host_vars)
+                # TODO ensure machine is on
                 if inst is not None:
                     return inst, True
             except Exception as e:

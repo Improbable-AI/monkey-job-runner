@@ -61,7 +61,12 @@ class Monkey():
     
     def check_for_dead_jobs(self):
         pending_jobs = MonkeyJob.objects(creation_date__gte=(datetime.now() - timedelta(days=10)))
-        print("Found: {} jobs in pending state".format(len(pending_jobs)))
+        pending_job_num = len([x for x in pending_jobs if x.state != MONKEY_STATE_FINISHED])
+        potential_missed_cleanup_num = len(pending_jobs) - pending_job_num
+        print("Found: {} jobs in pending state".format(pending_job_num))
+        print("Checking: {} jobs for late cleanup".format(potential_missed_cleanup_num))
+
+        # TODO: retry counts
         for job in pending_jobs:
             if job.state == MONKEY_STATE_QUEUED:
                 continue
@@ -77,6 +82,12 @@ class Monkey():
                 if time_elapsed > MONKEY_TIMEOUT_DISPATCHING_MACHINE:
                     print("Found DISPATCHING_MACHINE with time: ", time_elapsed, "\n\nRESETTING TO QUEUED\n\n")
                     job.set_state(state=MONKEY_STATE_QUEUED)
+            elif job.state == MONKEY_STATE_DISPATCHING_INSTALLS:
+                # TODO
+                pass
+            elif job.state == MONKEY_STATE_DISPATCHING_SETUP:
+                # TODO
+                pass
             elif job.state == MONKEY_STATE_RUNNING:
                 time_elapsed = (datetime.now() - job.run_running_start_date).total_seconds()
                 if (job.run_timeount_time != -1 and job.run_timeout_time != 0) \
@@ -201,7 +212,7 @@ class Monkey():
                 print("Failed to install dependency " + install_item)
                 return False, "Failed to install dependency " + install_item
 
-        logger.info("{}: Successfully configured machine installs: msg".format(job_uid, msg))
+        logger.info("{}: Successfully configured machine installs".format(job_uid))
 
         dbMonkeyJob.set_state(state=MONKEY_STATE_DISPATCHING_SETUP)
         success, msg = created_host.setup_job(job_yml, provider_info=provider.get_dict())
