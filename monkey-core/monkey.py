@@ -11,19 +11,13 @@ import threading
 # from cloud.cloud_instance import CloudInstance, CloudInstanceType
 from core.monkey_provider import MonkeyProvider
 from setup.mongo_utils import *
-from mongoengine import *
+from termcolor import colored
 
 DAEMON_THREAD_TIME = 15
-try:
-    connect("monkeydb", 
-             host="localhost", 
-             port=27017, 
-             username="monkeycore", 
-             password="bananas", 
-             authentication_source="monkeydb")
-except:
-    print("Failure connecting to mongodb\nRun `docker-compose up`")
-
+if get_monkey_db():
+    logger.info("Connected to monkeydb")
+else:
+    logger.info("Failed to connect to monkeydb")
 
 class Monkey():
 
@@ -40,6 +34,7 @@ class Monkey():
     def daemon_loop(self):
         threading.Timer(DAEMON_THREAD_TIME, self.daemon_loop).start()
         with self.lock:
+            print(colored("\n========================================================", "blue"))
             logger.info(" :{}:Running periodic check".format(datetime.now()))
             self.check_for_queued_jobs()
             self.check_for_dead_jobs()

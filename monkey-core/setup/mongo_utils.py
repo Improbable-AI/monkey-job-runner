@@ -13,6 +13,19 @@ MONKEY_STATE_FINISHED = "FINISHED"
 MONKEY_TIMEOUT_DISPATCHING_MACHINE = 60 * 3 # 5 min to dispatch machine max
 MONKEY_TIMEOUT_CLEANUP = 60 * 5 # 5 min to dispatch machine max
 
+def get_monkey_db():
+    try:
+        connect("monkeydb", 
+                host="localhost", 
+                port=27017, 
+                username="monkeycore", 
+                password="bananas", 
+                authentication_source="monkeydb")
+        return True
+    except:
+        print("Failure connecting to mongodb\nRun `docker-compose up`")
+    return False
+
 class MonkeyJob(DynamicDocument):
     job_uid = StringField(required=True, unique=True)
     job_yml = DictField(required=True)
