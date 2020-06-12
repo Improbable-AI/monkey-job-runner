@@ -69,6 +69,9 @@ class MonkeyProvider():
     def list_instances(self):
         raise NotImplementedError("This is not implemented yet")
 
+    def get_instance(self, instance_name):
+        raise NotImplementedError("This is not implemented yet")
+
     def list_jobs(self):
         raise NotImplementedError("This is not implemented yet")
 
@@ -158,7 +161,23 @@ class MonkeyProviderGCP(MonkeyProvider):
             inst = MonkeyInstanceGCP(ansible_info=host_vars)
             instances.append(inst)
         return instances
-   
+    
+    def get_instance(self, instance_name):
+        """Attempts to get instance by name
+
+        Args:
+            instance_name (str): The job_uid or name of instance
+
+        Returns:
+            [MonkeyInstance]: MonkeyInstance if it exists otherwise None
+        """
+        instances = self.list_instances()
+        for instance in instances:
+            if instance.name == instance_name:
+                return instance
+        found_instance = None
+
+        return found_instance
     def list_jobs(self):
         jobs = []
         for zone in self.zones:

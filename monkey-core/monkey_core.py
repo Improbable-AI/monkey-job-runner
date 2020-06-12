@@ -211,5 +211,5 @@ def get_logs():
 
 
 if __name__ == '__main__':
-    application.run(host='0.0.0.0', port=9990, debug=True)
+    application.run(host='0.0.0.0', port=9990)
 

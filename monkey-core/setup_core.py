@@ -14,6 +14,7 @@ readline.set_completer_delims(' \t\n;')
 readline.parse_and_bind("tab: complete")
 readline.set_completer(comp.complete)
 
+
 def parse_args():
   parser = argparse.ArgumentParser(description='Check for flags.')
   parser.add_argument('-n', '--noinput', action='store_true', required=False,

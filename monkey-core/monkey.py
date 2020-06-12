@@ -1,4 +1,6 @@
 import yaml, logging 
+import threading
+from datetime import datetime, timedelta
 logging.basicConfig()
 logging.getLogger().setLevel(logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -8,10 +10,24 @@ logging.getLogger("google_auth_httplib2").setLevel(logging.WARNING)
 import threading
 # from cloud.cloud_instance import CloudInstance, CloudInstanceType
 from core.monkey_provider import MonkeyProvider
+from setup.mongo_utils import *
+from mongoengine import *
+
+DAEMON_THREAD_TIME = 15
+try:
+    connect("monkeydb", 
+             host="localhost", 
+             port=27017, 
+             username="monkeycore", 
+             password="bananas", 
+             authentication_source="monkeydb")
+except:
+    print("Failure connecting to mongodb\nRun `docker-compose up`")
 
 
 class Monkey():
 
+    lock = threading.Lock()
     providers = []
 
     def __init__(self, providers_path="providers.yml"):
@@ -19,7 +35,76 @@ class Monkey():
         logger.info("Monkey Initializing")
         self.providers = []
         self.instantiate_providers(providers_path=providers_path)
-        
+        threading.Thread(target=self.daemon_loop).start()
+    
+    def daemon_loop(self):
+        threading.Timer(DAEMON_THREAD_TIME, self.daemon_loop).start()
+        with self.lock:
+            logger.info(" :{}:Running periodic check".format(datetime.now()))
+            self.check_for_queued_jobs()
+            self.check_for_dead_jobs()
+
+    def check_for_queued_jobs(self):
+        """Checks for all queued jobs and dispatches if necessary
+        """
+        queued_jobs = MonkeyJob.objects(state=MONKEY_STATE_QUEUED)
+        print("Found", len(queued_jobs), "queued jobs")
+        for job in queued_jobs:
+            print("Dispatching Job: ", job.job_uid)
+            found_provider = None
+            for p in self.providers:
+                if p.name == job.provider_name:
+                    found_provider = p
+            assert found_provider, "Provider should have been defined for the job to be submitted"
+            job.set_state(state=MONKEY_STATE_DISPATCHING)
+            threading.Thread(target=self.run_job, args=(found_provider, job.job_yml)).start()
+    
+    def check_for_dead_jobs(self):
+        pending_jobs = MonkeyJob.objects(creation_date__gte=(datetime.now() - timedelta(days=10)))
+        print("Found: {} jobs in pending state".format(len(pending_jobs)))
+        for job in pending_jobs:
+            if job.state == MONKEY_STATE_QUEUED:
+                continue
+            found_provider = None
+            for p in self.providers:
+                if p.name == job.provider_name:
+                    found_provider = p
+            if found_provider is None:
+                logger.error("Provider should have been defined for the job to be submitted: {}".format(job))
+            
+            if job.state == MONKEY_STATE_DISPATCHING_MACHINE:
+                time_elapsed = (datetime.now() - job.run_dispatch_machine_start_date).total_seconds()
+                if time_elapsed > MONKEY_TIMEOUT_DISPATCHING_MACHINE:
+                    print("Found DISPATCHING_MACHINE with time: ", time_elapsed, "\n\nRESETTING TO QUEUED\n\n")
+                    job.set_state(state=MONKEY_STATE_QUEUED)
+            elif job.state == MONKEY_STATE_RUNNING:
+                time_elapsed = (datetime.now() - job.run_running_start_date).total_seconds()
+                if (job.run_timeount_time != -1 and job.run_timeout_time != 0) \
+                    and time_elapsed > job.run_timeout_time:
+                    logger.info("Reached maximum running time: {}.  Killing job".format(job.job_uid))
+                    # Will run until finished cleanup 
+                    job.set_state(state=MONKEY_STATE_FINISHED)
+            elif job.state == MONKEY_STATE_CLEANUP:
+                time_elapsed = (datetime.now() - job.run_cleanup_start_date).total_seconds()
+                instance = found_provider.get_instance(job.job_uid)
+                if instance is not None:
+                    print("Skipping cleanup, machine already destroyed")
+                    job.set_state(MONKEY_STATE_FINISHED)
+                elif time_elapsed > MONKEY_TIMEOUT_CLEANUP:
+                    print("RESTARTING CLEANUP\n\nCLEANUP TIMEOUT TRIGGERED\n\n")
+                    threading.Thread(target=instance.cleanup_job, args=(job.job_yml, found_provider.get_dict())).start()
+                    job.run_cleanup_start_date = datetime.now()
+                    job.save()
+            elif job.state == MONKEY_STATE_FINISHED:
+                # Check if there are finished jobs that haven't been cleaned
+                instance = found_provider.get_instance(job.job_uid)
+                if instance is not None:
+                    print("Found inished machine with existing instance.  \n\nCLEANUP STATE SET\n\n")
+                    job.set_state(MONKEY_STATE_CLEANUP)
+                    threading.Thread(target=instance.cleanup_job, args=(job.job_yml, found_provider.get_dict())).start()
+                    
+
+
     def instantiate_providers(self, providers_path="providers.yml"):
         providers = dict()
         try:
@@ -46,8 +131,16 @@ class Monkey():
             except Exception as e:
                 logger.error("Could not instantiate provider \n{}".format(e))
 
-
     def submit_job(self, job_yml, foreground = True):
+        """ Persists a job to run
+
+        Args:
+            job_yml (dict): The yml that defines the job
+            foreground (bool, optional): Run in foreground or let the daemond dispatch. Defaults to True.
+
+        Returns:
+            (bool, str): (Success, Message)
+        """
         print("Monkey job yml submitted:", job_yml)
         providers = job_yml.get("providers", [])
         if len(providers) == 0:
@@ -61,20 +154,45 @@ class Monkey():
         if found_provider is None:
             return False, "No matching provider found"
 
+        # Add job to monkeydb
+        job = MonkeyJob(job_uid=job_yml["job_uid"],
+                        job_yml=job_yml,
+                        state=MONKEY_STATE_QUEUED,
+                        provider_name=provider_name,
+                        provider_type=found_provider.provider_type,
+                        provider_vars=found_provider.get_dict())
+        job.save()
+
         if foreground:
+            job.set_state(state=MONKEY_STATE_DISPATCHING)
             return self.run_job(provider=found_provider, job_yml=job_yml)
         else:
-            t = threading.Thread(target=self.run_job, args=(found_provider, job_yml))
-            t.start()
             return True, "Running in background"
 
     def run_job(self, provider, job_yml):
+        """ Runs a job in the monkey core system
+
+        Args:
+            provider (MonkeyProvider): The MonkeyProvider object that will execute the job
+            job_yml (dict): Full job yml
+
+        Returns:
+            (bool, str): (Success, Message)
+        """
         job_uid = job_yml["job_uid"]
+        dbMonkeyJob = MonkeyJob.objects(job_uid=job_uid).get()
+        logger.info(dbMonkeyJob)
+        if dbMonkeyJob.state.startswith(MONKEY_STATE_DISPATCHING):
+            print("Monkey Job {} is already in a dispatching state".format(dbMonkeyJob))
+        logger.info("Dispatching:".format(job_uid))
+        dbMonkeyJob.set_state(state=MONKEY_STATE_DISPATCHING_MACHINE)
         created_host, creation_success = provider.create_instance(machine_params={"monkey_job_uid": job_uid})
-        print("Created Host:", created_host)
+        logger.info("Created Host:".format(created_host))
         if creation_success == False:
             return False, "Failed to create and virtualize instance properly"
+        logger.info("{}: Successfully dispatched machine".format(job_uid))
 
+        dbMonkeyJob.set_state(state=MONKEY_STATE_DISPATCHING_INSTALLS)
         # Run install scripts
         for install_item in job_yml.get("install", []):
             print("Installing item: ", install_item)
@@ -83,22 +201,28 @@ class Monkey():
                 print("Failed to install dependency " + install_item)
                 return False, "Failed to install dependency " + install_item
 
+        logger.info("{}: Successfully configured machine installs: msg".format(job_uid, msg))
+
+        dbMonkeyJob.set_state(state=MONKEY_STATE_DISPATCHING_SETUP)
         success, msg = created_host.setup_job(job_yml, provider_info=provider.get_dict())
         if success == False:
             print("Failed to setup host:", msg)
             return success, msg
+        logger.info("{}: Successfully configured host environment: {}".format(job_uid, msg))
 
+        dbMonkeyJob.set_state(state=MONKEY_STATE_RUNNING)
         success, msg = created_host.run_job(job_yml, provider_info=provider.get_dict())
         if success == False:
             print("Failed to run job:", msg)
             return success, msg
-        
+        dbMonkeyJob.run_elapsed_time += (datetime.now() - dbMonkeyJob.run_running_start_date).total_seconds()
+        dbMonkeyJob.set_state(state=MONKEY_STATE_CLEANUP)
         success, msg = created_host.cleanup_job(job_yml, provider_info=provider.get_dict())
         if success == False:
             print("Job ran correctly, but cleanup failed:", msg)
             return success, msg 
+        dbMonkeyJob.set_state(state=MONKEY_STATE_FINISHED)
         return True, "Job ran successfully"
-
 
     # Fully implemented 
     def get_list_providers(self):
