@@ -10,7 +10,7 @@ on:
     branches: [ master, develop ]
 
 jobs:
-  build:
+  run_mnist_gcp:
     # runs-on: seacow
     runs-on: ubuntu-latest
     timeout-minutes: 15

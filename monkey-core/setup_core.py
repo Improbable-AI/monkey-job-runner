@@ -56,19 +56,6 @@ def main():
 
   print("{} providers found: {}".format(len(providers), ", ".join([x.get("name", "unknown") for x in providers])))
   args = parse_args()
-
-  monkeyfs = get_monkey_fs()
-  if monkeyfs is None:
-    print("No monkeyfs path configured")
-    create = "y"
-    if args.noinput == False:
-      create = input("Would you like to create a gcp monkeyfs? (Y/n): ") or create
-      create = create.lower() in ["y", "yes"]
-    if create:
-      print("Creating New GCP MonkeyFS...")
-      setup_gcp_monkeyfs()
-  else:
-    print("Found monkeyfs: {}".format(monkeyfs))
   
   provider_name = args.provider_name
   provider_type = args.provider_type
@@ -131,6 +118,20 @@ def main():
     elif "local" == provider_type:
       print("Currently unsupported provider type")
       exit(1)
+
+  monkeyfs = get_monkey_fs()
+  if monkeyfs is None:
+    print("No monkeyfs path configured")
+    create = "y"
+    if args.noinput == False:
+      create = input("Would you like to create a gcp monkeyfs? (Y/n): ") or create
+      create = create.lower() in ["y", "yes"]
+    if create:
+      print("Creating New GCP MonkeyFS...")
+      setup_gcp_monkeyfs()
+  else:
+    print("Found monkeyfs: {}".format(monkeyfs))
+
 
   return 0
 
