@@ -19,6 +19,8 @@ from ansible.parsing.dataloader import DataLoader
 from ansible.inventory.manager import InventoryManager
 from ansible.vars.manager import VariableManager
 import ansible_runner
+logging.getLogger("urllib3").setLevel(logging.WARNING)
+logging.getLogger("google.auth.transport.requests").setLevel(logging.WARNING)
 
 # Creates backgound decorators @threaded.  To block and get the result, use .result()
 def call_with_future(fn, future, args, kwargs):
@@ -154,7 +156,7 @@ class MonkeyProviderGCP(MonkeyProvider):
         loader = DataLoader()
         inventory = InventoryManager(loader=loader, sources="ansible/inventory")
         variable_manager = VariableManager(loader=loader, inventory=inventory)
-        host_list = inventory.get_groups_dict()["monkey_gcp"]
+        host_list = inventory.get_groups_dict().get("monkey_gcp", [])
         for host in host_list:
             h = inventory.get_host(host)
             host_vars = h.get_vars()

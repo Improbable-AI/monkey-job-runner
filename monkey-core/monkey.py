@@ -34,7 +34,7 @@ class Monkey():
     def daemon_loop(self):
         threading.Timer(DAEMON_THREAD_TIME, self.daemon_loop).start()
         with self.lock:
-            print(colored("\n========================================================", "blue"))
+            print(colored("\n======================================================================", "blue"))
             logger.info(" :{}:Running periodic check".format(datetime.now()))
             self.check_for_queued_jobs()
             self.check_for_dead_jobs()
@@ -56,7 +56,7 @@ class Monkey():
     
     def check_for_dead_jobs(self):
         pending_jobs = MonkeyJob.objects(creation_date__gte=(datetime.now() - timedelta(days=10)))
-        pending_job_num = len([x for x in pending_jobs if x.state != MONKEY_STATE_FINISHED])
+        pending_job_num = len([x for x in pending_jobs if x.state != MONKEY_STATE_FINISHED and x.state != MONKEY_STATE_CLEANUP])
         potential_missed_cleanup_num = len(pending_jobs) - pending_job_num
         print("Found: {} jobs in pending state".format(pending_job_num))
         print("Checking: {} jobs for late cleanup".format(potential_missed_cleanup_num))
@@ -78,14 +78,18 @@ class Monkey():
                     print("Found DISPATCHING_MACHINE with time: ", time_elapsed, "\n\nRESETTING TO QUEUED\n\n")
                     job.set_state(state=MONKEY_STATE_QUEUED)
             elif job.state == MONKEY_STATE_DISPATCHING_INSTALLS:
-                # TODO
-                pass
+                time_elapsed = (datetime.now() - job.run_dispatch_installs_start_date).total_seconds()
+                if time_elapsed > MONKEY_TIMEOUT_DISPATCHING_INSTALLS:
+                    print("Found DISPATCHING_INSTALLS with time: ", time_elapsed, "\n\nRESETTING TO QUEUED\n\n")
+                    job.set_state(state=MONKEY_STATE_QUEUED)
             elif job.state == MONKEY_STATE_DISPATCHING_SETUP:
-                # TODO
-                pass
+                time_elapsed = (datetime.now() - job.run_dispatch_setup_start_date).total_seconds()
+                if time_elapsed > MONKEY_TIMEOUT_DISPATCHING_SETUP:
+                    print("Found DISPATCHING_SETUP with time: ", time_elapsed, "\n\nRESETTING TO QUEUED\n\n")
+                    job.set_state(state=MONKEY_STATE_QUEUED)
             elif job.state == MONKEY_STATE_RUNNING:
                 time_elapsed = (datetime.now() - job.run_running_start_date).total_seconds()
-                if (job.run_timeount_time != -1 and job.run_timeout_time != 0) \
+                if (job.run_timeout_time != -1 and job.run_timeout_time != 0) \
                     and time_elapsed > job.run_timeout_time:
                     logger.info("Reached maximum running time: {}.  Killing job".format(job.job_uid))
                     # Will run until finished cleanup 
@@ -93,7 +97,7 @@ class Monkey():
             elif job.state == MONKEY_STATE_CLEANUP:
                 time_elapsed = (datetime.now() - job.run_cleanup_start_date).total_seconds()
                 instance = found_provider.get_instance(job.job_uid)
-                if instance is not None:
+                if instance is None:
                     print("Skipping cleanup, machine already destroyed")
                     job.set_state(MONKEY_STATE_FINISHED)
                 elif time_elapsed > MONKEY_TIMEOUT_CLEANUP:

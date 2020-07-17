@@ -11,6 +11,8 @@ MONKEY_STATE_FINISHED = "FINISHED"
 
 
 MONKEY_TIMEOUT_DISPATCHING_MACHINE = 60 * 3 # 5 min to dispatch machine max
+MONKEY_TIMEOUT_DISPATCHING_INSTALLS = 60 * 5 # 5 min to dispatch installs max
+MONKEY_TIMEOUT_DISPATCHING_SETUP = 60 * 8 # 8 min to dispatch setup max
 MONKEY_TIMEOUT_CLEANUP = 60 * 5 # 5 min to dispatch machine max
 
 def get_monkey_db():
