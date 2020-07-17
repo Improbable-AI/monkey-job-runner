@@ -1,13 +1,25 @@
+from setup.mongo_utils import *
 from mongoengine import *
-connect("monkeydb", 
-    host="localhost", 
-    port=27017, 
-    username="monkeycore", 
-    password="bananas", 
-    authentication_source="monkeydb")
-class Page(DynamicDocument):
-    title = StringField(max_length=200, required=True)
+try:
+    connect("monkeydb", 
+             host="localhost", 
+             port=27017, 
+             username="monkeycore", 
+             password="bananas", 
+             authentication_source="monkeydb")
+except:
+    print("Failure connecting to mongodb\nRun `docker-compose up`")
 
+# class Page(DynamicDocument):
+#     title = StringField(max_length=200, required=True)
+
+job = MonkeyJob(job_uid="asdf",
+                job_yml={"a":"a"},
+                state=MONKEY_STATE_QUEUED,
+                provider_type="gcp",
+                provider_name="gcp",
+                provider_vars={"a":"a"})
+job.save()
 
 
 # from ansible.parsing.dataloader import DataLoader

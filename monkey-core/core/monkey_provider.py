@@ -19,6 +19,8 @@ from ansible.parsing.dataloader import DataLoader
 from ansible.inventory.manager import InventoryManager
 from ansible.vars.manager import VariableManager
 import ansible_runner
+logging.getLogger("urllib3").setLevel(logging.WARNING)
+logging.getLogger("google.auth.transport.requests").setLevel(logging.WARNING)
 
 # Creates backgound decorators @threaded.  To block and get the result, use .result()
 def call_with_future(fn, future, args, kwargs):
@@ -67,6 +69,9 @@ class MonkeyProvider():
         self.project = provider_info["project"]
 
     def list_instances(self):
+        raise NotImplementedError("This is not implemented yet")
+
+    def get_instance(self, instance_name):
         raise NotImplementedError("This is not implemented yet")
 
     def list_jobs(self):
@@ -151,14 +156,30 @@ class MonkeyProviderGCP(MonkeyProvider):
         loader = DataLoader()
         inventory = InventoryManager(loader=loader, sources="ansible/inventory")
         variable_manager = VariableManager(loader=loader, inventory=inventory)
-        host_list = inventory.get_groups_dict()["monkey_gcp"]
+        host_list = inventory.get_groups_dict().get("monkey_gcp", [])
         for host in host_list:
             h = inventory.get_host(host)
             host_vars = h.get_vars()
             inst = MonkeyInstanceGCP(ansible_info=host_vars)
             instances.append(inst)
         return instances
-   
+    
+    def get_instance(self, instance_name):
+        """Attempts to get instance by name
+
+        Args:
+            instance_name (str): The job_uid or name of instance
+
+        Returns:
+            [MonkeyInstance]: MonkeyInstance if it exists otherwise None
+        """
+        instances = self.list_instances()
+        for instance in instances:
+            if instance.name == instance_name:
+                return instance
+        found_instance = None
+
+        return found_instance
     def list_jobs(self):
         jobs = []
         for zone in self.zones:
@@ -204,6 +225,7 @@ class MonkeyProviderGCP(MonkeyProvider):
                 h = inventory.get_host(machine_params["monkey_job_uid"])
                 host_vars = h.get_vars()
                 inst = MonkeyInstanceGCP(ansible_info=host_vars)
+                # TODO ensure machine is on
                 if inst is not None:
                     return inst, True
             except Exception as e:
