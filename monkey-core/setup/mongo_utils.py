@@ -36,6 +36,9 @@ class MonkeyJob(DynamicDocument):
     provider_name = StringField(required=True)
     provider_vars = DictField(required=True, default=dict)
 
+    # Job state
+    current_ip_address = StringField(required=False)
+
     # Dates to store certain timing statistics
     creation_date = DateTimeField(required=True, default=datetime.now)
     run_dispatch_date = DateTimeField(required=False)
@@ -50,7 +53,7 @@ class MonkeyJob(DynamicDocument):
     # Used to keep total run elapsed time
     run_timeout_time = IntField(required=True, default=-1)
     run_elapsed_time = IntField(required=True, default=0)
-
+    total_wall_time = IntField(required=True, default=0 )
 
     meta = {
         'indexes': [
