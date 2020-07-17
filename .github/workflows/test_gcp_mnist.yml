@@ -10,7 +10,7 @@ on:
     branches: [ master, develop ]
 
 jobs:
-  build:
+  run_mnist_gcp:
     # runs-on: seacow
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -67,11 +67,11 @@ jobs:
       env:
         gcp_key: ${{ secrets.improbable_ai_avery_gcp_service_key }}
       run: |
-        rm providers.yml
+        rm providers.yml || true
         echo "$gcp_key" | base64 --decode > gcp_cred.json
         python setup_core.py -n --create --type gcp -i gcp_cred.json
         df -h 
-        export MONKEYFS_PATH=$(realpath gcp_cred.json)
+        #export MONKEYFS_PATH=$(realpath gcp_cred.json)
         
     - name: Install monkey-cli packages
       run: |

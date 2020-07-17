@@ -27,10 +27,11 @@ install:
 code:
   # Path of the codebase.  Use . for cwd, use relative dir for directory
   path: "."
-  # Patterns to ignore from the code
+  # Patterns to ignore from the code (Make sure to include unncessary folders that will be created such as virtualenv folders or data folders)
   ignore:
     - "data**"
     - "output**"
+    - "venv**"
 
 # Define folders to persist throughout runs.  Should include your output or checkpoint directory
 # Any defined persist folder will be kept in persistent storage and applied over the codebase at start

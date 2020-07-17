@@ -18,7 +18,7 @@ def get_monkey_fs():
   if fs_output is not None and fs_output != "":
     fs_path = fs_output.split("\n")[0]
     return fs_path
-
+  return None
 
 class Completer(object):
   

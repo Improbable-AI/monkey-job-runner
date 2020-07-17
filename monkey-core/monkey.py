@@ -93,6 +93,10 @@ class Monkey():
             print("Failed to run job:", msg)
             return success, msg
         
+        success, msg = created_host.cleanup_job(job_yml, provider_info=provider.get_dict())
+        if success == False:
+            print("Job ran correctly, but cleanup failed:", msg)
+            return success, msg 
         return True, "Job ran successfully"
 
 

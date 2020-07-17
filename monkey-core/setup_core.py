@@ -1,13 +1,11 @@
 import os
 import io
 import readline
+import argparse
 from ruamel.yaml import YAML, round_trip_load
 
 from setup.gcp_setup import create_gcp_provider, setup_gcp_monkeyfs
-from setup.utils import Completer
-
-import argparse
-
+from setup.utils import Completer, get_monkey_fs
 
 
 comp = Completer()
@@ -37,7 +35,7 @@ def parse_args():
   parser.add_argument('--zone', dest='zone', required=False, default=None,
                       help='Allows you to pass provider zone (gcp: Required, default: us-east-1)')
   
-  parser.add_argument('--filesystem_only', action='store_true', required=False,
+  parser.add_argument('--filesystem-only', action='store_true', required=False,
                       help='Run setup and only configures the local shared filesystem')
   args = parser.parse_args()
   return args
@@ -55,9 +53,8 @@ def main():
     providers = []
 
   print("{} providers found: {}".format(len(providers), ", ".join([x.get("name", "unknown") for x in providers])))
-
   args = parse_args()
-
+  
   provider_name = args.provider_name
   provider_type = args.provider_type
  
@@ -119,6 +116,19 @@ def main():
     elif "local" == provider_type:
       print("Currently unsupported provider type")
       exit(1)
+
+  monkeyfs = get_monkey_fs()
+  if monkeyfs is None:
+    print("No monkeyfs path configured")
+    create = "y"
+    if args.noinput == False:
+      create = input("Would you like to create a gcp monkeyfs? (Y/n): ") or create
+      create = create.lower() in ["y", "yes"]
+    if create:
+      print("Creating New GCP MonkeyFS...")
+      setup_gcp_monkeyfs()
+  else:
+    print("Found monkeyfs: {}".format(monkeyfs))
 
   return 0
 

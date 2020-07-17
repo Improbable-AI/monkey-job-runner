@@ -64,14 +64,13 @@ class MonkeyInstance():
     def install_dependency(self, dependency):
         raise NotImplementedError("This is not implemented yet")
 
-    def setup_job(self, job, credential_file=None):
+    def setup_job(self, job, provider_info=dict()):
         raise NotImplementedError("This is not implemented yet")
 
-
-    def destroy_instance(self):
+    def run_job(self, job, provider_info=dict()):
         raise NotImplementedError("This is not implemented yet")
 
-    def stop_instance(self):
+    def cleanup_job(self, job, provider_info=dict()):
         raise NotImplementedError("This is not implemented yet")
     
 
@@ -316,3 +315,28 @@ name: {}, ip: {}, state: {}
         print("\n\nRan job:", job_uid, " SUCCESSFULLY!\n\n")
 
         return True, "Job completed"
+
+    def cleanup_job(self, job, provider_info=dict()):
+        job_uid = job["job_uid"]
+        print("\n\nTerminating Machine:", job_uid, "\n\n")
+
+        delete_instance_params = {
+            "monkey_job_uid": job_uid,
+            "zone": provider_info["zone"],
+            "gcp_project": provider_info["project"],
+            "gcp_cred_kind" : "serviceaccount",
+            "gcp_cred_file":provider_info["gcp_cred_file"],
+
+        }
+
+        print(provider_info)
+
+        runner = ansible_runner.run(host_pattern="localhost", private_data_dir="ansible", 
+                                    module="include_role", module_args="name=gcp/delete", 
+                                    extravars=delete_instance_params)
+        
+        print(runner.stats)
+        if len(runner.stats.get("failures")) != 0:
+            print("Failed Deletion of machine")
+            return False, "Failed to cleanup job after completion"
+        return True, "Succesfully cleaned up job"
