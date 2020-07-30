@@ -1,0 +1,42 @@
+---
+
+- name: Check for existing key
+  file:
+    state: file
+    path: "keys/{{ aws_key_name }}"
+  ignore_errors: yes
+  register: existing_private
+
+- name: Printout existing private
+  debug:
+    msg: "{{ existing_private }}"
+
+- name: Set private key path
+  set_fact:
+    aws_ssh_private_key_file:  "{{ existing_private.path }}"
+
+- name: Generate private key, register with gcp for service account os-login
+  when: existing_private.failed
+  block:
+
+    - name: remove existing ec2 key pair
+      ec2_key:
+        name: "{{aws_key_name}}"
+        region: "{{region}}"
+        state: absent
+
+    - name: create a new ec2 key pair, returns generated private key
+      register: aws_key_creation
+      ec2_key:
+        name: "{{aws_key_name}}"
+        region: "{{region}}"
+        force: yes
+    
+    - name: Write private key to file
+      copy:
+        content: "{{aws_key_creation.key.private_key }}"
+        dest: "{{ aws_ssh_private_key_file }}"
+
+    - name: Debug private key
+      debug:
+        msg: "Private key {{ aws_key_creation.key}}"

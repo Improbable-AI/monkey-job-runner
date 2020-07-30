@@ -1,0 +1,14 @@
+---
+- hosts: localhost
+  name: Testing gcp playbook
+  
+  pre_tasks:
+    - name: Import default vars
+      include_vars:
+        file: aws_vars.yml
+    # - name: Get variables from aws private key
+    #   set_fact:
+    #     gcp_project: "{{ (lookup('file', gcp_cred_file) | from_json).project_id }}"
+
+  roles:
+    - aws/setup_keys

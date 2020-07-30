@@ -1,0 +1,8 @@
+---
+region: us-east-1
+aws_key_name: monkey-aws
+zone: us-east1-b
+firewall_rule: monkey-ansible-firewall
+gcp_ssh_private_key_path:
+gcp_storage_name:
+monkeyfs_path:

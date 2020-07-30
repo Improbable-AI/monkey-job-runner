@@ -53,7 +53,7 @@ class MonkeyJob(DynamicDocument):
     # Used to keep total run elapsed time
     run_timeout_time = IntField(required=True, default=-1)
     run_elapsed_time = IntField(required=True, default=0)
-    total_wall_time = IntField(required=True, default=0 )
+    total_wall_time = IntField(required=True, default=0)
 
     meta = {
         'indexes': [
@@ -82,6 +82,7 @@ class MonkeyJob(DynamicDocument):
             self.run_cleanup_start_date = datetime.now()
         elif state == MONKEY_STATE_FINISHED:
             self.completion_date = datetime.now()
+            self.total_wall_time = (datetime.now() - self.creation_date).total_seconds()
             if self.run_cleanup_start_date is None:
                 # Ensures cleanup will be run immediately
                 self.run_cleanup_start_date = datetime.now() - timedelta(days=5)
