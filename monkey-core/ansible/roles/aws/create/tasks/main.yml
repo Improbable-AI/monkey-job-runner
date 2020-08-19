@@ -111,6 +111,9 @@
 - name: Create ec2 Instance
   ec2:
     instance_type: t2.nano
+    instance_tags:
+      Name: monkey-abeoi
+      Monkey: "Yes"
     image: ami-0bcc094591f354be2
     key_name: "{{ aws_key_name }}"
     wait: yes
