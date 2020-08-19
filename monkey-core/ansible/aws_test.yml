@@ -12,3 +12,4 @@
 
   roles:
     - aws/setup_keys
+    - aws/create

@@ -3,7 +3,7 @@
 - name: Check for existing key
   file:
     state: file
-    path: "keys/{{ aws_key_name }}"
+    path: "keys/{{ aws_key_name }}.pem"
   ignore_errors: yes
   register: existing_private
 
@@ -22,19 +22,19 @@
     - name: remove existing ec2 key pair
       ec2_key:
         name: "{{aws_key_name}}"
-        region: "{{region}}"
+        region: "{{aws_region}}"
         state: absent
 
     - name: create a new ec2 key pair, returns generated private key
       register: aws_key_creation
       ec2_key:
         name: "{{aws_key_name}}"
-        region: "{{region}}"
+        region: "{{aws_region}}"
         force: yes
     
     - name: Write private key to file
       copy:
-        content: "{{aws_key_creation.key.private_key }}"
+        content: "{{aws_key_creation.key.private_key}}"
         dest: "{{ aws_ssh_private_key_file }}"
 
     - name: Debug private key
