@@ -4,7 +4,6 @@
 #   include_vars:
 #     file: "{{ gcp_cred_file }}"
 
-
 - name: Create VPC
   ec2_vpc_net:
     name: Monkey_VPC
@@ -87,231 +86,93 @@
       - dest: "0.0.0.0/0"
         gateway_id: "{{monkey_igw_id}}"
 
+- name: Create Monkey Security group
+  ec2_group:
+    name: Monkey_Security_Group
+    description: The security group for monkey job runners
+    vpc_id: "{{monkey_vpc_id}}"
+    region: "{{aws_region}}"
+    rules:
+      - proto: tcp
+        ports:
+          - 22
+          - 80
+          - 443
+          - 9991
+        cidr_ip: "0.0.0.0/0"
+      - proto: udp
+        ports:
+          - 22
+          - 80
+          - 443
+          - 9991
+        cidr_ip: "0.0.0.0/0"
+  register: monkey_security_group
+- name: Create ec2 Instance
+  ec2:
+    instance_type: t2.nano
+    image: ami-0bcc094591f354be2
+    key_name: "{{ aws_key_name }}"
+    wait: yes
+    group: Monkey_Security_Group
+    vpc_subnet_id: "{{monkey_subnet_id}}"
+    assign_public_ip: yes
+    region: "{{ aws_region }}"
 
-# - name: Create Monkey Security group
-#   ec2_group:
-#     name: Monkey_Security_Group
-#     description: The security group for monkey job runners
-#     vpc_id: "{{monkey_vpc_id}}"
-#     region: "{{aws_region}}"
-#     rules:
-#       - proto: tcp
-#         ports:
-#           - 22
-#           - 80
-#           - 443
-#           - 9991
-#         cidr_ip: "0.0.0.0/0"
-#       - proto: udp
-#         ports:
-#           - 22
-#           - 80
-#           - 443
-#           - 9991
-#         cidr_ip: "0.0.0.0/0"
-#   register: monkey_security_group
-# - name: Create ec2 Instance
-#   ec2:
-#     instance_type: t2.nano
-#     image: ami-0bcc094591f354be2
-#     key_name: "{{ aws_key_name }}"
-#     wait: yes
-#     group: Monkey_Security_Group
-#     vpc_subnet_id: "{{monkey_subnet_id}}"
-#     assign_public_ip: yes
-#     region: "{{ aws_region }}"
+  register: instance
+- name:  Debug instance
+  debug:
+    msg: "{{ instance }}"
 
-#   register: instance
-# - name:  Debug instance
-#   debug:
-#     msg: "{{ instance }}"
+- name: Assert public ip address
+  set_fact:
+    public_ip: "{{ instance.instances.0.public_ip}}"
+  register: found_public_ip
+  until: found_public_ip is not failed
+  delay: 5
+  retries: 10
+  ignore_errors: true
 
-# - name: Assert public ip address
-#   set_fact:
-#     public_ip: "{{ instance.networkInterfaces.0.accessConfigs.0.natIP }}"
-#   register: found_public_ip
-#   until: found_public_ip is not failed
-#   delay: 5
-#   retries: 10
-#   ignore_errors: true
-
-# - name:  Debug public ip
-#   when: wait_for_ssh.failed
-#   debug:
-#     msg: public ip "{{ public_ip }}"
-# - name: Wait for SSH to come up
-#   wait_for: 
-#     host: "{{ public_ip }}"
-#     port: 22
-#     timeout: 15
-#   register: wait_for_ssh
-#   delay: 2
-#   until: wait_for_ssh is not failed
-#   retries: 5
-#   ignore_errors: true
+- name: Wait for SSH to come up
+  wait_for: 
+    host: "{{ public_ip }}"
+    port: 22
+    timeout: 15
+  register: wait_for_ssh
+  delay: 2
+  until: wait_for_ssh is not failed
+  retries: 5
+  ignore_errors: true
 
 
-# This is duplicated below to fix the ssh port issue not being visible unexpliciably issue #22
-# - name: create a instance
-#   gcp_compute_instance:
-#     state: present
-#     name: "{{ monkey_job_uid }}"
-#     machine_type: n1-standard-2
-#     status: "RUNNING"
-#     deletion_protection: no
-#     labels:
-#       monkey-identifier: avery
-#     disks:
-#       - auto_delete: true
-#         boot: true
-#         initialize_params:
-#           disk_size_gb: 10
-#           disk_type: pd-standard
-#           source_image: "projects/ubuntu-os-cloud/global/images/family/ubuntu-1804-lts"
-          
-#     network_interfaces:
-#       - access_configs:
-#           - name: "External NAT"
-#             type: "ONE_TO_ONE_NAT"
-#     metadata:
-#       enable-oslogin: "TRUE"
-#     service_accounts:
-#       - email: "{{ client_email }}"
-#         scopes: 
-#           - 'https://www.googleapis.com/auth/devstorage.read_write'
-#           - 'https://www.googleapis.com/auth/logging.write'
-#     zone: "{{ zone }}"
-#     project: "{{ gcp_project }}"
-#     auth_kind: "{{ gcp_cred_kind }}"
-#     service_account_file: "{{ gcp_cred_file }}"
-#     scheduling:
-#       preemptible: yes
-#     scopes:
-#       - https://www.googleapis.com/auth/compute
-#     tags:
-#       items:
-#         - "{{ firewall_rule }}"
-#   register: instance
-#   delay: 2
-#   # Sometimes doesn't imediately return natIP so retry
-#   until: "'natIP' in instance.networkInterfaces.0.accessConfigs.0"
-# - name: Assert public ip address
-#   set_fact:
-#     public_ip: "{{ instance.networkInterfaces.0.accessConfigs.0.natIP }}"
-#   register: found_public_ip
-#   until: found_public_ip is not failed
-#   delay: 5
-#   retries: 10
-#   ignore_errors: true
-# - name:  Debug public ip
-#   debug:
-#     msg: public ip "{{ public_ip }}"
-# - name: Wait for SSH to come up
-#   wait_for: 
-#     host: "{{ public_ip }}"
-#     port: 22
-#     timeout: 15
-#   register: wait_for_ssh
-#   delay: 2
-#   until: wait_for_ssh is not failed
-#   retries: 4
-#   ignore_errors: true
-# - name: If SSH still not up, terminate the instance and try again
-#   when: wait_for_ssh.failed
-#   gcp_compute_instance:
-#     state: present
-#     name: "{{ monkey_job_uid }}"
-#     machine_type: n1-standard-2
-#     status: "TERMINATED"
-#     zone: "{{ zone }}"
-#     deletion_protection: no
-#     project: "{{ gcp_project }}"
-#     auth_kind: "{{ gcp_cred_kind }}"
-#     service_account_file: "{{ gcp_cred_file }}"
 
-# - name: Recreate the instance
-#   when: wait_for_ssh.failed
-#   gcp_compute_instance:
-#     state: present
-#     name: "{{ monkey_job_uid }}"
-#     machine_type: n1-standard-2
-#     status: "RUNNING"
-#     deletion_protection: no
-#     labels:
-#       monkey-identifier: avery
-#     disks:
-#       - auto_delete: true
-#         boot: true
-#         initialize_params:
-#           disk_size_gb: 10
-#           disk_type: pd-standard
-#           source_image: "projects/ubuntu-os-cloud/global/images/family/ubuntu-1804-lts"
-          
-#     network_interfaces:
-#       - access_configs:
-#           - name: "External NAT"
-#             type: "ONE_TO_ONE_NAT"
-#     metadata:
-#       enable-oslogin: "TRUE"
-#     service_accounts:
-#       - email: "{{ client_email }}"
-#         scopes: 
-#           - 'https://www.googleapis.com/auth/devstorage.read_write'
-#           - 'https://www.googleapis.com/auth/logging.write'
-#     zone: "{{ zone }}"
-#     project: "{{ gcp_project }}"
-#     auth_kind: "{{ gcp_cred_kind }}"
-#     service_account_file: "{{ gcp_cred_file }}"
-#     scheduling:
-#       preemptible: yes
-#     scopes:
-#       - https://www.googleapis.com/auth/compute
-#     tags:
-#       items:
-#         - "{{ firewall_rule }}"
-#   register: instance
-#   delay: 2
-#   # Sometimes doesn't imediately return natIP so retry
-#   until: "'natIP' in instance.networkInterfaces.0.accessConfigs.0"
+- name: Get keyscan host key
+  command: "ssh-keyscan -trsa  {{ public_ip }}"
+  retries: 3
+  delay: 2
+  register: host_key_task
+  until: host_key_task.rc == 0
+- name: Set host key fact
+  set_fact:
+    host_key: "{{ host_key_task.stdout }}"
 
-# - name: Assert public ip address
-#   when: wait_for_ssh.failed
-#   set_fact:
-#     public_ip: "{{ instance.networkInterfaces.0.accessConfigs.0.natIP }}"
-#   register: found_public_ip
-#   until: found_public_ip is not failed
-#   delay: 5
-#   retries: 10
-#   ignore_errors: true
-  
+- name: Remove old known hosts
+  lineinfile:
+    dest: ~/.ssh/known_hosts
+    create: yes
+    state: absent
+    regexp: "{{ public_ip }}.*"
+- name: Add to known hosts
+  lineinfile:
+    dest: ~/.ssh/known_hosts
+    create: yes
+    state: present
+    line: "{{ host_key }}"
 
-# - name: Get keyscan host key
-#   command: "ssh-keyscan -trsa  {{ public_ip }}"
-#   retries: 3
-#   delay: 2
-#   register: host_key_task
-#   until: host_key_task.rc == 0
-# - name: Set host key fact
-#   set_fact:
-#     host_key: "{{ host_key_task.stdout }}"
-
-# - name: Remove old known hosts
-#   lineinfile:
-#     dest: ~/.ssh/known_hosts
-#     create: yes
-#     state: absent
-#     regexp: "{{ public_ip }}.*"
-# - name: Add to known hosts
-#   lineinfile:
-#     dest: ~/.ssh/known_hosts
-#     create: yes
-#     state: present
-#     line: "{{ host_key }}"
-
-# - name: Add host to groupname
-#   add_host: 
-#     name: "{{ public_ip }}"
-#     groups:
-#       - "new_host"
-#     ansible_user: "{{ ansible_user }}"
-#     ansible_ssh_private_key_file: "{{ gcp_ssh_private_key_file }}"
+- name: Add host to groupname
+  add_host: 
+    name: "{{ public_ip }}"
+    groups:
+      - "new_host"
+    ansible_user: "ubuntu"
+    ansible_ssh_private_key_file: "keys/{{ aws_key_name }}.pem"
