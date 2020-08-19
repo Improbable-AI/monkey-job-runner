@@ -175,4 +175,4 @@
     groups:
       - "new_host"
     ansible_user: "ubuntu"
-    ansible_ssh_private_key_file: "keys/{{ aws_key_name }}.pem"
+    ansible_ssh_private_key_file: "ansible/keys/{{ aws_key_name }}.pem"
