@@ -11,7 +11,6 @@ logger = logging.getLogger(__name__)
 from google.oauth2 import service_account
 import googleapiclient.discovery
 
-from core.monkey_instance import MonkeyInstanceGCP
 
 from threading import Thread
 from concurrent.futures import Future
