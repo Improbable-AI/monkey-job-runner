@@ -67,7 +67,7 @@ class Monkey():
             timeout = timeout if timeout is not None else ""
             print("job_uid: {}, state: {}, elapsed: {}, timeout: {}".format(job.job_uid, job.state, elapsed_time, timeout ))
 
-        # TODO: retry counts
+        # TODO (averylamp): retry counts
         for job in pending_jobs:
             if job.state == MONKEY_STATE_QUEUED:
                 continue
@@ -153,7 +153,7 @@ class Monkey():
             except Exception as e:
                 logger.error("Could not instantiate provider \n{}".format(e))
 
-    def submit_job(self, job_yml, foreground = True):
+    def submit_job(self, job_yml:dict, foreground = True) -> (bool, str):
         """ Persists a job to run
 
         Args:

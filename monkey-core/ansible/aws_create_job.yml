@@ -6,9 +6,6 @@
     - name: Import default vars
       include_vars:
         file: aws_vars.yml
-    # - name: Get variables from aws private key
-    #   set_fact:
-    #     gcp_project: "{{ (lookup('file', gcp_cred_file) | from_json).project_id }}"
 
   roles:
     - aws/setup_keys
@@ -26,10 +23,6 @@
     - name: Import default vars
       include_vars:
         file: aws_vars.yml
-    # - name: Get variables from gcp private key
-    #   set_fact:
-    #     ansible_user: "sa_{{ (lookup('file', gcp_cred_file) | from_json).client_id }}"
-    #     gcp_project: "{{ (lookup('file', gcp_cred_file) | from_json).project_id }}"
     - name: Wait for connection
       wait_for_connection:
         timeout: 15

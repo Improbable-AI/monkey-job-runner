@@ -112,7 +112,7 @@
   ec2:
     instance_type: t2.nano
     instance_tags:
-      Name: monkey-abeoi
+      Name: "{{ monkey_job_uid }}"
       Monkey: "Yes"
     image: ami-0bcc094591f354be2
     key_name: "{{ aws_key_name }}"
