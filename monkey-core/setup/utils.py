@@ -1,5 +1,8 @@
-import os, readline, subprocess
+import os
+import readline
+import subprocess
 from mongoengine import *
+
 
 def get_monkey_fs():
   # Check env variable MONKEYFS_PATH first
@@ -9,11 +12,11 @@ def get_monkey_fs():
         # Check that the env variable is a mounted directory
         fs_output = os.system("df {} | grep '{}'".format(fs_path, fs_path))
         if fs_output == 0:
-          # env filepath appears in df
-          return fs_path
+            # env filepath appears in df
+            return fs_path
         print("Did not find mount aligning with fs_path:", fs_path)
     # Check for mounts
-    fs_output = subprocess.check_output("df ansible/monkeyfs | grep monkeyfs | awk '{print $NF}'", 
+    fs_output = subprocess.check_output("df ansible/monkeyfs | grep monkeyfs | awk '{print $NF}'",
                                         shell=True).decode("utf-8")
     print(fs_output)
     if fs_output is not None and fs_output != "":
@@ -22,9 +25,8 @@ def get_monkey_fs():
     return None
 
 
-
 class Completer(object):
-  
+
     def _listdir(self, root):
         "List directory 'root' appending the path sep arator to subdirs."
         res = []
@@ -42,7 +44,7 @@ class Completer(object):
         dirname, rest = os.path.split(path)
         tmp = dirname if dirname else '.'
         res = [os.path.join(dirname, p)
-            for p in self._listdir(tmp) if p.startswith(rest)]
+               for p in self._listdir(tmp) if p.startswith(rest)]
         # more than one match, or single match which does not exist (typo)
         if len(res) > 1 or not os.path.exists(path):
             return res
@@ -60,4 +62,3 @@ class Completer(object):
         if len(line) == 1 and len(text) != 0:
             return self._complete_path(line[-1])[state]
         return None
-

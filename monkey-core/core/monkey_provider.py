@@ -1,23 +1,22 @@
 
+import ansible_runner
+from ansible.vars.manager import VariableManager
+from ansible.inventory.manager import InventoryManager
+from ansible.parsing.dataloader import DataLoader
+from concurrent.futures import Future
+from threading import Thread
+import googleapiclient.discovery
+from google.oauth2 import service_account
 import json
 import time
 import random
 import string
 import datetime
 
-import logging 
+import logging
 logger = logging.getLogger(__name__)
 
-from google.oauth2 import service_account
-import googleapiclient.discovery
 
-
-from threading import Thread
-from concurrent.futures import Future
-from ansible.parsing.dataloader import DataLoader
-from ansible.inventory.manager import InventoryManager
-from ansible.vars.manager import VariableManager
-import ansible_runner
 logging.getLogger("urllib3").setLevel(logging.WARNING)
 logging.getLogger("google.auth.transport.requests").setLevel(logging.WARNING)
 
@@ -30,12 +29,15 @@ def call_with_future(fn, future, args, kwargs):
     except Exception as exc:
         future.set_exception(exc)
 
+
 def threaded(fn):
     def wrapper(*args, **kwargs):
         future = Future()
-        Thread(target=call_with_future, args=(fn, future, args, kwargs)).start()
+        Thread(target=call_with_future, args=(
+            fn, future, args, kwargs)).start()
         return future
     return wrapper
+
 
 class MonkeyProvider():
 
@@ -58,12 +60,13 @@ class MonkeyProvider():
     def create_cloud_handler(provider_info):
         provider_type = provider_info["type"]
         if provider_type == "gcp":
-            from core.cloud.monkey_provider_gcp import MonkeyProviderGCP            
+            from core.cloud.monkey_provider_gcp import MonkeyProviderGCP
             return MonkeyProviderGCP(provider_info)
         elif provider_type == "aws":
             return MonkeyProviderAWS(provider_info)
         else:
-            raise ValueError("{} type for provider not supported yet".format(provider_type))
+            raise ValueError(
+                "{} type for provider not supported yet".format(provider_type))
 
     def __init__(self, provider_info):
         super().__init__()
@@ -95,20 +98,18 @@ class MonkeyProvider():
         raise NotImplementedError("This is not implemented yet")
 
     def is_valid(self):
-        return not(self.credentials == None or \
-            self.zone == None or \
-            self.project == None or \
-            self.name == None or \
-            self.provider_type == None)
+        return not(self.credentials == None or
+                   self.zone == None or
+                   self.project == None or
+                   self.name == None or
+                   self.provider_type == None)
 
     def __str__(self):
         return "Name: {}, provider: {}, zone: {}, project: {}"\
-            .format(self.name, self.provider_type,self.zone, self.project)
+            .format(self.name, self.provider_type, self.zone, self.project)
 
     def get_dict(self):
         return {
             "name": self.name,
             "type": self.provider_type
         }
-
-
