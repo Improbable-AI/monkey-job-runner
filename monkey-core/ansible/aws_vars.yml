@@ -1,7 +1,9 @@
 ---
-aws_region: "us-east-1"
+aws_region: us-east-1
 aws_key_name: monkey-aws
-aws_zone: "us-east1-b"
+aws_zone: us-east-1-b
 firewall_rule: monkey-ansible-firewall
-aws_storage_name:
-monkeyfs_path:
+aws_ssh_private_key_path: None
+storage_name: monkeyfs-wurcxl
+monkeyfs_path: None
+local_monkeyfs_path: /Users/avery/Developer/projects/monkey-project/monkey-core/ansible/monkeyfs-aws

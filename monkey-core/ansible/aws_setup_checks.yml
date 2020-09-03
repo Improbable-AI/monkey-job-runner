@@ -1,6 +1,6 @@
 ---
 - hosts: localhost
-  name: Install AWS S3 Bucket and Mount it
+  name: Locate AWS Bucket and Ensure permissions
   
   pre_tasks:
     - name: Import default vars
@@ -8,5 +8,5 @@
         file: aws_vars.yml
 
   roles:
-    - aws/create_fs
-    - aws/core_mount_fs
+    - aws/setup_fs/create_fs
+    - aws/setup_fs/mount_fs

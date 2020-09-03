@@ -6,6 +6,7 @@ import argparse
 from ruamel.yaml import YAML, round_trip_load
 
 from setup.gcp_setup import create_gcp_provider, check_gcp_provider
+from setup.aws_setup import create_aws_provider, check_aws_provider
 from setup.utils import Completer, get_monkey_fs
 from setup.mongo_utils import get_monkey_db
 from termcolor import colored, cprint
@@ -76,10 +77,6 @@ def main():
     provider_name = args.provider_name
     provider_type = args.provider_type
 
-    if args.filesystem_only:
-        if "gcp" in [x.get("type", "unknown") for x in providers]:
-            setup_gcp_monkeyfs()
-        exit(0)
     create = args.create
     if args.noinput == False:
         create = input("Create a new provider? (y/N): ")
@@ -96,8 +93,6 @@ def main():
             provider_name = "gcp"
         elif "aws" == provider_type:
             provider_name = "aws"
-            print("Currently unsupported provider type")
-            exit(1)
         elif "local" == provider_type:
             provider_name = "local"
             print("Currently unsupported provider type")
@@ -128,10 +123,9 @@ def main():
         print("Creating {}, type: {}".format(provider_name, provider_type))
 
         if "gcp" == provider_type:
-            p = create_gcp_provider(provider_name, provider_yaml, args)
+            create_gcp_provider(provider_name, provider_yaml, args)
         elif "aws" == provider_type:
-            print("Currently unsupported provider type")
-            exit(1)
+            create_aws_provider(provider_name, provider_yaml, args)
         elif "local" == provider_type:
             print("Currently unsupported provider type")
             exit(1)

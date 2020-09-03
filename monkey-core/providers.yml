@@ -1,0 +1,7 @@
+---
+providers:
+- {name: aws, type: aws, aws_region: us-east-1, aws_zone: us-east-1-b, aws_ssh_private_key_path: !!null ''  # Defaults to keys/aws
+, storage_name: monkeyfs-wurcxl # Defaults to monkeyfs-XXXXXX
+, local_monkeyfs_path: /Users/avery/Developer/projects/monkey-project/monkey-core/ansible/monkeyfs-aws,
+  monkeyfs_path: !!null ''  # Defaults to /monkeyfs
+}

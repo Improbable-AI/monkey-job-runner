@@ -83,12 +83,12 @@ def create_gcp_provider(provider_name, yaml, args):
         details["gcp_region"] = region_input
         details["gcp_zone"] = zone_input
 
-        # "  # Defaults to keys/gcp"
+        # "  # Defaults to keys/monkey-gcp"
         details["gcp_ssh_private_key_path"] = None
         details.yaml_set_comment_before_after_key(
             "gcp_ssh_private_key_path", before="\n\n###########\n# Optional\n###########")
         details.yaml_add_eol_comment(
-            "Defaults to keys/gcp", "gcp_ssh_private_key_path")
+            "Defaults to keys/mokney-gcp", "gcp_ssh_private_key_path")
         # "  # Defaults to monkeyfs-XXXXXX to create an unique bucket"
         details["storage_name"] = monkeyfs_input
         details.yaml_add_eol_comment(

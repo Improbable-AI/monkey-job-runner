@@ -1,0 +1,11 @@
+---
+- hosts: localhost
+  name: Create AWS S3 Bucket
+  
+  pre_tasks:
+    - name: Import default vars
+      include_vars:
+        file: aws_vars.yml
+
+  roles:
+    - aws/setup_fs/create_fs
