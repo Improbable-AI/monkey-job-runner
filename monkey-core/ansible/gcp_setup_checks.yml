@@ -1,6 +1,6 @@
 ---
 - hosts: localhost
-  name: Testing playbook
+  name: Locate GCS Bucket and Ensure permissions
   
   pre_tasks:
     - name: Import default vars
@@ -11,5 +11,5 @@
         gcp_project: "{{ (lookup('file', gcp_cred_file) | from_json).project_id }}"
 
   roles:
-    - gcp/create_fs
-    - gcp/core_mount_fs
+    - gcp/setup_fs/create_fs
+    - gcp/setup_fs/mount_fs

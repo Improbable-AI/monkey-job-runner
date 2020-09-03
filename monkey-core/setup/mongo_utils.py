@@ -10,23 +10,25 @@ MONKEY_STATE_CLEANUP = "CLEANING_UP"
 MONKEY_STATE_FINISHED = "FINISHED"
 
 
-MONKEY_TIMEOUT_DISPATCHING_MACHINE = 60 * 3 # 5 min to dispatch machine max
-MONKEY_TIMEOUT_DISPATCHING_INSTALLS = 60 * 5 # 5 min to dispatch installs max
-MONKEY_TIMEOUT_DISPATCHING_SETUP = 60 * 8 # 8 min to dispatch setup max
-MONKEY_TIMEOUT_CLEANUP = 60 * 5 # 5 min to dispatch machine max
+MONKEY_TIMEOUT_DISPATCHING_MACHINE = 60 * 4  # 5 min to dispatch machine max
+MONKEY_TIMEOUT_DISPATCHING_INSTALLS = 60 * 5  # 5 min to dispatch installs max
+MONKEY_TIMEOUT_DISPATCHING_SETUP = 60 * 8  # 8 min to dispatch setup max
+MONKEY_TIMEOUT_CLEANUP = 60 * 5  # 5 min to dispatch machine max
+
 
 def get_monkey_db():
     try:
-        connect("monkeydb", 
-                host="localhost", 
-                port=27017, 
-                username="monkeycore", 
-                password="bananas", 
+        connect("monkeydb",
+                host="localhost",
+                port=27017,
+                username="monkeycore",
+                password="bananas",
                 authentication_source="monkeydb")
         return True
     except:
         print("Failure connecting to mongodb\nRun `docker-compose up`")
     return False
+
 
 class MonkeyJob(DynamicDocument):
     job_uid = StringField(required=True, unique=True)
@@ -49,7 +51,6 @@ class MonkeyJob(DynamicDocument):
     run_cleanup_start_date = DateTimeField(required=False)
     completion_date = DateTimeField(required=False)
 
-
     # Used to keep total run elapsed time
     run_timeout_time = IntField(required=True, default=-1)
     run_elapsed_time = IntField(required=True, default=0)
@@ -68,7 +69,8 @@ class MonkeyJob(DynamicDocument):
         Args:
             state (MONKEY_STATE): The state to update to
         """
-        print("Setting job: {} state to: {}, from: {}".format(self.job_uid, state, self.state))
+        print("Setting job: {} state to: {}, from: {}".format(
+            self.job_uid, state, self.state))
         self.state = state
         if state == MONKEY_STATE_DISPATCHING_MACHINE:
             self.run_dispatch_machine_start_date = datetime.now()
@@ -82,7 +84,8 @@ class MonkeyJob(DynamicDocument):
             self.run_cleanup_start_date = datetime.now()
         elif state == MONKEY_STATE_FINISHED:
             self.completion_date = datetime.now()
-            self.total_wall_time = (datetime.now() - self.creation_date).total_seconds()
+            self.total_wall_time = (
+                datetime.now() - self.creation_date).total_seconds()
             if self.run_cleanup_start_date is None:
                 # Ensures cleanup will be run immediately
                 self.run_cleanup_start_date = datetime.now() - timedelta(days=5)

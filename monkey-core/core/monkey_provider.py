@@ -58,7 +58,7 @@ class MonkeyProvider():
     def create_cloud_handler(provider_info):
         provider_type = provider_info["type"]
         if provider_type == "gcp":
-            from core.cloud.monkey_provider_gcp import MonkeyProviderGCP
+            from core.cloud.monkey_provider_gcp import MonkeyProviderGCP            
             return MonkeyProviderGCP(provider_info)
         elif provider_type == "aws":
             return MonkeyProviderAWS(provider_info)
@@ -68,8 +68,10 @@ class MonkeyProvider():
     def __init__(self, provider_info):
         super().__init__()
         self.name = provider_info["name"]
-        self.zone = provider_info["zone"]
         self.project = provider_info["project"]
+
+    def get_local_filesystem_path(self):
+        raise NotImplementedError("This is not implemented yet")
 
     def list_instances(self):
         raise NotImplementedError("This is not implemented yet")

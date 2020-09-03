@@ -1,0 +1,17 @@
+---
+  # tasks:
+- name: Default fs name
+  set_fact:
+    gcp_project: "{{ (lookup('file', gcp_cred_file) | from_json).project_id }}"
+- name: Printout fs name
+  debug:
+    msg: "FS Name: {{ storage_name }} {{ gcp_project }} {{ gcp_cred_file }}"
+
+- name: Create filesystem 
+  gcp_storage_bucket:
+    name: "{{ storage_name}}"
+    project: "{{ gcp_project }}"
+    auth_kind: "{{ gcp_cred_kind }}"
+    service_account_file: "{{ gcp_cred_file }}"
+    state: present
+    location: "{{gcp_region}}"

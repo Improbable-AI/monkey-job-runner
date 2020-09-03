@@ -1,4 +1,7 @@
 
+import ansible_runner
+from concurrent.futures import Future
+from threading import Thread
 import json
 import time
 import random
@@ -8,16 +11,11 @@ import threading
 import requests
 import yaml
 import os
-import logging 
+import logging
 logger = logging.getLogger(__name__)
 
 HEARTBEAT_TIME = 30
 HEARTBEAT_FAILURE_TOLERANCE = 3
-
-
-from threading import Thread
-from concurrent.futures import Future
-import ansible_runner
 
 
 # Creates backgound decorators @threaded.  To block and get the result, use .result()
@@ -28,10 +26,12 @@ def call_with_future(fn, future, args, kwargs):
     except Exception as exc:
         future.set_exception(exc)
 
+
 def threaded(fn):
     def wrapper(*args, **kwargs):
         future = Future()
-        Thread(target=call_with_future, args=(fn, future, args, kwargs)).start()
+        Thread(target=call_with_future, args=(
+            fn, future, args, kwargs)).start()
         return future
     return wrapper
 
@@ -60,7 +60,6 @@ class MonkeyInstance():
             time.sleep(HEARTBEAT_TIME)
             r = requests.get("http://{}:9991/ping".format(self.ip_address))
 
-
     def install_dependency(self, dependency):
         raise NotImplementedError("This is not implemented yet")
 
@@ -72,6 +71,3 @@ class MonkeyInstance():
 
     def cleanup_job(self, job, provider_info=dict()):
         raise NotImplementedError("This is not implemented yet")
-    
-
-

@@ -42,8 +42,9 @@
         gcp_project: "{{ (lookup('file', gcp_cred_file) | from_json).project_id }}"
     - name: Wait for connection
       wait_for_connection:
-        timeout: 15
+        timeout: 5
       delay: 2
+      retries: 4
     - name: Setup host
       setup:
       register: result

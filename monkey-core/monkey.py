@@ -164,10 +164,7 @@ class Monkey():
             (bool, str): (Success, Message)
         """
         print("Monkey job yml submitted:", job_yml)
-        providers = job_yml.get("providers", [])
-        if len(providers) == 0:
-            return False, "No providers found"
-        provider, provider_name = providers[0], providers[0]["name"]
+        provider_name = job_yml["provider"]
         found_provider = None
         for p in self.providers:
             if p.name == provider_name:
