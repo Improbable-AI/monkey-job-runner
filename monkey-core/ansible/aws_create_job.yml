@@ -1,6 +1,6 @@
 ---
 - hosts: localhost
-  name: Testing gcp playbook
+  name: Create the AWS machine
   
   pre_tasks:
     - name: Import default vars

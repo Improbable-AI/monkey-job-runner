@@ -112,7 +112,7 @@ def create_aws_provider(provider_name, yaml, args):
         },
         "hostnames": ["tag:Name"],
         "filters": {
-            "tag:Monkey": "Yes"
+            "tag:Monkey": """Yes"""
         },
         "compose": {
             "ansible_host": "public_ip_address"

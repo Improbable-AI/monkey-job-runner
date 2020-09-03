@@ -63,6 +63,7 @@ class MonkeyProvider():
             from core.cloud.monkey_provider_gcp import MonkeyProviderGCP
             return MonkeyProviderGCP(provider_info)
         elif provider_type == "aws":
+            from core.cloud.monkey_provider_aws import MonkeyProviderAWS
             return MonkeyProviderAWS(provider_info)
         else:
             raise ValueError(
@@ -71,7 +72,6 @@ class MonkeyProvider():
     def __init__(self, provider_info):
         super().__init__()
         self.name = provider_info["name"]
-        self.project = provider_info["project"]
 
     def get_local_filesystem_path(self):
         raise NotImplementedError("This is not implemented yet")
@@ -98,15 +98,13 @@ class MonkeyProvider():
         raise NotImplementedError("This is not implemented yet")
 
     def is_valid(self):
-        return not(self.credentials == None or
-                   self.zone == None or
-                   self.project == None or
+        return not(self.zone == None or
                    self.name == None or
                    self.provider_type == None)
 
     def __str__(self):
-        return "Name: {}, provider: {}, zone: {}, project: {}"\
-            .format(self.name, self.provider_type, self.zone, self.project)
+        return "Name: {}, provider: {}, zone: {}"\
+            .format(self.name, self.provider_type, self.zone)
 
     def get_dict(self):
         return {
