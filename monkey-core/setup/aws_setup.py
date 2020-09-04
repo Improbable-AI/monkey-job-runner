@@ -31,13 +31,13 @@ def create_aws_provider(provider_name, yaml, args):
     }))
 
     region_input = args.region or "us-east-1"
-    zone_input = args.zone or region_input + "-b"
+    zone_input = args.zone or region_input + "c"
     monkeyfs_input = args.storage_name or "monkeyfs-" + \
         ''.join(random.choice(string.ascii_lowercase) for _ in range(6))
     if args.noinput == False:
         region_input = input("Set project region (us-east-1): ") or "us-east-1"
         zone_input = input("Set project region ({}): ".format(
-            region_input + "-b")) or region_input + "-b"
+            region_input + "c")) or region_input + "c"
         if monkeyfs_input is None:
             monkeyfs_input = input("Set the monkey_fs aws s3 bucket name ({})".format("monkeyfs-XXXXXX")) \
                 or "monkeyfs-" + ''.join(random.choice(string.ascii_lowercase) for _ in range(6))
@@ -112,7 +112,7 @@ def create_aws_provider(provider_name, yaml, args):
         },
         "hostnames": ["tag:Name"],
         "filters": {
-            "tag:Monkey": """Yes"""
+            "tag:Monkey": "Monkey_AWS"
         },
         "compose": {
             "ansible_host": "public_ip_address"

@@ -9,10 +9,11 @@
     name: Monkey_VPC
     cidr_block: 10.0.0.0/24
     region: "{{aws_region}}"
+    
     tenancy: default
     tags:
       Name: Monkey_VPC
-      Monkey: "Yes"
+      Monkey: "Monkey_AWS"
   register: monkey_vpc
 
 - name: Printout Monkey_VCP
@@ -30,9 +31,10 @@
     map_public: true
     cidr: 10.0.0.0/24
     region: "{{ aws_region }}"
+    az: "{{ aws_zone }}"
     tags:
       Name: Monkey_Subnet
-      Monkey: "Yes"
+      Monkey: "Monkey_AWS"
   register: monkey_subnet
 
 - name: Set vpc subnet facts
@@ -49,7 +51,7 @@
     region: "{{aws_region}}"
     tags:
       Name: "Monkey_IGW"
-      Monkey: "Yes"
+      Monkey: "Monkey_AWS"
   register: monkey_igw
 - name: Set vpc Internet Gateway facts
   set_fact:
@@ -77,7 +79,7 @@
     region: "{{aws_region}}"
     tags:
       Name: Monkey_Route_Table
-      Monkey: "Yes"
+      Monkey: "Monkey_AWS"
     subnets:
       - "{{monkey_subnet_id}}"
     routes:
@@ -108,12 +110,16 @@
           - 9991
         cidr_ip: "0.0.0.0/0"
   register: monkey_security_group
+
 - name: Create ec2 Instance
   ec2:
+    exact_count: 1
+    count_tag: 
+      Name: "{{ monkey_job_uid }}"
     instance_type: t2.nano
     instance_tags:
       Name: "{{ monkey_job_uid }}"
-      Monkey: "Yes"
+      Monkey: "Monkey_AWS"
     image: ami-0bcc094591f354be2
     key_name: "{{ aws_key_name }}"
     wait: yes
@@ -121,7 +127,7 @@
     vpc_subnet_id: "{{monkey_subnet_id}}"
     assign_public_ip: yes
     region: "{{ aws_region }}"
-
+    zone: "{{ aws_zone }}"
   register: instance
 - name:  Debug instance
   debug:
@@ -129,7 +135,7 @@
 
 - name: Assert public ip address
   set_fact:
-    public_ip: "{{ instance.instances.0.public_ip}}"
+    public_ip: "{{ instance.tagged_instances.0.public_ip}}"
   register: found_public_ip
   until: found_public_ip is not failed
   delay: 5

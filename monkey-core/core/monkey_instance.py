@@ -40,7 +40,6 @@ class MonkeyInstance():
 
     name = None
     machine_zone = None
-    machine_project = None
     creation_time = None
     destruction_time = None
     ip_address = None
