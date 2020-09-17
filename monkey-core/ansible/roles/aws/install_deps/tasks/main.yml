@@ -44,49 +44,24 @@
       become: true
       command: "swapon /swapfile"
 
+ 
 
-- name: Check for gcsfuse
-  command: which gcsfuse
-  register: gcsfuse_found
-  ignore_errors: true
+- name: apt update install gcsfuse python3 nginx
+  become: true
+  apt:
+    update_cache: yes
+    name: 
+      - python3
+      - python3-pip
+      - python3-venv
+      - python3-dev
+      - nginx
+      - tree
+    state: present
+  retries: 2
 
-- name: Install GCSFuse and Python dependencies
-  when: gcsfuse_found.rc != 0
-  block:
-  - name: get os gcsutil string
-    shell: echo gcsfuse-$(lsb_release -c -s)
-    register: gsfuse_name
-  - name: add gcloud repository
-    become: true
-    apt_repository:
-      repo: deb http://packages.cloud.google.com/apt {{ gsfuse_name.stdout }} main
-      update_cache: no
-      state: present
-      filename: gsfuse
-
-  - name: add gcloud apt key
-    become: true
-    apt_key:
-      url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
-      state: present
-      
-
-  - name: apt update install gcsfuse python3 nginx
-    become: true
-    apt:
-      update_cache: yes
-      name: 
-        - gcsfuse
-        - python3
-        - python3-pip
-        - python3-venv
-        - python3-dev
-        - nginx
-        - tree
-      state: present
-  
-  - name: Install virtualenv via pip
-    become: yes
-    pip:
-      name: virtualenv
-      executable: pip3
+- name: Install virtualenv via pip
+  become: yes
+  pip:
+    name: virtualenv
+    executable: pip3

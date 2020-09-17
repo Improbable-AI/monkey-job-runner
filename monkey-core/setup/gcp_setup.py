@@ -3,6 +3,14 @@ from ruamel.yaml import YAML, round_trip_load
 import ansible_runner
 import random
 import string
+import readline
+
+from setup.utils import Completer
+comp = Completer()
+# we want to treat '/' as part of a word, so override the delimiters
+readline.set_completer_delims(' \t\n;')
+readline.parse_and_bind("tab: complete")
+readline.set_completer(comp.complete)
 
 
 def check_gcp_provider(yaml):
@@ -40,7 +48,9 @@ def create_gcp_provider(provider_name, yaml, args):
             passed_key = True
             service_account_file = os.path.abspath(service_account_file)
 
-        if service_account_file is None and args.noinput == False:
+        if service_account_file is None:
+            if args.noinput == True:
+                raise ValueError("Please input the identity-file (gcp service account file)")
             service_account_file = input("GCP Service Account File: ")
             service_account_file = os.path.abspath(service_account_file)
         elif service_account_file is None:
@@ -94,7 +104,7 @@ def create_gcp_provider(provider_name, yaml, args):
         details.yaml_add_eol_comment(
             "Defaults to monkeyfs-XXXXXX", "storage_name")
         details["local_monkeyfs_path"] = monkeyfs_path
-        details["monkeyfs_path"] = None  # "  # Defaults to /monkeyfs"
+        details["monkeyfs_path"] = "/monkeyfs"  # "  # Defaults to /monkeyfs"
         details.yaml_add_eol_comment("Defaults to /monkeyfs", "monkeyfs_path")
 
         providers = yaml.get("providers", [])

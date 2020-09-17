@@ -60,9 +60,10 @@
     become: true
     apt_repository:
       repo: deb http://packages.cloud.google.com/apt {{ gsfuse_name.stdout }} main
-      update_cache: no
+      update_cache: yes
       state: present
       filename: gsfuse
+    retries: 2
 
   - name: add gcloud apt key
     become: true

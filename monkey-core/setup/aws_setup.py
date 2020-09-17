@@ -3,7 +3,14 @@ from ruamel.yaml import YAML, round_trip_load
 import ansible_runner
 import random
 import string
+import readline
 
+from setup.utils import Completer
+comp = Completer()
+# we want to treat '/' as part of a word, so override the delimiters
+readline.set_completer_delims(' \t\n;')
+readline.parse_and_bind("tab: complete")
+readline.set_completer(comp.complete)
 
 def check_aws_provider(yaml):
     provider_name = yaml.get("name")
@@ -43,6 +50,20 @@ def create_aws_provider(provider_name, yaml, args):
                 or "monkeyfs-" + ''.join(random.choice(string.ascii_lowercase) for _ in range(6))
     monkeyfs_path = os.path.join(os.getcwd(), "ansible/monkeyfs-aws")
 
+    aws_key_file = args.identification_file
+    passed_key = False
+    if aws_key_file is not None:
+        passed_key = True
+        aws_key_file = os.path.abspath(aws_key_file)
+
+    if aws_key_file is None:
+        if args.noinput == True:
+            raise ValueError("Please input the identity-file (aws credential key file)")
+        aws_key_file  = input("GCP Service Account File: ")
+        aws_key_file  = os.path.abspath(aws_key_file)
+       
+
+
     filesystem_ok = False
     # Create filesystem bucket and pick a new id if failed
     while filesystem_ok == False:
@@ -60,7 +81,7 @@ def create_aws_provider(provider_name, yaml, args):
         details.yaml_add_eol_comment(
             "Defaults to monkeyfs-XXXXXX", "storage_name")
         details["local_monkeyfs_path"] = monkeyfs_path
-        details["monkeyfs_path"] = None  # "  # Defaults to /monkeyfs"
+        details["monkeyfs_path"] = "/monkeyfs"  # "  # Defaults to /monkeyfs"
         details.yaml_add_eol_comment("Defaults to /monkeyfs", "monkeyfs_path")
 
         providers = yaml.get("providers", [])

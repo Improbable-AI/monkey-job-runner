@@ -45,11 +45,10 @@ class MonkeyInstance():
     ip_address = None
     state = None
 
-    def __init__(self, name, machine_zone, machine_project, ip_address):
+    def __init__(self, name, machine_zone, ip_address):
         super().__init__()
         self.name = name
         self.machine_zone = machine_zone
-        self.machine_project = machine_project
         self.ip_address = ip_address
 
         threading.Thread(target=self.heartbeat_loop, daemon=True)

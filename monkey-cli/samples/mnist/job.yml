@@ -50,7 +50,7 @@ data:
     # Options are copy or mount,  mount will mount the bucket, copy will copy the data to the machine locally (more performant)
     # only copy is supported for now
     type: copy
-    # Path should be a relative directory
+    # Path should be a relative directory that will only be reuploaded if a checksum does not match
     path: data
     # optional compression type. (Must have compression packages available on machine)  Options: tar (default), gztar
     compression: gztar

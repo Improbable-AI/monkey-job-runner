@@ -13,7 +13,7 @@ from core.monkey_provider import MonkeyProvider
 from setup.mongo_utils import *
 from termcolor import colored
 
-DAEMON_THREAD_TIME = 15
+DAEMON_THREAD_TIME = 5
 if get_monkey_db():
     logger.info("Connected to monkeydb")
 else:
