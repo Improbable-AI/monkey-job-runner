@@ -116,7 +116,7 @@
     exact_count: 1
     count_tag: 
       Name: "{{ monkey_job_uid }}"
-    instance_type: t2.nano
+    instance_type: t2.micro
     instance_tags:
       Name: "{{ monkey_job_uid }}"
       Monkey: "Monkey_AWS"

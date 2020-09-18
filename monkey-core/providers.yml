@@ -13,6 +13,6 @@ providers:
 # # Optional
 # ###########
   aws_ssh_private_key_path: keys/monkey-aws # Defaults to keys/aws
-  storage_name: monkeyfs-xwefpb # Defaults to monkeyfs-XXXXXX
+  storage_name: monkeyfs-qdbsss # Defaults to monkeyfs-XXXXXX
   local_monkeyfs_path: /Users/avery/Developer/projects/monkey-project/monkey-core/ansible/monkeyfs-aws
   monkeyfs_path: /monkeyfs  # Defaults to /monkeyfs
