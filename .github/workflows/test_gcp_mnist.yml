@@ -9,16 +9,19 @@ on:
   pull_request:
     branches: [ master, develop ]
 
-# jobs:
-#   run_mnist_gcp:
-#     # runs-on: seacow
-#     runs-on: ubuntu-latest
-#     timeout-minutes: 15
-#     defaults:
-#       run:
-#         shell: bash
-#         working-directory: monkey-core
-
+jobs:
+  run_mnist_gcp:
+    # runs-on: seacow
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: bash
+        working-directory: monkey-core
+      steps:
+      - name: Nothing
+        run: |
+          echo "This is a placeholder action"
 #     steps:
 #     - name: Check for existing monkeyfs
 #       run: | 
