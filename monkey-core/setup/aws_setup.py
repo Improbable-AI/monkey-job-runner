@@ -4,8 +4,7 @@ import ansible_runner
 import random
 import string
 import readline
-
-from setup.utils import Completer
+from setup.utils import Completer, aws_cred_file_environment
 comp = Completer()
 # we want to treat '/' as part of a word, so override the delimiters
 readline.set_completer_delims(' \t\n;')
@@ -36,19 +35,10 @@ def create_aws_provider(provider_name, yaml, args):
         "name": provider_name,
         "type": "aws",
     }))
+    details.fa.set_block_style()
+    details.yaml_set_start_comment(
+                    "\nAWS Provider: {}".format(provider_name))
 
-    region_input = args.region or "us-east-1"
-    zone_input = args.zone or region_input + "c"
-    monkeyfs_input = args.storage_name or "monkeyfs-" + \
-        ''.join(random.choice(string.ascii_lowercase) for _ in range(6))
-    if args.noinput == False:
-        region_input = input("Set project region (us-east-1): ") or "us-east-1"
-        zone_input = input("Set project region ({}): ".format(
-            region_input + "c")) or region_input + "c"
-        if monkeyfs_input is None:
-            monkeyfs_input = input("Set the monkey_fs aws s3 bucket name ({})".format("monkeyfs-XXXXXX")) \
-                or "monkeyfs-" + ''.join(random.choice(string.ascii_lowercase) for _ in range(6))
-    monkeyfs_path = os.path.join(os.getcwd(), "ansible/monkeyfs-aws")
 
     aws_key_file = args.identification_file
     passed_key = False
@@ -59,19 +49,48 @@ def create_aws_provider(provider_name, yaml, args):
     if aws_key_file is None:
         if args.noinput == True:
             raise ValueError("Please input the identity-file (aws credential key file)")
-        aws_key_file  = input("GCP Service Account File: ")
-        aws_key_file  = os.path.abspath(aws_key_file)
-       
+        valid = False
+        while valid == False:
+            aws_key_file  = input("AWS Account File (should have Access key ID and Secret Access Key in csv form)\nKey: ")
+            aws_key_file  = os.path.abspath(aws_key_file)
+            try:
+                cred_environment = aws_cred_file_environment(aws_key_file)
+                for key, value in cred_environment.items():
+                    os.environ[key] = value
+                valid = True
+            except:
+                print("Failed to read file")
 
 
-    filesystem_ok = False
+    region_input = args.region or "us-east-1"
+    zone_input = args.zone or region_input + "c"
+    monkeyfs_input = args.storage_name or "monkeyfs-" + \
+        ''.join(random.choice(string.ascii_lowercase) for _ in range(6))
+    if args.noinput == False:
+        region_input = input("Set project region (us-east-1): ") or "us-east-1"
+        zone_input = input("Set project zone ({}): ".format(
+            region_input + "c")) or region_input + "c"
+        if monkeyfs_input is None:
+            monkeyfs_input = input("Set the monkey_fs aws s3 bucket name ({})".format("monkeyfs-XXXXXX")) \
+                or "monkeyfs-" + ''.join(random.choice(string.ascii_lowercase) for _ in range(6))
+    monkeyfs_path = os.path.join(os.getcwd(), "ansible/monkeyfs-aws")
+
+
+
+
     # Create filesystem bucket and pick a new id if failed
+    filesystem_ok = False
     while filesystem_ok == False:
+
         details["aws_region"] = region_input
         details["aws_zone"] = zone_input
+        details["aws_cred_file"] = aws_key_file
+        details.yaml_add_eol_comment(
+            "Used for mounting filesystems", "aws_cred_file"
+        )
 
         # "  # Defaults to keys/monkey-aws"
-        details["aws_ssh_private_key_path"] = None
+        details["aws_ssh_private_key_path"] = "keys/monkey-aws"
         details.yaml_set_comment_before_after_key(
             "aws_ssh_private_key_path", before="\n\n###########\n# Optional\n###########")
         details.yaml_add_eol_comment(
@@ -93,6 +112,7 @@ def create_aws_provider(provider_name, yaml, args):
         print("\nWriting to providers.yml...")
         with open('providers.yml', 'w') as file:
             y = YAML()
+            yaml.fa.set_block_style()
             y.explicit_start = True
             y.default_flow_style = False
             y.dump(yaml, file)
@@ -136,9 +156,10 @@ def create_aws_provider(provider_name, yaml, args):
             "tag:Monkey": "Monkey_AWS"
         },
         "compose": {
-            "ansible_host": "public_ip_address"
+            "ansible_host": "public_ip_address",
         }
     }))
+    aws_inventory.fa.set_block_style()
     write_inventory_file(aws_inventory)
 
 

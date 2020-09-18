@@ -40,3 +40,15 @@
     - name: Debug private key
       debug:
         msg: "Private key {{ aws_key_creation.key}}"
+    - name: Remove old ansible_user if existing
+      lineinfile:
+        dest: "{{ playbook_dir }}/inventory/group_vars/monkey_aws.yml"
+        create: yes
+        state: absent
+        regexp: "ansible_*"
+    - name: Add ansible user to inventory file
+      lineinfile:
+        dest: "{{ playbook_dir }}/inventory/group_vars/monkey_aws.yml"
+        create: yes
+        state: present
+        line: "ansible_user: ubuntu"

@@ -86,8 +86,8 @@ def create_gcp_provider(provider_name, yaml, args):
                 or "monkeyfs-" + ''.join(random.choice(string.ascii_lowercase) for _ in range(6))
     monkeyfs_path = os.path.join(os.getcwd(), "ansible/monkeyfs-gcp")
 
-    filesystem_ok = False
     # Create filesystem bucket and pick a new id if failed
+    filesystem_ok = False
     while filesystem_ok == False:
 
         details["gcp_region"] = region_input
@@ -116,6 +116,7 @@ def create_gcp_provider(provider_name, yaml, args):
         print("\nWriting to providers.yml...")
         with open('providers.yml', 'w') as file:
             y = YAML()
+            yaml.fa.set_block_style()
             y.explicit_start = True
             y.default_flow_style = False
             y.dump(yaml, file)
@@ -165,6 +166,7 @@ def create_gcp_provider(provider_name, yaml, args):
             "ansible_host": "networkInterfaces[0].accessConfigs[0].natIP"
         }
     }))
+    gcp_inventory.fa.set_block_style()
     write_inventory_file(gcp_inventory)
 
 

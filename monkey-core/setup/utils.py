@@ -24,6 +24,26 @@ def get_monkey_fs():
         return fs_path
     return None
 
+def aws_cred_file_environment(file):
+    print(file)
+    with open(file) as f:
+        lines = f.readlines()
+        print(lines)
+        names = lines[0].split(",")
+        values = lines[1].split(",")
+        print(names[2])
+        print(names[3])
+        
+        if names[2] != "Access key ID" or names[3] != "Secret access key":
+            raise ValueError("The AWS Cred File does not look like a csv cred file")
+
+        access_key_id = values[2]
+        access_key_secret = values[3]
+        return {
+            "AWS_ACCESS_KEY_ID": access_key_id,
+            "AWS_SECRET_ACCESS_KEY": access_key_secret,
+        }
+
 
 class Completer(object):
 
