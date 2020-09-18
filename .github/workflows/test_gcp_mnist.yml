@@ -18,12 +18,12 @@ jobs:
       run:
         shell: bash
         working-directory: monkey-core
-      steps:
-      - name: Nothing
-        run: |
-          echo "This is a placeholder action"
-#     steps:
-#     - name: Check for existing monkeyfs
+    steps:
+    - name: Nothing
+      run: |
+        echo "This is a placeholder action"
+    # steps:
+    # - name: Check for existing monkeyfs
 #       run: | 
 #         pwd
 #         if command -v tree > /dev/null; then
