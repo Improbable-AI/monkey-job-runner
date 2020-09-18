@@ -22,6 +22,7 @@ jobs:
     - name: Nothing
       run: |
         echo "This is a placeholder action"
+      working-directory: "."
     # steps:
     # - name: Check for existing monkeyfs
 #       run: | 
