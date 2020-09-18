@@ -1,0 +1,19 @@
+server {
+    listen 9991;
+
+    location / {
+        include proxy_params;
+        proxy_pass http://unix:/home/{{ ansible_ssh_user }}/.monkey-client/monkey-client.sock;
+    }
+}
+
+server {
+    listen 80;
+
+    root /home/{{ ansible_ssh_user }};
+
+    location / {
+        autoindex on;
+        try_files $uri $uri/ =404;
+    }
+}

@@ -1,0 +1,93 @@
+---
+
+- name: Check for existing swapfile
+  shell: test -f /swapfile
+  changed_when: false
+  ignore_errors: true
+  register: swapfile_test
+
+- name:
+  debug:
+    msg: "Swapfile test: {{ swapfile_test }}"
+
+- name: Create and mount swapfile
+  when: swapfile_test.failed
+  block:
+    - name: Create swap file
+      become: true
+      command: dd if=/dev/zero of=/swapfile bs=1024 count=512k
+              creates=/swapfile
+
+    - name: Change swap file permissions
+      become: true
+      file: 
+        path: /swapfile
+        owner: root
+        group: root
+        mode: 0600
+
+    - name: Make swap file
+      become: true
+      command: mkswap /swapfile
+
+
+    - name: Write swap entry in fstab
+      become: true
+      mount:
+        src: /swapfile
+        path: /swapfile
+        fstype: swap
+        opts: sw
+        state: present
+
+    - name: Mount swap
+      become: true
+      command: "swapon /swapfile"
+
+
+- name: Check for gcsfuse
+  command: which gcsfuse
+  register: gcsfuse_found
+  ignore_errors: true
+
+- name: Install GCSFuse and Python dependencies
+  when: gcsfuse_found.rc != 0
+  block:
+  - name: get os gcsutil string
+    shell: echo gcsfuse-$(lsb_release -c -s)
+    register: gsfuse_name
+  - name: add gcloud repository
+    become: true
+    apt_repository:
+      repo: deb http://packages.cloud.google.com/apt {{ gsfuse_name.stdout }} main
+      update_cache: yes
+      state: present
+      filename: gsfuse
+    retries: 2
+
+  - name: add gcloud apt key
+    become: true
+    apt_key:
+      url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+      state: present
+      
+
+  - name: apt update install gcsfuse python3 nginx
+    become: true
+    apt:
+      update_cache: yes
+      name: 
+        - gcsfuse
+        - python3
+        - python3-pip
+        - python3-venv
+        - python3-dev
+        - nginx
+        - tree
+      state: present
+  
+  - name: Install virtualenv via pip
+    become: yes
+    pip:
+      name: virtualenv
+      executable: pip3

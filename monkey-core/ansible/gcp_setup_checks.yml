@@ -1,0 +1,15 @@
+---
+- hosts: localhost
+  name: Locate GCS Bucket and Ensure permissions
+  
+  pre_tasks:
+    - name: Import default vars
+      include_vars:
+        file: gcp_vars.yml
+    - name: Get variables from gcp private key
+      set_fact:
+        gcp_project: "{{ (lookup('file', gcp_cred_file) | from_json).project_id }}"
+
+  roles:
+    - gcp/setup_fs/create_fs
+    - gcp/setup_fs/mount_fs

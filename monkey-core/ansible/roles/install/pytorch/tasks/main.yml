@@ -1,0 +1,7 @@
+---
+- name: Installs pytorch (torch, torchvision)
+  pip:
+    state: present
+    name:
+      - torch
+      - torchvision

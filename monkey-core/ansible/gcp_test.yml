@@ -1,0 +1,14 @@
+---
+- hosts: monkey_gcp
+  name: Testing playbook
+  
+  pre_tasks:
+    - name: Import default vars
+      include_vars:
+        file: gcp_vars.yml
+    - name: Get variables from gcp private key
+      set_fact:
+        gcp_project: "{{ (lookup('file', gcp_cred_file) | from_json).project_id }}"
+
+  roles:
+    - install/conda

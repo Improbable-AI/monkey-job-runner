@@ -1,0 +1,18 @@
+---
+providers:
+# 
+# AWS Provider: aws
+- name: aws
+  type: aws
+  aws_region: us-east-1
+  aws_zone: us-east-1c
+  aws_cred_file: /Users/avery/Developer/projects/monkey-project/monkey-core/monkey-aws-credentials.csv  # Used for mounting filesystems
+
+
+# ###########
+# # Optional
+# ###########
+  aws_ssh_private_key_path: keys/monkey-aws # Defaults to keys/aws
+  storage_name: monkeyfs-qdbsss # Defaults to monkeyfs-XXXXXX
+  local_monkeyfs_path: /Users/avery/Developer/projects/monkey-project/monkey-core/ansible/monkeyfs-aws
+  monkeyfs_path: /monkeyfs  # Defaults to /monkeyfs
