@@ -20,12 +20,19 @@
 - name: Debug create mountpoint
   debug: 
     msg: "Mountpoint {{create_mountpoint.failed}}"
+- name: Check for mount
+  shell: "df | grep monkeyfs"
+  register: mount_found
+  ignore_errors: True
+- name: S3FS Mounting the Bucket
+  when: mount_found is failed
+  debug:
+    msg: "Mounting with: s3fs {{aws_storage_name}} {{monkeyfs_path}}"
 - name: Mount fs to Mountpoint
-  when: create_mountpoint is not failed
-
+  when: mount_found is failed
+  environment:
+      "AWSACCESSKEYID": "{{access_key_id}}"
+      "AWSSECRETACCESSKEY": "{{access_key_secret}}"
   command:
-    environment:
-        "AWS_ACCESS_KEY_ID": "{{access_key_id}}"
-        "AWS_SECRET_ACCESS_KEY": "{{access_key_secret}}"
     cmd: "s3fs {{aws_storage_name}} {{monkeyfs_path}}"
 
