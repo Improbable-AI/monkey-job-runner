@@ -1,0 +1,187 @@
+---
+  # tasks:
+# - name: Include AWS variables
+#   include_vars:
+#     file: "{{ gcp_cred_file }}"
+
+- name: Create VPC
+  ec2_vpc_net:
+    name: Monkey_VPC
+    cidr_block: 10.0.0.0/24
+    region: "{{aws_region}}"
+    
+    tenancy: default
+    tags:
+      Name: Monkey_VPC
+      Monkey: "Monkey_AWS"
+  register: monkey_vpc
+
+- name: Printout Monkey_VCP
+  debug:
+    msg: "{{monkey_vpc}}"
+
+- name: Set vpc facts
+  set_fact:
+    monkey_vpc_id: "{{monkey_vpc.vpc.id}}"
+
+- name: Create subnet for  servers
+  ec2_vpc_subnet:
+    state: present
+    vpc_id: "{{monkey_vpc_id}}"
+    map_public: true
+    cidr: 10.0.0.0/24
+    region: "{{ aws_region }}"
+    az: "{{ aws_zone }}"
+    tags:
+      Name: Monkey_Subnet
+      Monkey: "Monkey_AWS"
+  register: monkey_subnet
+
+- name: Set vpc subnet facts
+  set_fact:
+    monkey_subnet_id: "{{monkey_subnet.subnet.id}}"
+- name: Printout Monkey_VCP
+  debug:
+    msg: "{{monkey_subnet}}"
+
+- name: Create vpc Internet Gateway
+  ec2_vpc_igw:
+    state: present
+    vpc_id: "{{monkey_vpc_id}}"
+    region: "{{aws_region}}"
+    tags:
+      Name: "Monkey_IGW"
+      Monkey: "Monkey_AWS"
+  register: monkey_igw
+- name: Set vpc Internet Gateway facts
+  set_fact:
+    monkey_igw_id: "{{monkey_igw.gateway_id}}"
+
+- name: Fetch route tables
+  ec2_vpc_route_table_info:
+    region: "{{aws_region}}"
+    filters:
+      vpc-id: "{{monkey_vpc_id}}"
+  register: route_table_info
+- name: Debug table info
+  debug:
+    msg: "{{route_table_info}}"
+- name: Set route table id fact
+  set_fact:
+    monkey_route_table_id: "{{route_table_info.route_tables.0.id}}"
+
+- name: Create Route Table for VPC
+  ec2_vpc_route_table:
+    state: present
+    vpc_id: "{{monkey_vpc_id}}"
+    route_table_id: "{{monkey_route_table_id}}"
+    lookup: id
+    region: "{{aws_region}}"
+    tags:
+      Name: Monkey_Route_Table
+      Monkey: "Monkey_AWS"
+    subnets:
+      - "{{monkey_subnet_id}}"
+    routes:
+      - dest: "10.0.0.0/24"
+        gateway_id: local
+      - dest: "0.0.0.0/0"
+        gateway_id: "{{monkey_igw_id}}"
+
+- name: Create Monkey Security group
+  ec2_group:
+    name: Monkey_Security_Group
+    description: The security group for monkey job runners
+    vpc_id: "{{monkey_vpc_id}}"
+    region: "{{aws_region}}"
+    rules:
+      - proto: tcp
+        ports:
+          - 22
+          - 80
+          - 443
+          - 9991
+        cidr_ip: "0.0.0.0/0"
+      - proto: udp
+        ports:
+          - 22
+          - 80
+          - 443
+          - 9991
+        cidr_ip: "0.0.0.0/0"
+  register: monkey_security_group
+
+- name: Create ec2 Instance
+  ec2:
+    exact_count: 1
+    count_tag: 
+      Name: "{{ monkey_job_uid }}"
+    instance_type: t2.micro
+    instance_tags:
+      Name: "{{ monkey_job_uid }}"
+      Monkey: "Monkey_AWS"
+    image: ami-0bcc094591f354be2
+    key_name: "{{ aws_key_name }}"
+    wait: yes
+    group: Monkey_Security_Group
+    vpc_subnet_id: "{{monkey_subnet_id}}"
+    assign_public_ip: yes
+    region: "{{ aws_region }}"
+    zone: "{{ aws_zone }}"
+  register: instance
+- name:  Debug instance
+  debug:
+    msg: "{{ instance }}"
+
+- name: Assert public ip address
+  set_fact:
+    public_ip: "{{ instance.tagged_instances.0.public_ip}}"
+  register: found_public_ip
+  until: found_public_ip is not failed
+  delay: 5
+  retries: 10
+  ignore_errors: true
+
+- name: Wait for SSH to come up
+  wait_for: 
+    host: "{{ public_ip }}"
+    port: 22
+    timeout: 15
+  register: wait_for_ssh
+  delay: 2
+  until: wait_for_ssh is not failed
+  retries: 5
+  ignore_errors: true
+
+
+
+- name: Get keyscan host key
+  command: "ssh-keyscan -trsa  {{ public_ip }}"
+  retries: 3
+  delay: 2
+  register: host_key_task
+  until: host_key_task.rc == 0
+- name: Set host key fact
+  set_fact:
+    host_key: "{{ host_key_task.stdout }}"
+
+- name: Remove old known hosts
+  lineinfile:
+    dest: ~/.ssh/known_hosts
+    create: yes
+    state: absent
+    regexp: "{{ public_ip }}.*"
+- name: Add to known hosts
+  lineinfile:
+    dest: ~/.ssh/known_hosts
+    create: yes
+    state: present
+    line: "{{ host_key }}"
+
+- name: Add host to groupname
+  add_host: 
+    name: "{{ public_ip }}"
+    groups:
+      - "new_host"
+    ansible_user: "ubuntu"
+    ansible_ssh_private_key_file: "keys/{{ aws_key_name }}.pem"

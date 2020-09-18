@@ -1,0 +1,24 @@
+---
+  # tasks:
+
+# TODO: ensure copying of data over with shutdown script
+- name: Delete a instance
+    ec2:
+      exact_count: 1
+      count_tag: 
+        Name: "{{ monkey_job_uid }}"
+      instance_type: t2.nano
+      instance_tags:
+        Name: "{{ monkey_job_uid }}"
+        Monkey: "Monkey_AWS"
+      image: ami-0bcc094591f354be2
+      key_name: "{{ aws_key_name }}"
+      wait: yes
+      group: Monkey_Security_Group
+      vpc_subnet_id: "{{monkey_subnet_id}}"
+      assign_public_ip: yes
+      region: "{{ aws_region }}"
+      zone: "{{ aws_zone }}"
+      state: absent
+  register: instance
+  

@@ -5,12 +5,12 @@ import random
 import string
 import datetime
 
-import logging 
+import logging
 logger = logging.getLogger(__name__)
+
 
 class MonkeyJob():
     job_name = None
-
 
 
 class MonkeyJobGCP(MonkeyJob):

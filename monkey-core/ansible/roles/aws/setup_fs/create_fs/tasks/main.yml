@@ -1,0 +1,11 @@
+---
+    
+- name: Printout fs name
+  debug:
+    msg: "FS Name: {{ storage_name }}"
+- name: Create filesystem 
+  aws_s3:
+    bucket: "{{ storage_name}}"
+    mode: create
+    region: "{{ aws_region }}"
+    permission: "private"

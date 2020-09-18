@@ -10,6 +10,63 @@
 4. Allow for any sort of workflow (non-docker, script installation)
 5. Allow for preemptible instances
 
+
+The Monkey Job runner system is designed to augment a researchers ability to run experiments on other machines without designing any infrastructure to handle job dispatching and coordination throughout a hybrid cloud environment.  After a simple setup procedure, Monkey will handle coordination between different environments, ensuring experiments run until completion and tracking results.  Monkey is designed for researchers to use on their local machine and dispatch to other machines whenever parallelism is desired.  Monkey allows researchers to interact with the system through a couple of ways after setup is completed.
+
+### Ad-hoc Dispatch
+
+```bash
+monkey run -provider {aws|gcp|local} python3 mnist.py --learning-rate 0.14
+```
+
+### Scripting Dispatch
+
+```python
+from monkeycli.monkeycli import MonkeyCLI
+
+learning_rates = ["0.01", "0.02", "0.03", "0.05", "0.10"]
+
+for rate in learning_rates:
+    monkey = MonkeyCLI()
+    monkey.run("python -u mnist.py --learning-rate {}".format(rate))
+```
+
+### Hyper-parameter Sweep Dispatch
+
+```python
+from monkeycli.monkeycli import MonkeyCLI, PowerTwoParameter
+
+args = {
+	'learning-rate': PowerTwoParameter(0.01, 5), # 0.01, 0.02, 0.04, 0.08, 0.016
+	'n-epochs' : [1, 3, 5],
+	'
+}
+monkey = MonkeyCLI()
+monkey.sweep(args)
+```
+
+## Requirements
+
+Monkey aims to be extremely minimal in terms of requirements.  Requirements differ based on the type of providers a researcher is using.  
+
+- A **main node** machine that is always running.  Must be accessible through **https** to send jobs to.  Does not require escalated privileges.  (The **main node** can be the same machine that researchers dispatch jobs from)
+
+### Local Provider Requirements
+
+- A shared filesystem between **local nodes** accessible by the **main node**
+- SSH access from the main node to all **local nodes**
+
+### Cloud Provider Requirements
+
+- **Cloud Permissions**
+    - VPC permissions: creation of subnet
+    - EC2 or GCE permissions: creation/deletion/edit of instances
+    - S3 or GCS permissions: shared filesystem
+- **main node:** Must have **s3fs** or **gcsfuse** installed to mount the provider's filesystem
+
+
+
+
 ## Implementation
 
 There are a couple of parts that make up the monkey system.  
@@ -18,88 +75,60 @@ There are a couple of parts that make up the monkey system.
 - Monkey Client
 - Monkey Web (TODO later, visualize all jobs, create jobs, etc)
 
-Generally, the monkey CLI holds a Monkey Framework object, which will handle the tracking of all current jobs, dispatching of all new jobs, and other convienient features that can help interfacing with multiple providers without necessarily using their website.  The Monkey Client will be installed and run on each job-instance, and it will communicate with the Monkey Framework in order to coordinate information such as heartbeats, job status/stage, job initialization, logs, etc.
+### Monkey Core
+
+**Monkey Core** is the main coordinator of the entire monkey system.  It handles persistence of job requests, interfacing with different providers to spin up or restart instances.  **Monkey Core** coordinates tasks in multiple different ways, exposing an API (powered by [Flask](https://flask.palletsprojects.com/en/1.1.x/)) for **Monkey CLI** to submit jobs, using **[Ansible](https://www.ansible.com/)** to interface with providers and manage instances, persisting job requests in a local [MongoDB](https://www.mongodb.com/) database, and receiving and sending files to the needed shared filesystems for job dispatching.
+
+### Monkey Core (Flask API)
+
+The **Monkey Core** python framework contains a lightweight flask wrapper to allow a **Monkey CLI** submit a job/dataset/codebase to run and run commands to get the status of a job or instances created by **Monkey Core** in cloud providers.  The Flask API's main job is to coordinate the sending of a job from **Monkey CLI** and commit it to being run.  After receiving a job, it will commit the files to the correct filesystem to be shared with a runner node and write the metadata to the MongoDB database.  As long as the files are committed and the metadata for the run is stored in the MongoDB database, then the run will be entirely reproducible as the metadata contains all the information needed and file paths to reconstruct the run.  The Flask API coordinates the saving of packed dataset or codebase files and checksums datasets to ensure they are only uploaded once.  After the job is fully committed, the flask api will pass through the request to the Monkey Core Framework to add it to the run loop. 
+
+### Monkey Core (Ansible)
+
+Ansible is used to configure machines over SSH and reduce code complexity by creating Ansible Playbooks that simplify and make remote commands readable.  Ansible is also used to do cloud specific setup such as creating an AWS VPC, Subnet, Internet Gateway, and Buckets for storage.  Ansible dynamic inventories allows the Monkey Core interface to also scan cloud providers for existing instances and pull instance metadata easily.
+
+### Monkey Core (Framework)
+
+**Monkey Core** has a setup script that needs to be run to add providers to it and set it up on a new machine.  When running `setup.py`, it writes to various configuration files to coordinate future steps in initializing and accessing providers instances (explained in basic steps under **Installation**).  Specifically, when setting up a cloud provider, it asks for the provider credentials file and writes an Ansible Inventory file for that provider, a vars file populated with default regions/zones, filesystem bucket name and local mount point (S3, GCS), and any other information needed.  
+
+---
 
 ### Monkey CLI
 
-The monkey CLI is hopefully going to be how users interact with the monkey system.  
+The **Monkey CLI** is the user facing program used to dispatch jobs.  It will be installable as a pypi package that helps researchers configure and setup their jobs to run.  It also is the tool that helps users make programatic sweeps across hyper-parameters.  
 
-So far there are certain commands. 
-`./monkey-cli.py` Will start a monkey cmd prompt shell
-executing `./monkey-cli.py arg1 arg2 ...` will execute one monkey command and return
+Monkey CLI is intended to be installed through pip as a framework that can be imported or also used directly through command line functions.  There will be a minimal command line set to start with, but eventually we hope for the cli tool to be powerful way to dispatch jobs, inspect them, track progress, and quicklink to the Monkey Website to see results or fetch them quickly. Some examples of cli function we imagine in the early stage of monkey include 
 
-So far the command set that I am thinking about is.
-```
-run
-  (cmd)
+```bash
+# Dispatches a job
+monkey run --provider aws $CMD
 
-# This may be removed later as run creates an instance and runs stuff
-create
-  instance
-    - Creates an instance in the specified provider, allows for 
+# Lists current jobs
+monkey list jobs --running --finished --queued
+# Lists configured providers and provider based information
+monkey list providers --monkey-instances
+# Tails logs of the specified job
+monkey logs --follow --juid 20-09-17-001
 
-list
-  jobs (optional: providers=[], default=all defined providers)
-    - Lists all existing jobs in all providers that are running
-  providers
-    - Lists all defined providers (convenience)
+# Opens the webpage to inspect info for the job
+monkey web --juid 20-09-17-001
 
-kill
-  job
-    - Used to kill/cancel a job
-
-info
-  job
-    - Takes in the specified job and returns info on the job status/state
-
+# Modify running jobs
+monkey job cancel/pause --juid 20-09-17-001
 ```
 
+The Monkey CLI can also be used as an imported python framework with the code for running sweeps easily and quickly. An example of dispatching with sweeps is given above in usage examples. Likewise the imported monkey framework can also track parameters and their values over time. To do this, simply add `monkey like.log(“accuracy”, accuracy)`. The logs will be asynchronously written to a file to produce graphs of parameter values over time for viewing.  
 
-### Monkey Framework
+The Monkey Cli is implemented as a stand-alone python executable that connects to the Monkey Core through the designated core api. The most important job feature is dispatching of a job. A job consists of a few major pieces (dataset, codebase, fs structure, and metadata) that needs to be sent to Monkey Core to persist and dispatch to runners available in the system. To do so, the API has multiple calls that are run in sequence to prepare and set up the job.  
 
-The monkey framework will be running as a daemon (in the future) and it should be able to restore its state (the state of all jobs, instances, etc) by just being initialized.  It highly depends on a config file, which is used to define different providers as well as machine defaults.  As in most workflows the machine defaults do not change, they will be defined in the config with overriding possible.  
+---
 
-Supported provider types:
-- GCP
-- Local (TODO)
-- Slurm (TODO)
-- AWS (TODO)
+### Monkey Client
 
-#### Monkey Framework Structure
+The Monkey Client is a daemon system that is run on all worker nodes. When spinning up new instances, the Monkey Client code will be cloned and run to coordinate with Monkey Core on key events. 
 
-The monkey framework has one main object for each provider, the `CloudHandler` object, which will have a subclass for each provider type and will manage all of the instances/jobs created in that provider.  To implement local providers, there will have to be some resource logic eventually to ensure that a machine isn't being overused.
+The Monkey Client can help keep track of job status as well as provide logs for it current step in the running process. It will also respond to heartbeats or request a redeployment if the spot instance is marked for termination.  It is a lightweight program that Monkey Core can communicate to in order to get real-time logs and other statistics on the machine.
 
-#### Configuring the Monkey Framework 
-
-The monkey framework is configured from a singular `providers.yml` file.  The details on configuration options can be found in `PROVDIERS.md`.
-
-
-#### Running a job
-
-Running a job on will create an instance on the specified provider, with the defined resources, and do a few things in order.
-
-1. Create the instance
-2. Pull the monkey-client script and run it (done first thing in startup-script-file).
-3. Run the defined `startup-script-file` (used to configure the instance with installations)
-4. Mount the specified filesystems
-5. Copy the source code repo
-6. Run the specified command
-
-
-#### Monkey Client
-
-The monkey client is the daemon installed on each job instance to manage a couple specific tasks.
-
-1. The state of the job
-2. Logs for the job
-3. Providing debug information if things fail
-4. Respond to heartbeats
-
-In the future I can also imagine it doing things like:
-
-5. Conditionally ending tasks (i.e. >n epoch but no results)
-6. Conditionally sending job information to Slack/services
-7. Storing Job stats
 
 
 

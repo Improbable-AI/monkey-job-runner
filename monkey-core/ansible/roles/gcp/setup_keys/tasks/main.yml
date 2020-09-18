@@ -3,7 +3,7 @@
 - name: Check for existing key
   file:
     state: file
-    path: "{{ gcp_ssh_private_key_file | default('keys/gcp') }}"
+    path: "{{ gcp_ssh_private_key_file | default('keys/monkey-gcp') }}"
   ignore_errors: yes
   register: existing_private
 
@@ -27,12 +27,17 @@
     - name: Store current gcloud account
       command: gcloud config get-value account
       register: prev_gcloud_account
-    - name: Printout og gcloud account
+    - name: Store current gcloud project
+      command: gcloud config get-value project
+      register: prev_gcloud_project
+    - name: Printout og gcloud info
       debug:
-        msg: "Previous account: {{ prev_gcloud_account.stdout }}"
+        msg: "Previous account: {{ prev_gcloud_account.stdout }}, project: {{prev_gcloud_project.stdout}}"
     - name: Switch to service account
       when: prev_gcloud_account.stdout != gcp_service_email
       command: "gcloud auth activate-service-account --key-file {{ gcp_cred_file }}"
+    - name: Switch to project
+      command: "gcloud config set project {{gcp_project}}"
     - name: Register new ssh key with service account os-login
       command: "gcloud compute os-login ssh-keys add --key-file {{ existing_private.path }}.pub"
 

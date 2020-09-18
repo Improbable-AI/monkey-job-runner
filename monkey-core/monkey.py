@@ -13,7 +13,7 @@ from core.monkey_provider import MonkeyProvider
 from setup.mongo_utils import *
 from termcolor import colored
 
-DAEMON_THREAD_TIME = 15
+DAEMON_THREAD_TIME = 5
 if get_monkey_db():
     logger.info("Connected to monkeydb")
 else:
@@ -67,7 +67,7 @@ class Monkey():
             timeout = timeout if timeout is not None else ""
             print("job_uid: {}, state: {}, elapsed: {}, timeout: {}".format(job.job_uid, job.state, elapsed_time, timeout ))
 
-        # TODO: retry counts
+        # TODO (averylamp): retry counts
         for job in pending_jobs:
             if job.state == MONKEY_STATE_QUEUED:
                 continue
@@ -153,7 +153,7 @@ class Monkey():
             except Exception as e:
                 logger.error("Could not instantiate provider \n{}".format(e))
 
-    def submit_job(self, job_yml, foreground = True):
+    def submit_job(self, job_yml:dict, foreground = True) -> (bool, str):
         """ Persists a job to run
 
         Args:
@@ -164,10 +164,7 @@ class Monkey():
             (bool, str): (Success, Message)
         """
         print("Monkey job yml submitted:", job_yml)
-        providers = job_yml.get("providers", [])
-        if len(providers) == 0:
-            return False, "No providers found"
-        provider, provider_name = providers[0], providers[0]["name"]
+        provider_name = job_yml["provider"]
         found_provider = None
         for p in self.providers:
             if p.name == provider_name:
