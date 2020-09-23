@@ -1,11 +1,10 @@
-
+import datetime
 import json
-import time
+import logging
 import random
 import string
-import datetime
+import time
 
-import logging
 logger = logging.getLogger(__name__)
 
 
@@ -14,6 +13,5 @@ class MonkeyJob():
 
 
 class MonkeyJobGCP(MonkeyJob):
-
     def __init__(self, ):
         super().__init__()

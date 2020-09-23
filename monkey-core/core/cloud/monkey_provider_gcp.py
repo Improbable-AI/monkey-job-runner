@@ -1,22 +1,22 @@
-import ansible_runner
-from ansible.vars.manager import VariableManager
-from ansible.inventory.manager import InventoryManager
-from ansible.parsing.dataloader import DataLoader
-from concurrent.futures import Future
-from threading import Thread
-from core.cloud.monkey_instance_gcp import MonkeyInstanceGCP
-from core.monkey_provider import MonkeyProvider
-import googleapiclient.discovery
-from google.oauth2 import service_account
+import datetime
 import json
-import time
+import logging
 import random
 import string
-import datetime
+import time
+from concurrent.futures import Future
+from threading import Thread
 
-import logging
+import ansible_runner
+import googleapiclient.discovery
+from ansible.inventory.manager import InventoryManager
+from ansible.parsing.dataloader import DataLoader
+from ansible.vars.manager import VariableManager
+from core.cloud.monkey_instance_gcp import MonkeyInstanceGCP
+from core.monkey_provider import MonkeyProvider
+from google.oauth2 import service_account
+
 logger = logging.getLogger(__name__)
-
 
 logging.getLogger("urllib3").setLevel(logging.WARNING)
 logging.getLogger("google.auth.transport.requests").setLevel(logging.WARNING)
@@ -59,7 +59,10 @@ class MonkeyProviderGCP(MonkeyProvider):
         self.credentials = service_account.Credentials.from_service_account_file(
             provider_info["gcp_cred_file"])
         self.compute_api = googleapiclient.discovery.build(
-            'compute', 'v1', credentials=self.credentials, cache_discovery=False)
+            'compute',
+            'v1',
+            credentials=self.credentials,
+            cache_discovery=False)
 
     def is_valid(self):
         # Check filesystem
@@ -86,8 +89,8 @@ class MonkeyProviderGCP(MonkeyProvider):
         instances = []
         # MARK(alamp): AnsibleInternalAPI
         loader = DataLoader()
-        inventory = InventoryManager(
-            loader=loader, sources="ansible/inventory")
+        inventory = InventoryManager(loader=loader,
+                                     sources="ansible/inventory")
         variable_manager = VariableManager(loader=loader, inventory=inventory)
         host_list = inventory.get_groups_dict().get("monkey_gcp", [])
         for host in host_list:
@@ -124,8 +127,10 @@ class MonkeyProviderGCP(MonkeyProvider):
                 if result:
                     for item in result:
                         labels = item['labels'] if 'labels' in item else []
-                        monkey_identifier_target = self.machine_defaults['monkey-identifier']
-                        if 'monkey-identifier' in labels and labels['monkey-identifier'] == monkey_identifier_target:
+                        monkey_identifier_target = self.machine_defaults[
+                            'monkey-identifier']
+                        if 'monkey-identifier' in labels and labels[
+                                'monkey-identifier'] == monkey_identifier_target:
                             jobs.append(item['name'])
             except:
                 pass
@@ -134,11 +139,13 @@ class MonkeyProviderGCP(MonkeyProvider):
     def list_images(self):
         images = []
         try:
-            result = self.compute_api.images().list(project=self.project).execute()
+            result = self.compute_api.images().list(
+                project=self.project).execute()
             result = result['items'] if 'items' in result else None
             if result:
-                images += [(inst["name"], inst["family"]
-                            if "family" in inst else None) for inst in result]
+                images += [(inst["name"],
+                            inst["family"] if "family" in inst else None)
+                           for inst in result]
         except:
             pass
 
@@ -146,8 +153,9 @@ class MonkeyProviderGCP(MonkeyProvider):
 
     def create_instance(self, machine_params=dict()):
 
-        runner = ansible_runner.run(
-            playbook='gcp_create_job.yml', private_data_dir='ansible', extravars=machine_params)
+        runner = ansible_runner.run(playbook='gcp_create_job.yml',
+                                    private_data_dir='ansible',
+                                    extravars=machine_params)
         print(runner.stats)
 
         if len(runner.stats.get("failures")) != 0:
@@ -156,8 +164,8 @@ class MonkeyProviderGCP(MonkeyProvider):
         retries = 4
         while retries > 0:
             loader = DataLoader()
-            inventory = InventoryManager(
-                loader=loader, sources="ansible/inventory")
+            inventory = InventoryManager(loader=loader,
+                                         sources="ansible/inventory")
             try:
                 h = inventory.get_host(machine_params["monkey_job_uid"])
                 host_vars = h.get_vars()

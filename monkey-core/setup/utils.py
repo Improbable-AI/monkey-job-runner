@@ -1,11 +1,12 @@
 import os
 import readline
 import subprocess
+
 from mongoengine import *
 
 
 def get_monkey_fs():
-  # Check env variable MONKEYFS_PATH first
+    # Check env variable MONKEYFS_PATH first
     fs_path = os.environ.get("MONKEYFS_PATH", None)
     if fs_path is not None:
         print("Found env path:", fs_path)
@@ -16,13 +17,15 @@ def get_monkey_fs():
             return fs_path
         print("Did not find mount aligning with fs_path:", fs_path)
     # Check for mounts
-    fs_output = subprocess.check_output("df ansible/monkeyfs | grep monkeyfs | awk '{print $NF}'",
-                                        shell=True).decode("utf-8")
+    fs_output = subprocess.check_output(
+        "df ansible/monkeyfs | grep monkeyfs | awk '{print $NF}'",
+        shell=True).decode("utf-8")
     print(fs_output)
     if fs_output is not None and fs_output != "":
         fs_path = fs_output.split("\n")[0]
         return fs_path
     return None
+
 
 def aws_cred_file_environment(file):
     print(file)
@@ -33,9 +36,10 @@ def aws_cred_file_environment(file):
         values = lines[1].split(",")
         print(names[2])
         print(names[3])
-        
+
         if names[2] != "Access key ID" or names[3] != "Secret access key":
-            raise ValueError("The AWS Cred File does not look like a csv cred file")
+            raise ValueError(
+                "The AWS Cred File does not look like a csv cred file")
 
         access_key_id = values[2]
         access_key_secret = values[3]
@@ -46,7 +50,6 @@ def aws_cred_file_environment(file):
 
 
 class Completer(object):
-
     def _listdir(self, root):
         "List directory 'root' appending the path sep arator to subdirs."
         res = []
@@ -63,8 +66,10 @@ class Completer(object):
             return self._listdir('.')
         dirname, rest = os.path.split(path)
         tmp = dirname if dirname else '.'
-        res = [os.path.join(dirname, p)
-               for p in self._listdir(tmp) if p.startswith(rest)]
+        res = [
+            os.path.join(dirname, p) for p in self._listdir(tmp)
+            if p.startswith(rest)
+        ]
         # more than one match, or single match which does not exist (typo)
         if len(res) > 1 or not os.path.exists(path):
             return res

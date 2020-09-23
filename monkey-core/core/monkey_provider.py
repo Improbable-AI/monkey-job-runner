@@ -1,21 +1,20 @@
-
-import ansible_runner
-from ansible.vars.manager import VariableManager
-from ansible.inventory.manager import InventoryManager
-from ansible.parsing.dataloader import DataLoader
-from concurrent.futures import Future
-from threading import Thread
-import googleapiclient.discovery
-from google.oauth2 import service_account
+import datetime
 import json
-import time
+import logging
 import random
 import string
-import datetime
+import time
+from concurrent.futures import Future
+from threading import Thread
 
-import logging
+import ansible_runner
+import googleapiclient.discovery
+from ansible.inventory.manager import InventoryManager
+from ansible.parsing.dataloader import DataLoader
+from ansible.vars.manager import VariableManager
+from google.oauth2 import service_account
+
 logger = logging.getLogger(__name__)
-
 
 logging.getLogger("urllib3").setLevel(logging.WARNING)
 logging.getLogger("google.auth.transport.requests").setLevel(logging.WARNING)
@@ -33,9 +32,10 @@ def call_with_future(fn, future, args, kwargs):
 def threaded(fn):
     def wrapper(*args, **kwargs):
         future = Future()
-        Thread(target=call_with_future, args=(
-            fn, future, args, kwargs)).start()
+        Thread(target=call_with_future,
+               args=(fn, future, args, kwargs)).start()
         return future
+
     return wrapper
 
 
@@ -98,16 +98,12 @@ class MonkeyProvider():
         raise NotImplementedError("This is not implemented yet")
 
     def is_valid(self):
-        return not(self.zone == None or
-                   self.name == None or
-                   self.provider_type == None)
+        return not (self.zone == None or self.name == None
+                    or self.provider_type == None)
 
     def __str__(self):
         return "Name: {}, provider: {}, zone: {}"\
             .format(self.name, self.provider_type, self.zone)
 
     def get_dict(self):
-        return {
-            "name": self.name,
-            "type": self.provider_type
-        }
+        return {"name": self.name, "type": self.provider_type}
