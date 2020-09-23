@@ -1,5 +1,7 @@
-from mongoengine import *
 from datetime import datetime, timedelta
+
+from mongoengine import *
+
 MONKEY_STATE_QUEUED = "QUEUED"
 MONKEY_STATE_DISPATCHING = "DISPATCHING"
 MONKEY_STATE_DISPATCHING_MACHINE = "DISPATCHING_MACHINE"
@@ -8,7 +10,6 @@ MONKEY_STATE_DISPATCHING_SETUP = "DISPATCHING_SETUP"
 MONKEY_STATE_RUNNING = "RUNNING"
 MONKEY_STATE_CLEANUP = "CLEANING_UP"
 MONKEY_STATE_FINISHED = "FINISHED"
-
 
 MONKEY_TIMEOUT_DISPATCHING_MACHINE = 60 * 4  # 5 min to dispatch machine max
 MONKEY_TIMEOUT_DISPATCHING_INSTALLS = 60 * 5  # 5 min to dispatch installs max
@@ -84,9 +85,10 @@ class MonkeyJob(DynamicDocument):
             self.run_cleanup_start_date = datetime.now()
         elif state == MONKEY_STATE_FINISHED:
             self.completion_date = datetime.now()
-            self.total_wall_time = (
-                datetime.now() - self.creation_date).total_seconds()
+            self.total_wall_time = (datetime.now() -
+                                    self.creation_date).total_seconds()
             if self.run_cleanup_start_date is None:
                 # Ensures cleanup will be run immediately
-                self.run_cleanup_start_date = datetime.now() - timedelta(days=5)
+                self.run_cleanup_start_date = datetime.now() - timedelta(
+                    days=5)
         self.save()

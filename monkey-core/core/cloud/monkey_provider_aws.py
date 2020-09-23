@@ -1,22 +1,25 @@
-import ansible_runner
-from ansible.vars.manager import VariableManager
-from ansible.inventory.manager import InventoryManager
-from ansible.parsing.dataloader import DataLoader
-from concurrent.futures import Future
-from threading import Thread
-from core.cloud.monkey_instance_aws import MonkeyInstanceAWS
-from core.monkey_provider import MonkeyProvider
+import datetime
 import json
-import time
+import logging
+import os
 import random
 import string
-import datetime
-import os
+import time
+from concurrent.futures import Future
+from threading import Thread
+
+import ansible_runner
+from ansible.inventory.manager import InventoryManager
+from ansible.parsing.dataloader import DataLoader
+from ansible.vars.manager import VariableManager
+from core.cloud.monkey_instance_aws import MonkeyInstanceAWS
+from core.monkey_provider import MonkeyProvider
 from setup.utils import aws_cred_file_environment
 
-import logging
 logger = logging.getLogger(__name__)
 logging.getLogger("botocore").setLevel(logging.WARNING)
+
+
 class MonkeyProviderAWS(MonkeyProvider):
 
     raw_provider_info = dict()
@@ -45,19 +48,17 @@ class MonkeyProviderAWS(MonkeyProvider):
         if "aws_cred_file" not in provider_info:
             logger.error("Failed to provider aws_cred_file for account")
             raise ValueError("Failed to provider aws_cred_file for account")
-            
+
         self.credential_file = provider_info["aws_cred_file"]
         cred_environment = aws_cred_file_environment(self.credential_file)
         for key, value in cred_environment.items():
             os.environ[key] = value
 
-        
     def is_valid(self):
         return super().is_valid()
-    
+
     def get_local_filesystem_path(self):
         return self.raw_provider_info["local_monkeyfs_path"]
-
 
     def check_connection(self):
         pass
@@ -66,8 +67,8 @@ class MonkeyProviderAWS(MonkeyProvider):
         instances = []
         # MARK(alamp): AnsibleInternalAPI
         loader = DataLoader()
-        inventory = InventoryManager(
-            loader=loader, sources="ansible/inventory")
+        inventory = InventoryManager(loader=loader,
+                                     sources="ansible/inventory")
         variable_manager = VariableManager(loader=loader, inventory=inventory)
         host_list = inventory.get_groups_dict().get("monkey_aws", [])
         for host in host_list:
@@ -104,8 +105,10 @@ class MonkeyProviderAWS(MonkeyProvider):
                 if result:
                     for item in result:
                         labels = item['labels'] if 'labels' in item else []
-                        monkey_identifier_target = self.machine_defaults['monkey-identifier']
-                        if 'monkey-identifier' in labels and labels['monkey-identifier'] == monkey_identifier_target:
+                        monkey_identifier_target = self.machine_defaults[
+                            'monkey-identifier']
+                        if 'monkey-identifier' in labels and labels[
+                                'monkey-identifier'] == monkey_identifier_target:
                             jobs.append(item['name'])
             except:
                 pass
@@ -114,11 +117,13 @@ class MonkeyProviderAWS(MonkeyProvider):
     def list_images(self):
         images = []
         try:
-            result = self.compute_api.images().list(project=self.project).execute()
+            result = self.compute_api.images().list(
+                project=self.project).execute()
             result = result['items'] if 'items' in result else None
             if result:
-                images += [(inst["name"], inst["family"]
-                            if "family" in inst else None) for inst in result]
+                images += [(inst["name"],
+                            inst["family"] if "family" in inst else None)
+                           for inst in result]
         except:
             pass
 
@@ -126,8 +131,9 @@ class MonkeyProviderAWS(MonkeyProvider):
 
     def create_instance(self, machine_params=dict()):
 
-        runner = ansible_runner.run(
-            playbook='aws_create_job.yml', private_data_dir='ansible', extravars=machine_params)
+        runner = ansible_runner.run(playbook='aws_create_job.yml',
+                                    private_data_dir='ansible',
+                                    extravars=machine_params)
         print(runner.stats)
 
         if len(runner.stats.get("failures")) != 0:
@@ -135,8 +141,8 @@ class MonkeyProviderAWS(MonkeyProvider):
         retries = 4
         while retries > 0:
             loader = DataLoader()
-            inventory = InventoryManager(
-                loader=loader, sources="ansible/inventory")
+            inventory = InventoryManager(loader=loader,
+                                         sources="ansible/inventory")
             try:
                 print("Checking inventory for host machine")
                 h = inventory.get_host(machine_params["monkey_job_uid"])

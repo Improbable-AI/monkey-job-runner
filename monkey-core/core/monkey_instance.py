@@ -1,17 +1,18 @@
-
-import ansible_runner
-from concurrent.futures import Future
-from threading import Thread
+import datetime
 import json
-import time
+import logging
+import os
 import random
 import string
-import datetime
 import threading
+import time
+from concurrent.futures import Future
+from threading import Thread
+
+import ansible_runner
 import requests
 import yaml
-import os
-import logging
+
 logger = logging.getLogger(__name__)
 
 HEARTBEAT_TIME = 30
@@ -30,9 +31,10 @@ def call_with_future(fn, future, args, kwargs):
 def threaded(fn):
     def wrapper(*args, **kwargs):
         future = Future()
-        Thread(target=call_with_future, args=(
-            fn, future, args, kwargs)).start()
+        Thread(target=call_with_future,
+               args=(fn, future, args, kwargs)).start()
         return future
+
     return wrapper
 
 

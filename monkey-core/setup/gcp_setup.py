@@ -1,11 +1,13 @@
 import os
-from ruamel.yaml import YAML, round_trip_load
-import ansible_runner
 import random
-import string
 import readline
+import string
+
+import ansible_runner
+from ruamel.yaml import YAML, round_trip_load
 
 from setup.utils import Completer
+
 comp = Completer()
 # we want to treat '/' as part of a word, so override the delimiters
 readline.set_completer_delims(' \t\n;')
@@ -15,8 +17,8 @@ readline.set_completer(comp.complete)
 
 def check_gcp_provider(yaml):
     provider_name = yaml.get("name")
-    print("Checking integrity of", provider_name,
-          "with type:", yaml.get("type"))
+    print("Checking integrity of", provider_name, "with type:",
+          yaml.get("type"))
     storage_name = yaml.get("storage_name")
 
     print("Checking if {} is mounted".format(storage_name))
@@ -33,13 +35,14 @@ def check_gcp_provider(yaml):
 
 
 def create_gcp_provider(provider_name, yaml, args):
-    details = round_trip_load(str({
-        "name": provider_name,
-        "type": "gcp",
-        "project": "",
-        "gcp_cred_kind": "serviceaccount",
-        "gcp_cred_file": "",
-    }))
+    details = round_trip_load(
+        str({
+            "name": provider_name,
+            "type": "gcp",
+            "project": "",
+            "gcp_cred_kind": "serviceaccount",
+            "gcp_cred_file": "",
+        }))
 
     while details["project"] == "":
         service_account_file = args.identification_file
@@ -50,11 +53,15 @@ def create_gcp_provider(provider_name, yaml, args):
 
         if service_account_file is None:
             if args.noinput == True:
-                raise ValueError("Please input the identity-file (gcp service account file)")
+                raise ValueError(
+                    "Please input the identity-file (gcp service account file)"
+                )
             service_account_file = input("GCP Service Account File: ")
             service_account_file = os.path.abspath(service_account_file)
         elif service_account_file is None:
-            print("Please pass in an service account with -i/--identification-file")
+            print(
+                "Please pass in an service account with -i/--identification-file"
+            )
             exit(1)
         try:
             with open(service_account_file) as file:
@@ -79,8 +86,9 @@ def create_gcp_provider(provider_name, yaml, args):
         ''.join(random.choice(string.ascii_lowercase) for _ in range(6))
     if args.noinput == False:
         region_input = input("Set project region (us-east1): ") or "us-east1"
-        zone_input = input("Set project region ({}): ".format(
-            region_input + "-b")) or region_input + "-b"
+        zone_input = input(
+            "Set project region ({}): ".format(region_input +
+                                               "-b")) or region_input + "-b"
         if monkeyfs_input is None:
             monkeyfs_input = input("Set the monkey_fs gcs bucket name ({})".format("monkeyfs-XXXXXX")) \
                 or "monkeyfs-" + ''.join(random.choice(string.ascii_lowercase) for _ in range(6))
@@ -96,13 +104,14 @@ def create_gcp_provider(provider_name, yaml, args):
         # "  # Defaults to keys/monkey-gcp"
         details["gcp_ssh_private_key_path"] = None
         details.yaml_set_comment_before_after_key(
-            "gcp_ssh_private_key_path", before="\n\n###########\n# Optional\n###########")
-        details.yaml_add_eol_comment(
-            "Defaults to keys/mokney-gcp", "gcp_ssh_private_key_path")
+            "gcp_ssh_private_key_path",
+            before="\n\n###########\n# Optional\n###########")
+        details.yaml_add_eol_comment("Defaults to keys/mokney-gcp",
+                                     "gcp_ssh_private_key_path")
         # "  # Defaults to monkeyfs-XXXXXX to create an unique bucket"
         details["storage_name"] = monkeyfs_input
-        details.yaml_add_eol_comment(
-            "Defaults to monkeyfs-XXXXXX", "storage_name")
+        details.yaml_add_eol_comment("Defaults to monkeyfs-XXXXXX",
+                                     "storage_name")
         details["local_monkeyfs_path"] = monkeyfs_path
         details["monkeyfs_path"] = "/monkeyfs"  # "  # Defaults to /monkeyfs"
         details.yaml_add_eol_comment("Defaults to /monkeyfs", "monkeyfs_path")
@@ -122,17 +131,19 @@ def create_gcp_provider(provider_name, yaml, args):
             y.dump(yaml, file)
 
         print("\nWriting gcp vars file...")
-        gcp_vars = round_trip_load(str({
-            "gcp_cred_kind": "serviceaccount",
-            "gcp_cred_file": service_account_file,
-            "gcp_region": region_input,
-            "gcp_zone": zone_input,
-            "firewall_rule": "monkey-ansible-firewall",
-            "gcp_ssh_private_key_path": details["gcp_ssh_private_key_path"],
-            "storage_name": details["storage_name"],
-            "monkeyfs_path": details["monkeyfs_path"],
-            "local_monkeyfs_path": monkeyfs_path
-        }))
+        gcp_vars = round_trip_load(
+            str({
+                "gcp_cred_kind": "serviceaccount",
+                "gcp_cred_file": service_account_file,
+                "gcp_region": region_input,
+                "gcp_zone": zone_input,
+                "firewall_rule": "monkey-ansible-firewall",
+                "gcp_ssh_private_key_path":
+                details["gcp_ssh_private_key_path"],
+                "storage_name": details["storage_name"],
+                "monkeyfs_path": details["monkeyfs_path"],
+                "local_monkeyfs_path": monkeyfs_path
+            }))
         write_vars_file(gcp_vars)
 
         # Create filesystem and check if succeeded
@@ -145,27 +156,32 @@ def create_gcp_provider(provider_name, yaml, args):
 
     # Creation of FS OK, now mounting FS to local mount point
     if mount_gcp_monkeyfs(details) == False:
-        print("Terminating, please ensure you have gcsfuse installed on the core machine")
+        print(
+            "Terminating, please ensure you have gcsfuse installed on the core machine"
+        )
         exit(1)
 
     print("\nWriting ansible inventory file...")
-    gcp_inventory = round_trip_load(str({
-        "plugin": "gcp_compute",
-        "projects": [project],
-        "regions": [region_input],
-        "keyed_groups": [{"key": "zone"}],
-        "groups": {
-            "monkey": "'monkey' in name",
-            "monkey_gcp": "'monkey' in name",
-        },
-        "hostnames": ["name"],
-        "filters": [],
-        "auth_kind": "serviceaccount",
-        "service_account_file": service_account_file,
-        "compose": {
-            "ansible_host": "networkInterfaces[0].accessConfigs[0].natIP"
-        }
-    }))
+    gcp_inventory = round_trip_load(
+        str({
+            "plugin": "gcp_compute",
+            "projects": [project],
+            "regions": [region_input],
+            "keyed_groups": [{
+                "key": "zone"
+            }],
+            "groups": {
+                "monkey": "'monkey' in name",
+                "monkey_gcp": "'monkey' in name",
+            },
+            "hostnames": ["name"],
+            "filters": [],
+            "auth_kind": "serviceaccount",
+            "service_account_file": service_account_file,
+            "compose": {
+                "ansible_host": "networkInterfaces[0].accessConfigs[0].natIP"
+            }
+        }))
     gcp_inventory.fa.set_block_style()
     write_inventory_file(gcp_inventory)
 
