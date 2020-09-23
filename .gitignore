@@ -1,6 +1,7 @@
 venv
 __pycache__
 *.pyc
-*key*.*
+*key*.csv
+*key*.json
 .vscode/
 *.DS_Store
