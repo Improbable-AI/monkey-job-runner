@@ -97,15 +97,10 @@ def create_aws_provider(provider_name, yaml, args):
         details.yaml_add_eol_comment("Used for mounting filesystems",
                                      "aws_cred_file")
 
-        # "  # Defaults to keys/monkey-aws"
-        details["aws_ssh_private_key_path"] = "keys/monkey-aws"
-        details.yaml_set_comment_before_after_key(
-            "aws_ssh_private_key_path",
-            before="\n\n###########\n# Optional\n###########")
-        details.yaml_add_eol_comment("Defaults to keys/aws",
-                                     "aws_ssh_private_key_path")
         # "  # Defaults to monkeyfs-XXXXXX to create an unique bucket"
         details["storage_name"] = monkeyfs_input
+        details.yaml_set_comment_before_after_key(
+            "storage_name", before="\n\n###########\n# Optional\n###########")
         details.yaml_add_eol_comment("Defaults to monkeyfs-XXXXXX",
                                      "storage_name")
         details["local_monkeyfs_path"] = monkeyfs_path
@@ -133,8 +128,6 @@ def create_aws_provider(provider_name, yaml, args):
                 "aws_key_name": "monkey-aws",  # Sets default key name
                 "aws_zone": zone_input,
                 "firewall_rule": "monkey-ansible-firewall",
-                "aws_ssh_private_key_path":
-                details["aws_ssh_private_key_path"],
                 "storage_name": details["storage_name"],
                 "monkeyfs_path": details["monkeyfs_path"],
                 "local_monkeyfs_path": monkeyfs_path
@@ -186,7 +179,7 @@ def write_commented_file(file, yaml):
             y.default_flow_style = False
             y.dump(yaml, file)
         except:
-            print("Failed to write aws  file")
+            print("Failed to write aws file: ", file)
             exit(1)
 
 

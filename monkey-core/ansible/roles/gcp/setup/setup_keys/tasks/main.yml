@@ -27,6 +27,7 @@
     - name: Store current gcloud account
       command: gcloud config get-value account
       register: prev_gcloud_account
+      ignore_errors: true
     - name: Store current gcloud project
       command: gcloud config get-value project
       register: prev_gcloud_project
@@ -39,7 +40,7 @@
     - name: Switch to project
       command: "gcloud config set project {{gcp_project}}"
     - name: Register new ssh key with service account os-login
-      command: "gcloud compute os-login ssh-keys add --key-file {{ existing_private.path }}.pub"
+      command: "gcloud compute os-login ssh-keys add --key-file {{ gcp_ssh_private_key_file }}.pub"
 
     - name: Switch back to old gcp account if needed
       ignore_errors: true
@@ -67,5 +68,10 @@
         create: yes
         state: present
         line: "ansible_ssh_private_key_file: {{playbook_dir}}/{{ gcp_ssh_private_key_file }}"
-
+    - name: Add ansible private key to gcp_var file
+      lineinfile:
+        dest: "{{ playbook_dir }}/gcp_vars.yml"
+        create: yes
+        state: present
+        line: "gcp_ssh_private_key_file: {{playbook_dir}}/{{ gcp_ssh_private_key_file }}"
 

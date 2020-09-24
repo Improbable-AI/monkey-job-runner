@@ -1,0 +1,130 @@
+---
+
+
+- name: Create VPC
+  ec2_vpc_net:
+    name: Monkey_VPC
+    cidr_block: 10.0.0.0/24
+    region: "{{aws_region}}"
+    
+    tenancy: default
+    tags:
+      Name: Monkey_VPC
+      Monkey: "Monkey_AWS"
+  register: monkey_vpc
+
+- name: Printout Monkey_VCP
+  debug:
+    msg: "{{monkey_vpc}}"
+
+- name: Set vpc facts
+  set_fact:
+    monkey_vpc_id: "{{monkey_vpc.vpc.id}}"
+
+- name: Create subnet for  servers
+  ec2_vpc_subnet:
+    state: present
+    vpc_id: "{{monkey_vpc_id}}"
+    map_public: true
+    cidr: 10.0.0.0/24
+    region: "{{ aws_region }}"
+    az: "{{ aws_zone }}"
+    tags:
+      Name: Monkey_Subnet
+      Monkey: "Monkey_AWS"
+  register: monkey_subnet
+
+- name: Set vpc subnet facts
+  set_fact:
+    monkey_subnet_id: "{{monkey_subnet.subnet.id}}"
+- name: Printout Monkey_VCP
+  debug:
+    msg: "{{monkey_subnet}}"
+
+- name: Create vpc Internet Gateway
+  ec2_vpc_igw:
+    state: present
+    vpc_id: "{{monkey_vpc_id}}"
+    region: "{{aws_region}}"
+    tags:
+      Name: "Monkey_IGW"
+      Monkey: "Monkey_AWS"
+  register: monkey_igw
+- name: Set vpc Internet Gateway facts
+  set_fact:
+    monkey_igw_id: "{{monkey_igw.gateway_id}}"
+
+- name: Fetch route tables
+  ec2_vpc_route_table_info:
+    region: "{{aws_region}}"
+    filters:
+      vpc-id: "{{monkey_vpc_id}}"
+  register: route_table_info
+- name: Debug table info
+  debug:
+    msg: "{{route_table_info}}"
+- name: Set route table id fact
+  set_fact:
+    monkey_route_table_id: "{{route_table_info.route_tables.0.id}}"
+
+- name: Create Route Table for VPC
+  ec2_vpc_route_table:
+    state: present
+    vpc_id: "{{monkey_vpc_id}}"
+    route_table_id: "{{monkey_route_table_id}}"
+    lookup: id
+    region: "{{aws_region}}"
+    tags:
+      Name: Monkey_Route_Table
+      Monkey: "Monkey_AWS"
+    subnets:
+      - "{{monkey_subnet_id}}"
+    routes:
+      - dest: "10.0.0.0/24"
+        gateway_id: local
+      - dest: "0.0.0.0/0"
+        gateway_id: "{{monkey_igw_id}}"
+
+- name: Create Monkey Security group
+  ec2_group:
+    name: Monkey_Security_Group
+    description: The security group for monkey job runners
+    vpc_id: "{{monkey_vpc_id}}"
+    region: "{{aws_region}}"
+    rules:
+      - proto: tcp
+        ports:
+          - 22
+          - 80
+          - 443
+          - 9991
+        cidr_ip: "0.0.0.0/0"
+      - proto: udp
+        ports:
+          - 22
+          - 80
+          - 443
+          - 9991
+        cidr_ip: "0.0.0.0/0"
+  register: monkey_security_group
+
+- name: Adds AWS line to vars file for monkey_vpc_id
+  lineinfile:
+    dest: "{{ playbook_dir }}/aws_vars.yml"
+    create: yes
+    state: present
+    line: "monkey_vpc_id: {{monkey_vpc_id}}"
+
+
+- name: Adds AWS line to vars file for monkey_subnet_id
+  lineinfile:
+    dest: "{{ playbook_dir }}/aws_vars.yml"
+    create: yes
+    state: present
+    line: "monkey_subnet_id: {{monkey_subnet_id}}"
+
+
+
+
+
+

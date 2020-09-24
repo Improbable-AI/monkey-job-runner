@@ -36,11 +36,8 @@ def aws_cred_file_environment(file):
     print(file)
     with open(file) as f:
         lines = f.readlines()
-        print(lines)
         names = lines[0].split(",")
         values = lines[1].split(",")
-        print(names[2])
-        print(names[3])
 
         if names[2] != "Access key ID" or names[3] != "Secret access key":
             raise ValueError(

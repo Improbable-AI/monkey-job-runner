@@ -44,7 +44,7 @@ class MonkeyProviderAWS(MonkeyProvider):
             if value is not None:
                 self.raw_provider_info[key] = value
 
-        logger.info("AWS Cloud Handler Instantiating {}".format(self))
+        logger.info("AWS Cloud Handler Instantiating {}".format(self.name))
         if "aws_cred_file" not in provider_info:
             logger.error("Failed to provider aws_cred_file for account")
             raise ValueError("Failed to provider aws_cred_file for account")

@@ -1,18 +1,19 @@
 ---
 providers:
 # 
-# AWS Provider: aws
-- name: aws
-  type: aws
-  aws_region: us-east-1
-  aws_zone: us-east-1c
-  aws_cred_file: /home/avery/Developer/projects/monkey/monkey-core/monkey_aws_creds.csv  # Used for mounting filesystems
+# GCP Provider: gcp
+- name: gcp
+  type: gcp
+  project: fast-art-288220
+  gcp_cred_kind: serviceaccount
+  gcp_cred_file: /home/avery/Developer/projects/monkey/monkey-core/gcp_service_account_key.json
+  gcp_region: us-east1
+  gcp_zone: us-east1-b
 
 
 # ###########
 # # Optional
 # ###########
-  aws_ssh_private_key_path: keys/monkey-aws # Defaults to keys/aws
-  storage_name: monkeyfs-eijivf # Defaults to monkeyfs-XXXXXX
-  local_monkeyfs_path: /home/avery/Developer/projects/monkey/monkey-core/ansible/monkeyfs-aws
+  storage_name: monkeyfs-qzwsdi  # Defaults to monkeyfs-XXXXXX
+  local_monkeyfs_path: /home/avery/Developer/projects/monkey/monkey-core/ansible/monkeyfs-gcp
   monkeyfs_path: /monkeyfs  # Defaults to /monkeyfs

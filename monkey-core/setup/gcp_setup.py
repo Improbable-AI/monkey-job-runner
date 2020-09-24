@@ -6,7 +6,7 @@ import string
 import ansible_runner
 from ruamel.yaml import YAML, round_trip_load
 
-from setup.utils import Completer
+from setup.utils import Completer, check_for_existing_local_command
 
 comp = Completer()
 # we want to treat '/' as part of a word, so override the delimiters
@@ -43,6 +43,19 @@ def create_gcp_provider(provider_name, yaml, args):
             "gcp_cred_kind": "serviceaccount",
             "gcp_cred_file": "",
         }))
+
+    if check_for_existing_local_command("gcsfuse") == False:
+        print(
+            "You must have gcsfuse installed.\nTo install please follow the instructions here:\n{}"
+            .format(
+                "https://github.com/GoogleCloudPlatform/gcsfuse/blob/master/docs/installing.md"
+            ))
+        exit(1)
+    if check_for_existing_local_command("gcloud") == False:
+        print(
+            "You must have gcloud installed.\nTo install please follow the instructions here:\n{}"
+            .format("https://cloud.google.com/sdk/docs/install"))
+        exit(1)
 
     while details["project"] == "":
         service_account_file = args.identification_file
@@ -101,15 +114,10 @@ def create_gcp_provider(provider_name, yaml, args):
         details["gcp_region"] = region_input
         details["gcp_zone"] = zone_input
 
-        # "  # Defaults to keys/monkey-gcp"
-        details["gcp_ssh_private_key_path"] = None
-        details.yaml_set_comment_before_after_key(
-            "gcp_ssh_private_key_path",
-            before="\n\n###########\n# Optional\n###########")
-        details.yaml_add_eol_comment("Defaults to keys/mokney-gcp",
-                                     "gcp_ssh_private_key_path")
         # "  # Defaults to monkeyfs-XXXXXX to create an unique bucket"
         details["storage_name"] = monkeyfs_input
+        details.yaml_set_comment_before_after_key(
+            "storage_name", before="\n\n###########\n# Optional\n###########")
         details.yaml_add_eol_comment("Defaults to monkeyfs-XXXXXX",
                                      "storage_name")
         details["local_monkeyfs_path"] = monkeyfs_path
@@ -138,8 +146,6 @@ def create_gcp_provider(provider_name, yaml, args):
                 "gcp_region": region_input,
                 "gcp_zone": zone_input,
                 "firewall_rule": "monkey-ansible-firewall",
-                "gcp_ssh_private_key_path":
-                details["gcp_ssh_private_key_path"],
                 "storage_name": details["storage_name"],
                 "monkeyfs_path": details["monkeyfs_path"],
                 "local_monkeyfs_path": monkeyfs_path

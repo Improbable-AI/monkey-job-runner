@@ -39,6 +39,7 @@ def get_local_filesystem_for_provider(provider_name):
 
     if found_provider is None:
         print("Failed to find provider with specified name for job")
+        return None
     local_filesystem_path = found_provider.get_local_filesystem_path()
     return local_filesystem_path
 

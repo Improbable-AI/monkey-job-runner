@@ -8,7 +8,6 @@
         file: aws_vars.yml
 
   roles:
-    - aws/setup_keys
     - aws/create
 
 - hosts: new_host

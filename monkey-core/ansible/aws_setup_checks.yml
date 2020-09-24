@@ -8,5 +8,7 @@
         file: aws_vars.yml
 
   roles:
-    - aws/setup_fs/create_fs
-    - aws/setup_fs/mount_fs
+    - aws/setup/setup_keys
+    - aws/setup/setup_vpc
+    - aws/setup/create_fs
+    - aws/setup/mount_fs

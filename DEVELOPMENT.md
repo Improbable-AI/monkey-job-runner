@@ -123,7 +123,7 @@ Before the mnist sample can be used, you will have to download the dataset with 
 
 It should connect to *Monkey Core* and give you a uid for the job in the form of:
 ```
-monkey-yy-mm-dd-#-***
+monkeyec2-35-170-61-127.compute-1.amazonaws.com-yy-mm-dd-#-***
 ```
 
 
