@@ -113,6 +113,14 @@ To dispatch a job, go to the samples directory `./*monkey-cli*/samples/mnist` an
 monkey run python mnist.py --learning-rate 0.13
 ```
 
+Before the mnist sample can be used, you will have to download the dataset with the convenience script
+```
+# torchvision must be installed to run it.  
+# A quick way to install is to create a venv with the requirements for the sample to run it
+./download_data.py
+
+```
+
 It should connect to *Monkey Core* and give you a uid for the job in the form of:
 ```
 monkey-yy-mm-dd-#-***

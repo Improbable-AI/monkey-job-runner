@@ -11,7 +11,6 @@ import torchvision
 
 # Or better: make a custom docker image with dependencies already installed
 
-
 torch.backends.cudnn.enabled = False
 test_env = os.environ.get("TEST_ENV")
 # print("TEST_ENV=", test_env)
