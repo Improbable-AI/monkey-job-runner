@@ -1,8 +1,2 @@
 ---
-aws_region: us-east-1
-aws_key_name: monkey-aws
-aws_zone: us-east-1c
-firewall_rule: monkey-ansible-firewall
-storage_name: monkeyfs-eijivf
-monkeyfs_path: /monkeyfs
-local_monkeyfs_path: /home/avery/Developer/projects/monkey/monkey-core/ansible/monkeyfs-aws
+# This file will automatically be populated by setup_core.py with the necessary information
