@@ -33,6 +33,6 @@
   environment:
       "AWSACCESSKEYID": "{{access_key_id}}"
       "AWSSECRETACCESSKEY": "{{access_key_secret}}"
-  command:
+  command:    
     cmd: "s3fs {{aws_storage_name}} {{monkeyfs_path}}"
 

@@ -6,7 +6,8 @@ import string
 import ansible_runner
 from ruamel.yaml import YAML, round_trip_load
 
-from setup.utils import Completer, aws_cred_file_environment
+from setup.utils import (Completer, aws_cred_file_environment,
+                         check_for_existing_local_command)
 
 comp = Completer()
 # we want to treat '/' as part of a word, so override the delimiters
@@ -41,6 +42,12 @@ def create_aws_provider(provider_name, yaml, args):
     }))
     details.fa.set_block_style()
     details.yaml_set_start_comment("\nAWS Provider: {}".format(provider_name))
+
+    if check_for_existing_local_command("s3fs") == False:
+        print(
+            "You must have s3fs installed.\nTo install please follow the instructions here:\n{}"
+            .format("https://github.com/s3fs-fuse/s3fs-fuse"))
+        exit(1)
 
     aws_key_file = args.identification_file
     passed_key = False
@@ -213,8 +220,17 @@ def mount_aws_monkeyfs(yaml):
     local_mount_point = yaml["local_monkeyfs_path"]
     print("Attempting to mount gcs bucket: {} to {}".format(
         bucket_name, local_mount_point))
+
+    cred_environment = aws_cred_file_environment(yaml["aws_cred_file"])
+
     runner = ansible_runner.run(playbook='aws_setup_checks.yml',
                                 private_data_dir='ansible',
+                                extravars={
+                                    "access_key_id":
+                                    cred_environment["AWS_ACCESS_KEY_ID"],
+                                    "access_key_secret":
+                                    cred_environment["AWS_SECRET_ACCESS_KEY"],
+                                },
                                 quiet=False)
     events = [e for e in runner.events]
     if len(runner.stats.get("failures")) != 0:

@@ -1,8 +1,13 @@
 import os
 import readline
 import subprocess
+from shutil import which
 
 from mongoengine import *
+
+
+def check_for_existing_local_command(command):
+    return which(command) is not None
 
 
 def get_monkey_fs():

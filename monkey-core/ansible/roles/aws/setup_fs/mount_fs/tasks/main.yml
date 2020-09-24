@@ -34,10 +34,15 @@
     - name: Debug Mountpoint
       debug:
         msg: "{{create_mountpoint.path}}"
+
     - name: Mount fs to Mountpoint
       when: create_mountpoint is not failed
+      environment:
+        "AWSACCESSKEYID": "{{access_key_id}}"
+        "AWSSECRETACCESSKEY": "{{access_key_secret}}"
       command:
-        cmd: "s3fs {{ storage_name}} {{ local_monkeyfs_path }}"
+        cmd: "s3fs {{storage_name}} {{local_monkeyfs_path}}"
+
 - name: Get Mount Path
   shell: df "{{ local_monkeyfs_path }}" | grep {{storage_name}} | awk '{print $NF}'
   register: mount_path
