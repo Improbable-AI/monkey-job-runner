@@ -1,6 +1,22 @@
 # Installation Instructions
 
-## This doc is out of date, please ignore for now
+# This doc is out of date, please ignore for now
+
+
+# Instead for Installation See DEVELOPMENT.md
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ### GCP
 
