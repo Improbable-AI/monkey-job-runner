@@ -1,20 +1,22 @@
 #!/usr/bin/env python
-from termcolor import colored, cprint
-import tarfile
-import glob
-import fnmatch
-import shutil
-import os
-import tempfile
-from urllib.parse import urljoin
-from checksumdir import dirhash
-import time
 import argparse
-import sys
+import fnmatch
+import glob
 import json
+import os
+import shutil
+import sys
+import tarfile
+import tempfile
+import time
 from cmd import Cmd
+from urllib.parse import urljoin
+
 import requests
 import yaml
+from checksumdir import dirhash
+from termcolor import colored, cprint
+
 MONKEY_CORE_URL = "http://localhost:9990/"
 
 
@@ -47,8 +49,10 @@ class MonkeyCLI(Cmd):
         self.parse_args(inp.split(" "))
 
     def create_instance(self, provider, machine_overrides):
-        print("Creating Instance with override args:\n{}".format(machine_overrides))
-        return self.monkey.create_instance(provider=provider, machine_params=machine_overrides)
+        print("Creating Instance with override args:\n{}".format(
+            machine_overrides))
+        return self.monkey.create_instance(provider=provider,
+                                           machine_params=machine_overrides)
 
     def list_providers(self, printout=False):
         providers = []
@@ -85,7 +89,10 @@ class MonkeyCLI(Cmd):
                 print("Total: {}".format(len(value)))
         return r.json()
 
-    def check_or_upload_dataset(self, dataset, provider_name, compression_type="tar"):
+    def check_or_upload_dataset(self,
+                                dataset,
+                                provider_name,
+                                compression_type="tar"):
         print("Uploading dataset...")
         dataset_name = dataset["name"]
         dataset_path = dataset["path"]
@@ -93,8 +100,11 @@ class MonkeyCLI(Cmd):
         print("Dataset checksum: {}".format(dataset_checksum))
 
         if dataset.get("compression", "tar"):
-            compression_map = {"tar": ".tar",
-                               "gztar": ".tar.gz", "zip": ".zip"}
+            compression_map = {
+                "tar": ".tar",
+                "gztar": ".tar.gz",
+                "zip": ".zip"
+            }
             compression_type = dataset.get("compression", "tar")
             compression_suffix = compression_map[compression_type]
 
@@ -107,13 +117,14 @@ class MonkeyCLI(Cmd):
         }
         r = requests.get(self.build_url("check/dataset"),
                          params=dataset_params)
-        dataset_found, msg = r.json().get("found", False), r.json().get("msg", "")
+        dataset_found, msg = r.json().get("found",
+                                          False), r.json().get("msg", "")
         print(msg)
         if dataset_found == False:
             with tempfile.NamedTemporaryFile() as dir_tmp:
                 print("Compressing Dataset...")
-                shutil.make_archive(
-                    dir_tmp.name, compression_type, dataset_path)
+                shutil.make_archive(dir_tmp.name, compression_type,
+                                    dataset_path)
                 compressed_name = dir_tmp.name + compression_suffix
                 print(compressed_name)
                 try:
@@ -137,15 +148,20 @@ class MonkeyCLI(Cmd):
         code_path = persist["path"]
         ignore_filters = persist.get("ignore", [])
 
-        all_files = set([y.strip("/") for y in [x.strip(".")
-                                                for x in glob.glob(code_path + "/**", recursive=True)]])
-        filenames = (n for n in all_files
-                     if not any(fnmatch.fnmatch(n, ignore) for ignore in ignore_filters))
+        all_files = set([
+            y.strip("/") for y in [
+                x.strip(".")
+                for x in glob.glob(code_path + "/**", recursive=True)
+            ]
+        ])
+        filenames = (n for n in all_files if not any(
+            fnmatch.fnmatch(n, ignore) for ignore in ignore_filters))
         all_files = sorted(list(filenames))
         print("Persisting: ", all_files)
         if "" in all_files:
             all_files.remove("")
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".tar") as dir_tmp:
+        with tempfile.NamedTemporaryFile(delete=False,
+                                         suffix=".tar") as dir_tmp:
             code_tar = tarfile.open(dir_tmp.name, "w")
             code_tar.add(persist_name)
             # for file in all_files:
@@ -156,12 +172,16 @@ class MonkeyCLI(Cmd):
                 with open(dir_tmp.name, "rb") as compressed_persist:
                     r = requests.post(self.build_url("upload/persist"),
                                       data=compressed_persist,
-                                      params={"job_uid": job_uid,
-                                              "provider": provider_name},
+                                      params={
+                                          "job_uid": job_uid,
+                                          "provider": provider_name
+                                      },
                                       allow_redirects=True)
                     success = r.json()["success"]
-                    print("Upload Persisted Folder:", colored(
-                        "Successful", "green") if success else colored("FAILED", "red"))
+                    print(
+                        "Upload Persisted Folder:",
+                        colored("Successful", "green") if success else colored(
+                            "FAILED", "red"))
             except:
                 print("Upload failure")
             if success == False:
@@ -173,14 +193,19 @@ class MonkeyCLI(Cmd):
         code_path = code["path"]
         ignore_filters = code.get("ignore", [])
 
-        all_files = set([y.strip("/") for y in [x.strip(".")
-                                                for x in glob.glob(code_path + "/**", recursive=True)]])
-        filenames = (n for n in all_files
-                     if not any(fnmatch.fnmatch(n, ignore) for ignore in ignore_filters))
+        all_files = set([
+            y.strip("/") for y in [
+                x.strip(".")
+                for x in glob.glob(code_path + "/**", recursive=True)
+            ]
+        ])
+        filenames = (n for n in all_files if not any(
+            fnmatch.fnmatch(n, ignore) for ignore in ignore_filters))
         all_files = sorted(list(filenames))
         if "" in all_files:
             all_files.remove("")
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".tar") as dir_tmp:
+        with tempfile.NamedTemporaryFile(delete=False,
+                                         suffix=".tar") as dir_tmp:
             code_tar = tarfile.open(dir_tmp.name, "w")
             for file in all_files:
                 code_tar.add(file)
@@ -190,12 +215,16 @@ class MonkeyCLI(Cmd):
                 with open(dir_tmp.name, "rb") as compressed_codebase:
                     r = requests.post(self.build_url("upload/codebase"),
                                       data=compressed_codebase,
-                                      params={"job_uid": job_uid,
-                                              "provider": provider_name},
+                                      params={
+                                          "job_uid": job_uid,
+                                          "provider": provider_name
+                                      },
                                       allow_redirects=True)
                     success = r.json()["success"]
-                    print("Upload Codebase:", colored("Successful", "green")
-                          if success else colored("FAILED", "red"))
+                    print(
+                        "Upload Codebase:",
+                        colored("Successful", "green") if success else colored(
+                            "FAILED", "red"))
             except:
                 print("Upload failure")
             if success == False:
@@ -213,8 +242,12 @@ class MonkeyCLI(Cmd):
         r = requests.get(self.build_url("get/job_uid"))
         return r.text
 
-    def run_job(self, cmd, job_yaml_file="job.yml", job_uid=None,
-                foreground=False, provider=None,
+    def run_job(self,
+                cmd,
+                job_yaml_file="job.yml",
+                job_uid=None,
+                foreground=False,
+                provider=None,
                 printout=False):
         if printout:
             print("\nMonkey running:\n{}".format(colored(cmd, "green")))
@@ -255,8 +288,9 @@ class MonkeyCLI(Cmd):
 
         # Upload persisted folder
         for persist_dir in job_yaml.get("persist", []):
-            self.upload_persisted_folder(
-                persist=persist_dir, job_uid=job_uid, provider_name=provider)
+            self.upload_persisted_folder(persist=persist_dir,
+                                         job_uid=job_uid,
+                                         provider_name=provider)
 
         # Upload codebase
         if "code" not in job_yaml:
@@ -266,8 +300,9 @@ class MonkeyCLI(Cmd):
         # Setup extra job args
         job_yaml["foreground"] = foreground
 
-        self.upload_codebase(
-            code=job_yaml["code"], job_uid=job_uid, provider_name=provider)
+        self.upload_codebase(code=job_yaml["code"],
+                             job_uid=job_uid,
+                             provider_name=provider)
 
         # Submit job
         self.submit_job(job=job_yaml)
@@ -283,10 +318,26 @@ class MonkeyCLI(Cmd):
             "providers", help="List the jobs on the given provider")
         list_instances_parser = list_subparser.add_parser(
             "instances", help="List the jobs on the given provider")
-        list_jobs_parser.add_argument('-p', '--provider', dest='providers', type=str, required=False, default=[],
-                                      help='The provider you wish to use.  Should be defined in providers.yml')
-        list_instances_parser.add_argument('-p', '--provider', dest='providers', type=str, required=False, default=[],
-                                           help='The provider you wish to use.  Should be defined in providers.yml')
+        list_jobs_parser.add_argument(
+            '-p',
+            '--provider',
+            dest='providers',
+            type=str,
+            required=False,
+            default=[],
+            help=
+            'The provider you wish to use.  Should be defined in providers.yml'
+        )
+        list_instances_parser.add_argument(
+            '-p',
+            '--provider',
+            dest='providers',
+            type=str,
+            required=False,
+            default=[],
+            help=
+            'The provider you wish to use.  Should be defined in providers.yml'
+        )
         return list_parser, list_subparser
 
     def get_create_parser(self, subparser):
@@ -295,9 +346,17 @@ class MonkeyCLI(Cmd):
         create_subparser = create_parser.add_subparsers(
             description="Create command options", dest="create_option")
         create_instance_parser = create_subparser.add_parser(
-            "instance", help="Creates an instance with given provider and overrides")
-        create_instance_parser.add_argument('-p', '--provider', dest='provider', type=str, required=True,
-                                            help='The provider you wish to use.  Should be defined in cloud_providers.yml')
+            "instance",
+            help="Creates an instance with given provider and overrides")
+        create_instance_parser.add_argument(
+            '-p',
+            '--provider',
+            dest='provider',
+            type=str,
+            required=True,
+            help=
+            'The provider you wish to use.  Should be defined in cloud_providers.yml'
+        )
         # create_instance_parser.add_argument('machine_params', type=str, nargs=argparse.REMAINDER,
         #                  help='Any other machine overrides to replace values found in providers.yml')
         return create_parser, create_subparser
@@ -310,30 +369,50 @@ class MonkeyCLI(Cmd):
         print("Parsing args: {}".format(input_args))
         parser = argparse.ArgumentParser(description='Parses monkey commands')
 
-        subparser = parser.add_subparsers(
-            help="Monkey Commands", dest="command")
+        subparser = parser.add_subparsers(help="Monkey Commands",
+                                          dest="command")
 
         run_parser = subparser.add_parser(
             "run", help="Run a job on the specified provider")
 
-        run_parser.add_argument("--provider", "-p", required=False, default=None, dest="provider",
-                                help="Optionial specification of provider (Defaults to first listed provider)")
-        run_parser.add_argument("--job_file", "-j", required=False, default="job.yml", dest="job_yaml_file",
+        run_parser.add_argument(
+            "--provider",
+            "-p",
+            required=False,
+            default=None,
+            dest="provider",
+            help=
+            "Optionial specification of provider (Defaults to first listed provider)"
+        )
+        run_parser.add_argument("--job_file",
+                                "-j",
+                                required=False,
+                                default="job.yml",
+                                dest="job_yaml_file",
                                 help="Optionial specification of job.yml file")
-        run_parser.add_argument("--foreground", "-f", required=False, action='store_true',
-                                help="Run in foreground or detach when successfully sent")
-        run_parser.add_argument("--job_uid", "-juid", required=False, default=None, dest="job_uid",
-                                help="Run in foreground or detach when successfully sent")
+        run_parser.add_argument(
+            "--foreground",
+            "-f",
+            required=False,
+            action='store_true',
+            help="Run in foreground or detach when successfully sent")
+        run_parser.add_argument(
+            "--job_uid",
+            "-juid",
+            required=False,
+            default=None,
+            dest="job_uid",
+            help="Run in foreground or detach when successfully sent")
 
         create_parser, create_subparser = self.get_create_parser(
             subparser=subparser)
 
         list_parser, list_subparser = self.get_list_parser(subparser=subparser)
 
-        info_parser = subparser.add_parser(
-            "info", help="Infoon the specified item")
-        info_subparser = info_parser.add_subparsers(
-            description="Info options", dest="info_option")
+        info_parser = subparser.add_parser("info",
+                                           help="Infoon the specified item")
+        info_subparser = info_parser.add_subparsers(description="Info options",
+                                                    dest="info_option")
         info_jobs_parser = list_subparser.add_parser(
             "job", help="Gets the info on the specified job")
         info_providers_parser = list_subparser.add_parser(
@@ -344,8 +423,11 @@ class MonkeyCLI(Cmd):
         except:
             return False
         if args.command == "run":
-            return self.run_job(cmd=" ".join(remaining_args), job_yaml_file=args.job_yaml_file,
-                                job_uid=args.job_uid, foreground=args.foreground, provider=args.provider,
+            return self.run_job(cmd=" ".join(remaining_args),
+                                job_yaml_file=args.job_yaml_file,
+                                job_uid=args.job_uid,
+                                foreground=args.foreground,
+                                provider=args.provider,
                                 printout=printout)
         elif args.command == "create":
             if args.create_option == "instance":
@@ -355,21 +437,24 @@ class MonkeyCLI(Cmd):
                     print("Adding override argumen: \n")
                 for i in range(0, len(remaining_args), 2):
                     if remaining_args[i][:2] == "--":
-                        print("{}={}".format(
-                            remaining_args[i][2:], remaining_args[i + 1]))
+                        print("{}={}".format(remaining_args[i][2:],
+                                             remaining_args[i + 1]))
                         additional_args[remaining_args[i]
-                                        [2:]] = remaining_args[i+1]
+                                        [2:]] = remaining_args[i + 1]
 
-                return self.create_instance(provider=args.provider, machine_overrides=additional_args)
+                return self.create_instance(provider=args.provider,
+                                            machine_overrides=additional_args)
             else:
                 create_parser.print_help()
                 return False
         elif args.command == "list":
             if args.list_option == "jobs":
                 raise NotImplementedError("Not implemented yet")
-                return self.list_jobs(providers=args.providers, printout=printout)
+                return self.list_jobs(providers=args.providers,
+                                      printout=printout)
             elif args.list_option == "instances":
-                return self.list_instances(providers=args.providers, printout=printout)
+                return self.list_instances(providers=args.providers,
+                                           printout=printout)
             elif args.list_option == "providers":
                 return self.list_providers(printout=printout)
             else:
