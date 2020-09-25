@@ -95,6 +95,8 @@ def main():
     except:
         print("No providers.yml file found")
         provider_yaml = round_trip_load("---\nproviders: []")
+    if provider_yaml is None:
+        provider_yaml = round_trip_load("---\nproviders: []")
     providers = provider_yaml.get("providers", [])
     if providers is None:
         providers = []
