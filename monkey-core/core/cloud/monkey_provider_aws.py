@@ -9,6 +9,7 @@ from concurrent.futures import Future
 from threading import Thread
 
 import ansible_runner
+import monkey_global
 from ansible.inventory.manager import InventoryManager
 from ansible.parsing.dataloader import DataLoader
 from ansible.vars.manager import VariableManager
@@ -133,7 +134,8 @@ class MonkeyProviderAWS(MonkeyProvider):
 
         runner = ansible_runner.run(playbook='aws_create_job.yml',
                                     private_data_dir='ansible',
-                                    extravars=machine_params)
+                                    extravars=machine_params,
+                                    quiet=monkey_global.QUIET_ANSIBLE)
         print(runner.stats)
 
         if len(runner.stats.get("failures")) != 0:

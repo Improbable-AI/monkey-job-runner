@@ -9,6 +9,7 @@ from threading import Thread
 
 import ansible_runner
 import googleapiclient.discovery
+import monkey_global
 from ansible.inventory.manager import InventoryManager
 from ansible.parsing.dataloader import DataLoader
 from ansible.vars.manager import VariableManager

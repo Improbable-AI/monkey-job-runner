@@ -2,6 +2,9 @@
 
 
 - name: Create VPC
+  environment:
+    "AWS_ACCESS_KEY_ID": "{{access_key_id}}"
+    "AWS_SECRET_ACCESS_KEY": "{{access_key_secret}}"
   ec2_vpc_net:
     name: Monkey_VPC
     cidr_block: 10.0.0.0/24
@@ -22,6 +25,9 @@
     monkey_vpc_id: "{{monkey_vpc.vpc.id}}"
 
 - name: Create subnet for  servers
+  environment:
+    "AWS_ACCESS_KEY_ID": "{{access_key_id}}"
+    "AWS_SECRET_ACCESS_KEY": "{{access_key_secret}}"
   ec2_vpc_subnet:
     state: present
     vpc_id: "{{monkey_vpc_id}}"
@@ -42,6 +48,9 @@
     msg: "{{monkey_subnet}}"
 
 - name: Create vpc Internet Gateway
+  environment:
+    "AWS_ACCESS_KEY_ID": "{{access_key_id}}"
+    "AWS_SECRET_ACCESS_KEY": "{{access_key_secret}}"
   ec2_vpc_igw:
     state: present
     vpc_id: "{{monkey_vpc_id}}"
@@ -55,6 +64,9 @@
     monkey_igw_id: "{{monkey_igw.gateway_id}}"
 
 - name: Fetch route tables
+  environment:
+    "AWS_ACCESS_KEY_ID": "{{access_key_id}}"
+    "AWS_SECRET_ACCESS_KEY": "{{access_key_secret}}"
   ec2_vpc_route_table_info:
     region: "{{aws_region}}"
     filters:
@@ -68,6 +80,9 @@
     monkey_route_table_id: "{{route_table_info.route_tables.0.id}}"
 
 - name: Create Route Table for VPC
+  environment:
+    "AWS_ACCESS_KEY_ID": "{{access_key_id}}"
+    "AWS_SECRET_ACCESS_KEY": "{{access_key_secret}}"
   ec2_vpc_route_table:
     state: present
     vpc_id: "{{monkey_vpc_id}}"
@@ -86,6 +101,9 @@
         gateway_id: "{{monkey_igw_id}}"
 
 - name: Create Monkey Security group
+  environment:
+    "AWS_ACCESS_KEY_ID": "{{access_key_id}}"
+    "AWS_SECRET_ACCESS_KEY": "{{access_key_secret}}"
   ec2_group:
     name: Monkey_Security_Group
     description: The security group for monkey job runners

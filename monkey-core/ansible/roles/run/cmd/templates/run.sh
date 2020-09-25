@@ -1,7 +1,6 @@
 #!/bin/bash
-. ~/.profile  | tee logs/run.log
+. ~/.monkey_activate  | tee logs/run.log
 echo Activated environment correctly
-conda list
 if command -v tree > /dev/null; then
   tree
 fi

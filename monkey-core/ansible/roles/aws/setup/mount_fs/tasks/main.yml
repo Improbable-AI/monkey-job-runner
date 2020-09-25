@@ -6,7 +6,7 @@
 
     # TODO(alamp): Make more robust
 - name: Check for existing mount
-  shell: df {{ local_monkeyfs_path }} | grep {{ storage_name }}
+  shell: df {{ local_monkeyfs_path }} | grep "s3fs"
   register: existing_mount
   ignore_errors: true
 - name: Printout mount
