@@ -11,7 +11,7 @@ import ansible_runner
 import requests
 import yaml
 from core.monkey_instance import MonkeyInstance
-from setup.utils import aws_cred_file_environment
+from setup.utils import aws_cred_file_environment, get_aws_vars
 
 logger = logging.getLogger(__name__)
 
@@ -303,10 +303,10 @@ name: {}, ip: {}, state: {}
             "monkey_job_uid": job_uid,
             "aws_zone": provider_info["zone"],
             "aws_region": provider_info["zone"],
-            "monkey_subnet_id": provider_info["monkey_subnet_id"]
         }
 
-        print(provider_info)
+        for key, val in get_aws_vars().items():
+            delete_instance_params[key] = val
 
         runner = ansible_runner.run(host_pattern="localhost",
                                     private_data_dir="ansible",
@@ -314,7 +314,6 @@ name: {}, ip: {}, state: {}
                                     module_args="name=aws/delete",
                                     extravars=delete_instance_params)
 
-        print(runner.stats)
         if len(runner.stats.get("failures")) != 0:
             print("Failed Deletion of machine")
             return False, "Failed to cleanup job after completion"

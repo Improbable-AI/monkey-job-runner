@@ -4,10 +4,31 @@ import subprocess
 from shutil import which
 
 from mongoengine import *
+from ruamel.yaml import YAML
 
 
 def check_for_existing_local_command(command):
     return which(command) is not None
+
+
+def load_yaml_file_as_dict(filename):
+    try:
+        with open(filename) as f:
+            aws_vars = YAML().load(f)
+            return aws_vars
+    except:
+        print("Failed to load ", filename)
+        return dict()
+
+
+def get_aws_vars():
+    aws_vars_file = "ansible/aws_vars.yml"
+    return load_yaml_file_as_dict(aws_vars_file)
+
+
+def get_gcp_vars():
+    gcp_vars_file = "ansible/gcp_vars.yml"
+    return load_yaml_file_as_dict(gcp_vars_file)
 
 
 def get_monkey_fs():

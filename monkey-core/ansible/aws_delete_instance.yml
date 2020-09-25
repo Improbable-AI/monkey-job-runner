@@ -1,0 +1,11 @@
+---
+- hosts: localhost
+  name: Deletes the aws instance
+  gather_facts: no
+
+  pre_tasks:
+    - name: Import default vars
+      include_vars:
+        file: aws_vars.yml
+  roles:
+    - aws/delete
