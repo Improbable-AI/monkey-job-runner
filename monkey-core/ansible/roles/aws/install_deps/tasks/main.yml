@@ -45,6 +45,10 @@
       command: "swapon /swapfile"
 
  
+- name: apt update 
+  become: true
+  apt:
+    update_cache: yes
 
 - name: apt update install s3fs python3 nginx
   become: true

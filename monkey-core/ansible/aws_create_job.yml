@@ -15,10 +15,6 @@
   gather_facts: no
 
   pre_tasks:
-    - name: Display all variables/facts known for a host
-      debug:
-        var: hostvars[inventory_hostname]
-        verbosity: 1
     - name: Import default vars
       include_vars:
         file: aws_vars.yml
