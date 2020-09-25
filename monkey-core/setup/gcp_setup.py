@@ -21,7 +21,6 @@ def check_gcp_provider(yaml):
           yaml.get("type"))
     storage_name = yaml.get("storage_name")
 
-    print("Checking if {} is mounted".format(storage_name))
     runner = ansible_runner.run(playbook='gcp_setup_checks.yml',
                                 private_data_dir='ansible',
                                 quiet=False)

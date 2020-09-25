@@ -1,15 +1,19 @@
 ---
-- name: Printout command
-  debug:
-    msg: "while true; do gsutil -m rsync -r {{ persist_folder_path }} {{ bucket_path }}; sleep 15; done"
-- name: template sync command
-  template:
-    src: templates/sync_loop.sh
-    dest: "{{ persist_script_path }}"
-    mode: u=rwx,g=r,o=r
-- name: Persist folder by running async rsync
-  shell: "{{ persist_script_path }}"
+- name: Create venv folder
+  shell: |
+    python3 -m venv venv
+    echo '. venv/bin/activate' >> ~/.monkey_activate; 
   args:
     executable: /bin/bash
-  async: 2592000               # 60*60*24*30 – 1 month
-  poll: 0
+
+- name: Create upgrade pip
+  shell: |
+    . ~/.monkey_activate
+    pip install --upgrade pip
+
+- name: Install requirements
+  shell: . ~/.monkey_activate; pip install -r "{{ environment_file }}"
+  args:
+    executable: /bin/bash
+
+

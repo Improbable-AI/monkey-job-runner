@@ -1,0 +1,49 @@
+---
+#  Unique name to separate the project
+name: docker
+
+run:
+  # env_type can be conda or pip
+  # TODO(@alamp): Implement pip environment restoration
+  env_type: pip
+  # env_file should be the conda environment or pip environment
+  # for conda to generate: conda env export
+  # for pip to generate:   pip freeze
+  env_file: requirements.txt
+  # Any additional environment variables specified
+  # Terminate the instance after finishing
+  terminate: true
+
+install:
+# Installs each of the system dependencies.  
+# Current available options: conda, docker
+  - docker
+
+code:
+  path: "."
+  ignore:
+      - output
+
+persist:
+  - name: output
+    # Must be a relative dir
+    path: output
+
+
+providers:
+  - name: aws
+    
+    machine_type: t2-nano
+    disk_size_gb: 10
+    # disk_type: pd-standard
+    # source_image: "projects/ubuntu-os-cloud/global/images/family/ubuntu-1804-lts"
+    # preemptible: true
+  # Specifications of GCP machines to run on
+  - name: gcp
+    
+    machine_type: n1-standard-2
+    disk_size_gb: 10
+    disk_type: pd-standard
+    source_image: "projects/ubuntu-os-cloud/global/images/family/ubuntu-1804-lts"
+    preemptible: true
+  

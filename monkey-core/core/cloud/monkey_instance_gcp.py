@@ -235,6 +235,11 @@ name: {}, ip: {}, state: {}
             if success == False:
                 return success, msg
 
+        print("Setting up dependency manager...")
+        success, msg = self.setup_dependency_manager(job["run"])
+        if success == False:
+            return success, msg
+
         return True, "Successfully setup the job"
 
     def setup_dependency_manager(self, run_yml):
@@ -259,12 +264,12 @@ name: {}, ip: {}, state: {}
         if len(runner.stats.get("failures")) != 0:
             return False, "Failed to initialize environment manager"
 
-        return True, "Successfully created dependency manager and stored initialization in .profile"
+        return True, "Successfully created dependency manager and stored initialization in .monkey_activate"
 
     def execute_command(self, cmd, run_yml):
         print("Executing cmd: ", cmd)
         print("Environment Variables:", run_yml.get("env", dict()))
-        final_command = ". ~/.profile; " + cmd + " 2>&1 | tee logs/run.log"
+        final_command = ". ~/.monkey_activate; " + cmd + " 2>&1 | tee logs/run.log"
         runner = ansible_runner.run(host_pattern=self.name,
                                     private_data_dir="ansible",
                                     module="include_role",
@@ -285,11 +290,6 @@ name: {}, ip: {}, state: {}
         monkeyfs_path = provider_info.get("monkeyfs_path", "/monkeyfs")
         if credential_file is None:
             return False, "Service account credential file is not provided"
-
-        print("Setting up dependency manager...")
-        success, msg = self.setup_dependency_manager(job["run"])
-        if success == False:
-            return success, msg
 
         success, msg = self.execute_command(cmd=job["cmd"], run_yml=job["run"])
         if success == False:

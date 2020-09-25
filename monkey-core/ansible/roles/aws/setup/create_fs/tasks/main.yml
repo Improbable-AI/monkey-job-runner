@@ -4,6 +4,9 @@
   debug:
     msg: "FS Name: {{ storage_name }}"
 - name: Create filesystem 
+  environment:
+    "AWS_ACCESS_KEY_ID": "{{access_key_id}}"
+    "AWS_SECRET_ACCESS_KEY": "{{access_key_secret}}"
   aws_s3:
     bucket: "{{ storage_name}}"
     mode: create

@@ -33,6 +33,5 @@
 
     - name: Add miniconda bin to path
       shell: |
-       echo 'export PATH=~/.miniconda3/bin:$PATH' >> ~/.profile; 
-       echo 'eval "$(conda shell.bash hook)"' >> ~/.profile; 
-       echo 'export PATH=~/.miniconda3/bin:$PATH' >> ~/.bashrc
+       echo 'export PATH=~/.miniconda3/bin:$PATH' >> ~/.monkey_activate; 
+       echo 'eval "$(conda shell.bash hook)"' >> ~/.monkey_activate; 

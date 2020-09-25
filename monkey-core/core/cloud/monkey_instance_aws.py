@@ -8,6 +8,7 @@ import threading
 import time
 
 import ansible_runner
+import monkey_global
 import requests
 import yaml
 from core.monkey_instance import MonkeyInstance
@@ -55,7 +56,8 @@ name: {}, ip: {}, state: {}
             host_pattern=self.name,
             private_data_dir="ansible",
             module="include_role",
-            module_args="name=install/{}".format(dependency))
+            module_args="name=install/{}".format(dependency),
+            quiet=monkey_global.QUIET_ANSIBLE)
 
         if len(runner.stats.get("failures")) != 0:
             return False
@@ -79,14 +81,16 @@ name: {}, ip: {}, state: {}
             private_data_dir="ansible",
             module="file",
             module_args="path={} state=directory".format(
-                installation_location))
+                installation_location),
+            quiet=monkey_global.QUIET_ANSIBLE)
 
         runner = ansible_runner.run(
             host_pattern=self.name,
             private_data_dir="ansible",
             module="unarchive",
             module_args="src={} remote_src=True dest={} creates=yes".format(
-                dataset_full_path, installation_location))
+                dataset_full_path, installation_location),
+            quiet=monkey_global.QUIET_ANSIBLE)
         print(runner.stats)
         if len(runner.stats.get("failures")) != 0:
             return False, "Failed to extract archive"
@@ -101,7 +105,8 @@ name: {}, ip: {}, state: {}
             private_data_dir="ansible",
             module="copy",
             module_args="src={} dest={} remote_src=true".format(
-                job_path + "/", home_dir_path))
+                job_path + "/", home_dir_path),
+            quiet=monkey_global.QUIET_ANSIBLE)
         if len(runner.stats.get("failures")) != 0:
             return False, "Failed to copy directory"
 
@@ -110,7 +115,8 @@ name: {}, ip: {}, state: {}
             private_data_dir="ansible",
             module="unarchive",
             module_args="src={} remote_src=True dest={} creates=yes".format(
-                os.path.join(job_path, "code.tar"), home_dir_path))
+                os.path.join(job_path, "code.tar"), home_dir_path),
+            quiet=monkey_global.QUIET_ANSIBLE)
         if len(runner.stats.get("failures")) != 0:
             return False, "Failed to extract archive"
 
@@ -137,7 +143,8 @@ name: {}, ip: {}, state: {}
                 "persist_folder_path": persist_folder_path,
                 "persist_script_path": script_path,
                 "bucket_path": monkeyfs_output_folder,
-            })
+            },
+            quiet=monkey_global.QUIET_ANSIBLE)
 
         if len(runner.stats.get("failures")) != 0:
             return False, "Failed to create persisted directory: " + persist_path
@@ -159,7 +166,8 @@ name: {}, ip: {}, state: {}
                 "persist_script_path": script_path,
                 "bucket_path": monkeyfs_output_folder,
                 "persist_time": 3,
-            })
+            },
+            quiet=monkey_global.QUIET_ANSIBLE)
 
         if len(runner.stats.get("failures")) != 0:
             return False, "Failed to create persisted logs folder"
@@ -187,7 +195,8 @@ name: {}, ip: {}, state: {}
                 "monkeyfs_path": monkeyfs_path,
                 "access_key_id": cred_environment["AWS_ACCESS_KEY_ID"],
                 "access_key_secret": cred_environment["AWS_SECRET_ACCESS_KEY"]
-            })
+            },
+            quiet=monkey_global.QUIET_ANSIBLE)
         print(runner.stats)
         if len(runner.stats.get("failures")) != 0:
             return False, "Failed to mount filesystem"
@@ -228,6 +237,11 @@ name: {}, ip: {}, state: {}
             if success == False:
                 return success, msg
 
+        print("Setting up dependency manager...")
+        success, msg = self.setup_dependency_manager(job["run"])
+        if success == False:
+            return success, msg
+
         return True, "Successfully setup the job"
 
     def setup_dependency_manager(self, run_yml):
@@ -243,27 +257,36 @@ name: {}, ip: {}, state: {}
                                         module_args="name=run/setup_conda",
                                         extravars={
                                             "environment_file": env_file,
-                                        })
+                                        },
+                                        quiet=monkey_global.QUIET_ANSIBLE)
         elif env_type == "pip":
-            return True, "pip environment manager not implemented yet"
+            runner = ansible_runner.run(host_pattern=self.name,
+                                        private_data_dir="ansible",
+                                        module="include_role",
+                                        module_args="name=run/setup_pip",
+                                        extravars={
+                                            "environment_file": env_file,
+                                        },
+                                        quiet=monkey_global.QUIET_ANSIBLE)
         else:
             return False, "Provided or missing dependency manager"
 
         if len(runner.stats.get("failures")) != 0:
             return False, "Failed to initialize environment manager"
 
-        return True, "Successfully created dependency manager and stored initialization in .profile"
+        return True, "Successfully created dependency manager and stored initialization in .monkey_activate"
 
     def execute_command(self, cmd, run_yml):
         print("Executing cmd: ", cmd)
         print("Environment Variables:", run_yml.get("env", dict()))
-        final_command = ". ~/.profile; " + cmd + " 2>&1 | tee logs/run.log"
+        final_command = ". ~/.monkey_activate; " + cmd + " 2>&1 | tee logs/run.log"
         runner = ansible_runner.run(host_pattern=self.name,
                                     private_data_dir="ansible",
                                     module="include_role",
                                     module_args="name=run/cmd",
                                     extravars={"run_command": cmd},
-                                    envvars=run_yml.get("env", dict()))
+                                    envvars=run_yml.get("env", dict()),
+                                    quiet=monkey_global.QUIET_ANSIBLE)
 
         if len(runner.stats.get("failures")) != 0:
             return False, "Failed to run command properly: " + cmd
@@ -278,11 +301,6 @@ name: {}, ip: {}, state: {}
         monkeyfs_path = provider_info.get("monkeyfs_path", "/monkeyfs")
         if credential_file is None:
             return False, "AWS Account Credential file is not provided"
-
-        print("Setting up dependency manager...")
-        success, msg = self.setup_dependency_manager(job["run"])
-        if success == False:
-            return success, msg
 
         success, msg = self.execute_command(cmd=job["cmd"], run_yml=job["run"])
         if success == False:
@@ -311,7 +329,8 @@ name: {}, ip: {}, state: {}
                                     private_data_dir="ansible",
                                     module="include_role",
                                     module_args="name=aws/delete",
-                                    extravars=delete_instance_params)
+                                    extravars=delete_instance_params,
+                                    quiet=monkey_global.QUIET_ANSIBLE)
 
         if len(runner.stats.get("failures")) != 0:
             print("Failed Deletion of machine")

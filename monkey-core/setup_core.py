@@ -109,12 +109,11 @@ def main():
     if len(providers) > 0:
         print("Checking integrity of existing providers...")
     for provider in providers:
-        print(provider)
         provider_type = provider.get("type", None)
         if provider_type == "gcp":
             check_gcp_provider(provider)
         elif provider_type == "aws":
-            pass
+            check_aws_provider(provider)
         else:
             print("Unsupported provider type", provider_type)
 

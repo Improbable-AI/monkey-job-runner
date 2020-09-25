@@ -31,6 +31,24 @@ def get_gcp_vars():
     return load_yaml_file_as_dict(gcp_vars_file)
 
 
+def printout_ansible_events(events):
+    for e in events:
+        print(e)
+    events = [(x.get("event_data", {}).get("task", "unknown"),
+               x.get("event_data", {}).get("playbook", "unknown"),
+               x.get("event_data", {}).get("task_action", "unknown"),
+               x.get("event_data", {}).get("task_args",
+                                           "unknown"), x.get("stdout", None))
+              for x in events]
+
+    for task, playbook, action, args, stdout in events:
+        print("----------------------")
+        print(playbook, ":", task)
+        print("Task: ", action, ", args: ", args)
+        if stdout is not None and stdout != "":
+            print("stdout: ", stdout, "\n")
+
+
 def get_monkey_fs():
     # Check env variable MONKEYFS_PATH first
     fs_path = os.environ.get("MONKEYFS_PATH", None)
@@ -54,7 +72,6 @@ def get_monkey_fs():
 
 
 def aws_cred_file_environment(file):
-    print(file)
     with open(file) as f:
         lines = f.readlines()
         names = lines[0].split(",")

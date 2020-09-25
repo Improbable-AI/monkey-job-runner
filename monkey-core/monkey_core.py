@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
-from flask import Flask, jsonify, request
-
-application = Flask(__name__)
-
+import argparse
 import concurrent.futures
 import copy
+import logging
 import os
 import random
 import string
 import subprocess
+import sys
 import tarfile
 import tempfile
 import threading
@@ -16,10 +15,15 @@ import time
 from datetime import datetime
 
 import yaml
+from flask import Flask, jsonify, request
 from werkzeug.datastructures import FileStorage
 
+import monkey_global
 from monkey import Monkey
 from setup.utils import get_monkey_fs
+
+application = Flask(__name__)
+logging.getLogger("werkzeug").setLevel(logging.WARNING)
 
 date_format = "monkey-%y-%m-%d-"
 instance_number = 0
@@ -137,7 +141,7 @@ def submit_job():
     success, msg = monkey.submit_job(job_args, foreground=foreground)
     res = {"msg": msg, "success": success}
 
-    print("returning:", res)
+    print("Finished submitting job")
     return jsonify(res)
 
 
@@ -241,5 +245,38 @@ def get_logs():
     return application.response_class(logs(), mimetype='text/plain')
 
 
-if __name__ == '__main__':
+def parse_args(args):
+    parser = argparse.ArgumentParser(description='For extra commands')
+
+    parser.add_argument("--quiet",
+                        "-q",
+                        required=False,
+                        default=None,
+                        action="store_true",
+                        dest="quiet",
+                        help="Run quietly for all printouts")
+    parser.add_argument("--ansible-quiet",
+                        "-qa",
+                        required=False,
+                        default=None,
+                        action="store_true",
+                        dest="quietansible",
+                        help="Run quietly for all printouts")
+    parsed_args, remainder = parser.parse_known_args(args)
+    if parsed_args.quiet is not None:
+        monkey_global.QUIET = parsed_args.quiet
+        monkey_global.QUIET_ANSIBLE = parsed_args.quiet
+
+    if parsed_args.quietansible is not None:
+        monkey_global.QUIET_ANSIBLE = parsed_args.quietansible
+
+
+def main():
+    if len(sys.argv) > 1:
+        parse_args(sys.argv[1:])
     application.run(host='0.0.0.0', port=9990)
+    return 0
+
+
+if __name__ == '__main__':
+    exit(main())

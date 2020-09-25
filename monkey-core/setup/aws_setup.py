@@ -7,7 +7,8 @@ import ansible_runner
 from ruamel.yaml import YAML, round_trip_load
 
 from setup.utils import (Completer, aws_cred_file_environment,
-                         check_for_existing_local_command)
+                         check_for_existing_local_command,
+                         printout_ansible_events)
 
 comp = Completer()
 # we want to treat '/' as part of a word, so override the delimiters
@@ -20,14 +21,22 @@ def check_aws_provider(yaml):
     provider_name = yaml.get("name")
     print("Checking integrity of", provider_name, "with type:",
           yaml.get("type"))
-    storage_name = yaml.get("storage_name")
 
-    print("Checking if {} is mounted".format(storage_name))
+    cred_environment = aws_cred_file_environment(yaml["aws_cred_file"])
+
     runner = ansible_runner.run(playbook='aws_setup_checks.yml',
                                 private_data_dir='ansible',
-                                quiet=False)
+                                extravars={
+                                    "access_key_id":
+                                    cred_environment["AWS_ACCESS_KEY_ID"],
+                                    "access_key_secret":
+                                    cred_environment["AWS_SECRET_ACCESS_KEY"],
+                                },
+                                quiet=True)
     events = [e for e in runner.events]
     if len(runner.stats.get("failures")) != 0:
+        printout_ansible_events(events)
+
         print("Failed to mount the AWS S3 filesystem")
         return False
     print("Mount successful")

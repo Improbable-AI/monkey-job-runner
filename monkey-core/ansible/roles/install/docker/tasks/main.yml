@@ -42,6 +42,9 @@
         name: docker
 
     - name: Add ansible user to docker group
+      debug:
+        msg: "user {{ ansible_user }}"
+    - name: Add ansible user to docker group
       become: true
       user:
         name: "{{ ansible_user }}"

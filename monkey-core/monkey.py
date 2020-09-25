@@ -40,7 +40,7 @@ class Monkey():
                 colored(
                     "\n======================================================================",
                     "blue"))
-            logger.info(" :{}:Running periodic check".format(datetime.now()))
+            print("{}:Running periodic check".format(datetime.now()))
             self.check_for_queued_jobs()
             self.check_for_dead_jobs()
 
@@ -222,7 +222,7 @@ class Monkey():
         Returns:
             (bool, str): (Success, Message)
         """
-        print("Monkey job yml submitted:", job_yml)
+        print("Monkey job yml submitted:")
         provider_name = job_yml["provider"]
         found_provider = None
         for p in self.providers:
