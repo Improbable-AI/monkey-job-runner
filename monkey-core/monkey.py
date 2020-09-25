@@ -63,11 +63,20 @@ class Monkey():
     def check_for_dead_jobs(self):
         pending_jobs = MonkeyJob.objects(
             creation_date__gte=(datetime.now() - timedelta(days=10)))
-        pending_job_num = len([
+
+        current_jobs = [
             x for x in pending_jobs if x.state != MONKEY_STATE_FINISHED
             and x.state != MONKEY_STATE_CLEANUP
-        ])
-        potential_missed_cleanup_num = len(pending_jobs) - pending_job_num
+        ]
+
+        pending_job_num = len(current_jobs)
+        cleanup_jobs = [
+            x for x in pending_jobs if x.state == MONKEY_STATE_CLEANUP
+        ]
+        potential_missed_cleanup_num = len(cleanup_jobs)
+        recently_finished_jos = [
+            x for x in pending_jobs if x.state == MONKEY_STATE_FINISHED
+        ]
         print("Found: {} jobs in pending state".format(pending_job_num))
         print("Checking: {} jobs for late cleanup".format(
             potential_missed_cleanup_num))

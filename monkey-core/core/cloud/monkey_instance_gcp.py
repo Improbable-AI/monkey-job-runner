@@ -251,8 +251,8 @@ name: {}, ip: {}, state: {}
                                         extravars={
                                             "environment_file": env_file,
                                         })
-        elif env_file == "pip":
-            return False, "pip environment manager not implemented yet"
+        elif env_type == "pip":
+            return True, "pip environment manager not implemented yet"
         else:
             return False, "Provided or missing dependency manager"
 

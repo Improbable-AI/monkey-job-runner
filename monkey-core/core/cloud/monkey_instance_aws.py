@@ -35,7 +35,6 @@ name: {}, ip: {}, state: {}
 
     # Passes compute_api in order to restart instances
     def __init__(self, ansible_info):
-        print("Instantiating AWS Instance \n\n")
 
         name = ansible_info["tags"]["Name"]
         machine_zone = ansible_info["placement"]["availability_zone"]
@@ -245,8 +244,8 @@ name: {}, ip: {}, state: {}
                                         extravars={
                                             "environment_file": env_file,
                                         })
-        elif env_file == "pip":
-            return False, "pip environment manager not implemented yet"
+        elif env_type == "pip":
+            return True, "pip environment manager not implemented yet"
         else:
             return False, "Provided or missing dependency manager"
 
