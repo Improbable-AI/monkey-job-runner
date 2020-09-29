@@ -262,6 +262,11 @@ def parse_args(args):
                         action="store_true",
                         dest="quietansible",
                         help="Run quietly for all printouts")
+    parser.add_argument("--log-file",
+                        required=False,
+                        default=None,
+                        dest="log_file",
+                        help="Run quietly for all printouts")
     parsed_args, remainder = parser.parse_known_args(args)
     if parsed_args.quiet is not None:
         monkey_global.QUIET = parsed_args.quiet
@@ -270,9 +275,16 @@ def parse_args(args):
     if parsed_args.quietansible is not None:
         monkey_global.QUIET_ANSIBLE = parsed_args.quietansible
 
+    if parsed_args.log_file is not None:
+        monkey_global.LOG_FILE = parsed_args.log_file
+
+    print("Logging to ", monkey_global.LOG_FILE)
+    logging.basicConfig(filename=monkey_global.LOG_FILE, level=logging.DEBUG)
+    logging.info("Starting Monkey Core logs...")
+
 
 def main():
-    if len(sys.argv) > 1:
+    if len(sys.argv) >= 1:
         parse_args(sys.argv[1:])
     application.run(host='0.0.0.0', port=9990)
     return 0

@@ -59,7 +59,7 @@ providers:
   - name: aws
     
     # TODO(@alamp): implement machine options passthrough
-    machine_type: t2-nano
+    machine_type: t2.micro
     disk_size_gb: 10
     # disk_type: pd-standard
     # source_image: "projects/ubuntu-os-cloud/global/images/family/ubuntu-1804-lts"
