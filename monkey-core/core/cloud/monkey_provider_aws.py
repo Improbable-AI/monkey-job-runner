@@ -131,6 +131,7 @@ class MonkeyProviderAWS(MonkeyProvider):
         return images
 
     def create_instance(self, machine_params=dict()):
+        print("MACHINE PARAMS: ", machine_params)
 
         runner = ansible_runner.run(playbook='aws_create_job.yml',
                                     private_data_dir='ansible',

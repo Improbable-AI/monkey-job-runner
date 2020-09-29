@@ -264,9 +264,17 @@ class Monkey():
             print("Monkey Job {} is already in a dispatching state".format(
                 dbMonkeyJob))
         logger.info("Dispatching:".format(job_uid))
+        machine_params = dict()
+        for provider_yml in job_yml["providers"]:
+            if provider_yml.get("name", "") == provider.name:
+                for key, val in provider_yml.items():
+                    machine_params[key] = val
+                break
+        machine_params["monkey_job_uid"] = job_uid
+
         dbMonkeyJob.set_state(state=MONKEY_STATE_DISPATCHING_MACHINE)
         created_host, creation_success = provider.create_instance(
-            machine_params={"monkey_job_uid": job_uid})
+            machine_params=machine_params)
         logger.info("Created Host:".format(created_host))
         if creation_success == False:
             return False, "Failed to create and virtualize instance properly"
