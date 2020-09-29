@@ -200,7 +200,7 @@ class Monkey():
 
         for provider in providers:
             try:
-                logger.info("Try initializing: {}".format(provider))
+                logger.info("Try initializing: {}".format(provider["name"]))
                 handler = MonkeyProvider.create_cloud_handler(
                     provider_info=provider)
                 if handler.is_valid():

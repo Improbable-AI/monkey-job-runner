@@ -104,9 +104,9 @@ def get_list_jobs():
 
 @application.route('/check/dataset')
 def check_dataset():
-    print("Checking dataset: {}".format(request.args))
     dataset_name = request.args.get('dataset_name', None)
     dataset_checksum = request.args.get('dataset_checksum', None)
+    print("Checking dataset: {}:{}".format(dataset_name, dataset_checksum))
     provider = request.args.get('provider', None)
 
     if dataset_name is None or dataset_checksum is None or provider is None:
