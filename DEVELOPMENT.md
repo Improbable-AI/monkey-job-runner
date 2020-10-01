@@ -108,6 +108,13 @@ To expore the binary options (not all available) run:
 monkey
 ```
 
+#### Monkey-CLI Job.yml
+Monkey-CLI requires a "job.yml" file to read in parameters to dispatch jobs to Monkey-Core.  To set up this job.yml, run the command 
+```
+monkey init
+```
+Follow the step by step instructions, and a `job.yml` file will be written to the current working directory.  Ensure that the job.yml is at the root of the workflow and all paths are relative to the `job.yml` file.
+
 To dispatch a job, go to the samples directory `./*monkey-cli*/samples/mnist` and run with whatever options desired:
 ```
 monkey run python mnist.py --learning-rate 0.13
