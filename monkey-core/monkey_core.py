@@ -75,7 +75,7 @@ def get_job_uid():
 def get_list_providers():
     providers_list = monkey.get_list_providers()
     print(providers_list)
-    return jsonify(providers_list)
+    return jsonify({"response": providers_list})
 
 
 @application.route('/list/instances')

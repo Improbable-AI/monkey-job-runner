@@ -29,11 +29,8 @@ class MonkeyProviderGCP(MonkeyProvider):
     raw_provider_info = dict()
 
     def get_dict(self):
-        res = {
-            "name": self.name,
-            "type": self.provider_type,
-            "credential_file": self.credential_file,
-        }
+        res = super().get_dict()
+        res["credential_file"] = self.credential_file
         for key, value in self.raw_provider_info.items():
             res[key] = value
         return res

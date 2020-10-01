@@ -1,15 +1,12 @@
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 setup(
     name="monkeycli",
     version="0.0.1",
     packages=["monkeycli"],
-    package_dir = {"": "lib"},
-    entry_points={
-        'console_scripts': ['monkey=monkeycli.monkeycli:main']
-    }, 
+    entry_points={'console_scripts': ['monkey=monkeycli:main']},
     install_requires=[
-        "requests"
+        "requests", "yaml", "checksumdir", "termcolor", "ruamel.yaml"
     ],
     author="Avery Lamp",
     author_email="averylamp@gmail.com",
