@@ -1,3 +1,6 @@
 [submodule "monkey-client"]
 	path = monkey-client
 	url = https://github.com/Averylamp/monkey-client.git
+[submodule "monkey-cli/samples/locomotion"]
+	path = monkey-cli/samples/locomotion
+	url = git@github.com:Improbable-AI/locomotion.git
