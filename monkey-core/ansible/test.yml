@@ -1,0 +1,14 @@
+---
+- hosts: localhost
+  name: Testing playbook
+  
+  pre_tasks:
+    - name: Starting
+      debug:
+        msg: "Starting tests"
+
+  roles:
+    - install/nvidia-docker
+
+
+
