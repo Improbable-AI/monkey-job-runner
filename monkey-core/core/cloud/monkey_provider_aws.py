@@ -1,9 +1,6 @@
-import datetime
-import json
 import logging
 import os
-import random
-import string
+import subprocess
 import time
 from concurrent.futures import Future
 from threading import Thread
@@ -15,7 +12,7 @@ from ansible.parsing.dataloader import DataLoader
 from ansible.vars.manager import VariableManager
 from core.cloud.monkey_instance_aws import MonkeyInstanceAWS
 from core.monkey_provider import MonkeyProvider
-from setup.utils import aws_cred_file_environment
+from setup.utils import aws_cred_file_environment, printout_ansible_events
 
 logger = logging.getLogger(__name__)
 logging.getLogger("botocore").setLevel(logging.WARNING)
@@ -37,6 +34,7 @@ class MonkeyProviderAWS(MonkeyProvider):
         self.provider_type = "aws"
         self.zone = provider_info["aws_zone"]
         provider_info["zone"] = provider_info["aws_zone"]
+        self.provider_info = provider_info
 
         for key, value in provider_info.items():
             if value is not None:
@@ -51,6 +49,53 @@ class MonkeyProviderAWS(MonkeyProvider):
         cred_environment = aws_cred_file_environment(self.credential_file)
         for key, value in cred_environment.items():
             os.environ[key] = value
+
+        if self.check_filesystem_mounted() == False:
+            print("Filesystem mount not found")
+            print("Remounting filesystem.... ")
+            if self.check_provider() == False or self.check_filesystem_mounted(
+            ):
+                print("Failed to remount filesystem")
+                return None
+            else:
+                print("Filesystem remounted successfully!")
+
+    def check_filesystem_mounted(self):
+        # Check for mounts
+        print("Checking for mounted filesystem")
+
+        fs_output = subprocess.run("df {} | grep monkeyfs".format(
+            self.provider_info.get("local_monkeyfs_path",
+                                   "ansible/monkeyfs-aws")),
+                                   shell=True,
+                                   capture_output=True).stdout.decode("utf-8")
+        if fs_output is not None and fs_output != "":
+            return (fs_output.split()[0] == "s3fs"
+                    or fs_output.split()[0] == self.provider_info.get(
+                        "storage_name", "monkeyfs"))
+        return False
+
+    def check_provider(self):
+        cred_environment = aws_cred_file_environment(
+            self.provider_info["aws_cred_file"])
+
+        runner = ansible_runner.run(
+            playbook='aws_setup_checks.yml',
+            private_data_dir='ansible',
+            extravars={
+                "access_key_id": cred_environment["AWS_ACCESS_KEY_ID"],
+                "access_key_secret": cred_environment["AWS_SECRET_ACCESS_KEY"],
+            },
+            quiet=True)
+
+        events = [e for e in runner.events]
+        if len(runner.stats.get("failures")) != 0:
+            printout_ansible_events(events)
+
+            print("Failed to mount the AWS S3 filesystem")
+            return False
+        print("Mount successful")
+        return True
 
     def is_valid(self):
         return super().is_valid()
