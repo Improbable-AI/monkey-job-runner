@@ -58,9 +58,15 @@ def check_or_upload_dataset(dataset, provider_name, compression_type="tar"):
 
 def upload_persisted_folder(persist, job_uid, provider_name):
     print("Uploading persisted_folder...")
-    persist_name = persist["name"]
-    code_path = persist["path"]
-    ignore_filters = persist.get("ignore", [])
+
+    if type(persist) is str:
+        persist_name = persist
+        code_path = persist
+        ignore_filters = []
+    elif type(persist) is dict:
+        persist_name = persist["name"]
+        code_path = persist["path"]
+        ignore_filters = persist.get("ignore", [])
 
     all_files = set([
         y.strip("/") for y in
@@ -103,7 +109,7 @@ def upload_persisted_folder(persist, job_uid, provider_name):
 def upload_codebase(code, job_uid, provider_name):
     print("Uploading Codebase...")
     code_path = code["path"]
-    ignore_filters = code.get("ignore", [])
+    ignore_filters = [x + "*" for x in code.get("ignore", [])]
 
     all_files = set([
         y.strip("/") for y in
