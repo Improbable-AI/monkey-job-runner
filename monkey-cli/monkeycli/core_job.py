@@ -59,18 +59,10 @@ def check_or_upload_dataset(dataset, provider_name, compression_type="tar"):
 def upload_persisted_folder(persist, job_uid, provider_name):
     print("Uploading persisted_folder...")
 
-    if type(persist) is str:
-        persist_name = persist
-        code_path = persist
-        ignore_filters = []
-    elif type(persist) is dict:
-        persist_name = persist["name"]
-        code_path = persist["path"]
-        ignore_filters = persist.get("ignore", [])
-
+    ignore_filters = []
     all_files = set([
         y.strip("/") for y in
-        [x.strip(".") for x in glob.glob(code_path + "/**", recursive=True)]
+        [x.strip(".") for x in glob.glob(persist + "**", recursive=True)]
     ])
     filenames = (n for n in all_files if not any(
         fnmatch.fnmatch(n, ignore) for ignore in ignore_filters))
@@ -80,9 +72,9 @@ def upload_persisted_folder(persist, job_uid, provider_name):
         all_files.remove("")
     with tempfile.NamedTemporaryFile(delete=False, suffix=".tar") as dir_tmp:
         code_tar = tarfile.open(dir_tmp.name, "w")
-        code_tar.add(persist_name)
-        # for file in all_files:
-        #     code_tar.add(file)
+        code_tar.add(persist)
+        for file in all_files:
+            code_tar.add(file)
         code_tar.close()
         success = False
         try:

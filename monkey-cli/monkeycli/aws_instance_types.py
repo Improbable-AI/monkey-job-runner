@@ -14,6 +14,10 @@ class AWSInstanceInfo():
         except:
             self.price_float = -1
         self.gpus = 0
+        self.architecture = "x86"
+        for sub in arm_architectures:
+            if name.startswith(sub):
+                self.architecture = "ARM"
 
     def __str__(self):
         return "Name: {}, cpus: {}, memory: {}GB, storage: {}, price: {}".format(
@@ -23,9 +27,9 @@ class AWSInstanceInfo():
 instance_type_map = {
     "gpu": ["p3", "p2"],
     "compute": ["c6", "c5"],
-    "compute_minimal": ["c6g."],
+    "compute_minimal": ["c6."],
     "memory": ["r6g", "r5"],
-    "memory_minimal": ["r6g."],
+    "memory_minimal": ["r6."],
     "general": ["a1", "t4g"],
     "general_minimal": ["a1."],
 }

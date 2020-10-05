@@ -553,7 +553,7 @@ def runfile_write(project_name, env_type, env_file, env_ignore, installs,
     persist_yml.fa.set_block_style()
     persist_yml += persisted_folders
     persist_yml.yaml_set_start_comment("""
-Define folders to persist throughout runs.
+Define folders or files to persist throughout runs.
 Should include your output or checkpoint directory
 Any defined persist folder will be kept in persistent storage and applied over the codebase at start
 Persisted folders will be unpacked in the order they are listed

@@ -125,8 +125,8 @@ name: {}, ip: {}, state: {}
     def setup_persist_folder(self, job_uid, monkeyfs_bucket_name,
                              home_dir_path, persist):
         print("Persisting folder: ", persist)
-        persist_path = persist["path"]
-        persist_name = "." + persist_path.replace("/", "_") + "_sync.sh"
+        persist_path = persist
+        persist_name = "." + persist.replace("/", "_") + "_sync.sh"
         script_path = os.path.join(home_dir_path, persist_name)
         monkeyfs_output_folder = \
             os.path.join("/monkeyfs", "jobs", job_uid, persist_path)

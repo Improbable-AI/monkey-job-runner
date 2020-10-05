@@ -1,5 +1,8 @@
 ---
 
+- name: Set Subnet CIDR
+  set_fact:
+    monkey_subnet_cidr: 10.0.0.0/24
 
 - name: Create VPC
   environment:
@@ -7,7 +10,7 @@
     "AWS_SECRET_ACCESS_KEY": "{{access_key_secret}}"
   ec2_vpc_net:
     name: Monkey_VPC
-    cidr_block: 10.0.0.0/24
+    cidr_block: 10.0.0.0/16
     region: "{{aws_region}}"
     
     tenancy: default
@@ -32,7 +35,7 @@
     state: present
     vpc_id: "{{monkey_vpc_id}}"
     map_public: true
-    cidr: 10.0.0.0/24
+    cidr: "{{ monkey_subnet_cidr }}"
     region: "{{ aws_region }}"
     az: "{{ aws_zone }}"
     tags:
@@ -95,7 +98,7 @@
     subnets:
       - "{{monkey_subnet_id}}"
     routes:
-      - dest: "10.0.0.0/24"
+      - dest: "10.0.0.0/16"
         gateway_id: local
       - dest: "0.0.0.0/0"
         gateway_id: "{{monkey_igw_id}}"

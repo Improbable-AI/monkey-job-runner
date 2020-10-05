@@ -2,13 +2,13 @@
 name: monkey
 run:
 # Supported env_type options: conda, pip, docker
-    env_type: conda
+    env_type: pip
 # Please set it to the requirements.txt file or environment.yml file
-    env_file: environment.yml
+    env_file: requirements.txt
 install:
 # Installs each of the system dependencies.
 # Current available options include: docker, cuda10.2,
-  - conda
+  - pip
 code:
 # Defines the codebase path
     path: .
@@ -19,7 +19,7 @@ code:
       - output
 persist:
 # 
-# Define folders or files to persist throughout runs.
+# Define folders to persist throughout runs.
 # Should include your output or checkpoint directory
 # Any defined persist folder will be kept in persistent storage and applied over the codebase at start
 # Persisted folders will be unpacked in the order they are listed
@@ -47,13 +47,13 @@ providers:
 # AWS Provider: aws
   - name: aws
 # Pick an AWS instance type (https://aws.amazon.com/ec2/instance-types/)
-    machine_type: a1.medium
+    machine_type: t2.micro
     disk_size: 10
 # Available disk types (gp2, st1) (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-volume-types.html)
     disk_type: gp2
 # Currently only Ubuntu 18.04/20.04 is supported. 
-# Ubuntu 20.04 ARM ( ami-0ea142bd244023692 )
-    base_image: ami-0ea142bd244023692
+# Ubuntu 20.04 x86 ( ami-0dba2cb6798deb6d8 )
+    base_image: ami-0dba2cb6798deb6d8
     spot: true
-# 80%  $0.03/hr -> $0.01/hr
-    spot_price: 0.0051
+# 80%  $24.48/hr -> $4.90/hr
+    spot_price: 4.896

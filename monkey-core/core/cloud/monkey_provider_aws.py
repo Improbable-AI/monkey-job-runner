@@ -182,6 +182,8 @@ class MonkeyProviderAWS(MonkeyProvider):
         print(runner.stats)
 
         if len(runner.stats.get("failures")) != 0:
+            printout_ansible_events([e for e in runner.events])
+
             return None, False
         retries = 4
         while retries > 0:
