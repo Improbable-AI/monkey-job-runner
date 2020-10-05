@@ -97,9 +97,9 @@ def get_list_instances():
 
 @application.route('/list/jobs')
 def get_list_jobs():
-    providers_list = monkey.get_list_providers()
-    print(providers_list)
-    return jsonify(providers_list)
+    jobs_list = monkey.get_list_jobs()
+    print(jobs_list)
+    return jsonify(jobs_list)
 
 
 @application.route('/check/dataset')

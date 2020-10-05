@@ -6,7 +6,7 @@ import yaml
 from termcolor import colored
 
 from core.monkey_provider import MonkeyProvider
-from setup.mongo_utils import *
+from mongo import *
 
 logging.basicConfig()
 logging.getLogger().setLevel(logging.DEBUG)

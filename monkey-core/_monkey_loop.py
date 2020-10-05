@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 
 from termcolor import colored
 
-from setup.mongo_utils import *
+from mongo import *
 
 logging.basicConfig()
 logging.getLogger().setLevel(logging.DEBUG)
