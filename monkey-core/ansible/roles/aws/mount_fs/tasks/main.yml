@@ -28,9 +28,6 @@
   when: mount_found is failed
   debug:
     msg: "Mounting with: s3fs {{aws_storage_name}} {{monkeyfs_path}}"
-- name: Debug creds
-  debug:
-    msg:  "AWSACCESSKEYID:{{access_key_id}} AWSSECRETACCESSKEY: {{access_key_secret}}"
 - name: Mount fs to Mountpoint
   when: mount_found is failed
   environment:
