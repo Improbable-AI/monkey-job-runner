@@ -1,3 +1,4 @@
+import json
 from datetime import datetime, timedelta
 
 from mongoengine import *
@@ -18,6 +19,7 @@ class MonkeyJob(DynamicDocument):
 
     # Dates to store certain timing statistics
     creation_date = DateTimeField(required=True, default=datetime.now)
+    last_state_change = DateTimeField(required=True, default=datetime.now)
     run_dispatch_date = DateTimeField(required=False)
     run_dispatch_machine_start_date = DateTimeField(required=False)
     run_dispatch_installs_start_date = DateTimeField(required=False)
@@ -37,6 +39,9 @@ class MonkeyJob(DynamicDocument):
             '$state',  # text index for state
         ]
     }
+
+    def get_dict(self):
+        return json.loads(self.to_json())
 
     def set_state(self, state):
         """ Sets the state and updates needed timestamps
@@ -65,4 +70,8 @@ class MonkeyJob(DynamicDocument):
                 # Ensures cleanup will be run immediately
                 self.run_cleanup_start_date = datetime.now() - timedelta(
                     days=5)
+        self.last_state_change = datetime.now()
         self.save()
+
+    def time_elapsed_in_state(self):
+        return (datetime.now() - self.last_state_change).total_seconds()

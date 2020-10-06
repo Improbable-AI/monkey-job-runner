@@ -405,7 +405,7 @@ def get_provider_aws(name):
             options = []
             for disc in discounts:
                 price = instance_info.price_float * (100 - disc) / 100
-                readable = "{}%  ${:.2f}/hr -> ${:.2f}/hr".format(
+                readable = "{}%  ${:.2f}/hr -> ${:.3f}/hr".format(
                     disc, instance_info.price_float, price)
                 options.append((readable, price))
 

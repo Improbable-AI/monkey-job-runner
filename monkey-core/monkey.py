@@ -28,7 +28,7 @@ class Monkey():
     from _monkey_list import (get_list_instances, get_list_jobs,
                               get_list_providers)
     from _monkey_loop import (check_for_dead_jobs, check_for_queued_jobs,
-                              daemon_loop)
+                              daemon_loop, print_jobs)
 
     def __init__(self, providers_path="providers.yml"):
         super().__init__()

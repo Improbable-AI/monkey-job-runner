@@ -41,8 +41,11 @@ name: {}, ip: {}, state: {}
         machine_zone = ansible_info["placement"]["availability_zone"]
         # Look for public IP
 
-        self.ip_address = ansible_info["network_interfaces"][0]["association"][
-            "public_ip"]
+        try:
+            self.ip_address = ansible_info["network_interfaces"][0][
+                "association"]["public_ip"]
+        except:
+            self.ip_address = None
 
         super().__init__(name=name,
                          machine_zone=machine_zone,

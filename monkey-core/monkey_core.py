@@ -80,25 +80,22 @@ def get_list_providers():
 
 @application.route('/list/instances')
 def get_list_instances():
-    print("Request")
-    providers = request.args.get('providers', [])
+    args = vars(request.args)
+    providers = args.get('providers', [])
     if len(providers) == 0:
         providers = [x["name"] for x in monkey.get_list_providers()]
+    args["providers"] = providers
 
-    print("Looking up instances for providers: {}".format(providers))
     res = dict()
     for provider_name in providers:
         instances = monkey.get_list_instances(provider_name=provider_name)
         res[provider_name] = [x.get_json() for x in instances]
-
-    print(res)
     return jsonify(res)
 
 
 @application.route('/list/jobs')
 def get_list_jobs():
-    jobs_list = monkey.get_list_jobs()
-    print(jobs_list)
+    jobs_list = monkey.get_list_jobs(request.args)
     return jsonify(jobs_list)
 
 
@@ -248,6 +245,13 @@ def get_logs():
 def parse_args(args):
     parser = argparse.ArgumentParser(description='For extra commands')
 
+    parser.add_argument("--dev",
+                        "-d",
+                        required=False,
+                        default=False,
+                        action="store_true",
+                        dest="dev",
+                        help="Auto restart core when files modified")
     parser.add_argument("--quiet",
                         "-q",
                         required=False,
@@ -281,12 +285,19 @@ def parse_args(args):
     print("Logging to ", monkey_global.LOG_FILE)
     logging.basicConfig(filename=monkey_global.LOG_FILE, level=logging.DEBUG)
     logging.info("Starting Monkey Core logs...")
+    return parsed_args
 
 
 def main():
-    if len(sys.argv) >= 1:
-        parse_args(sys.argv[1:])
-    application.run(host='0.0.0.0', port=9990)
+    parsed_args = parse_args(sys.argv[1:])
+    if parsed_args.dev:
+        print("\n\nStarting in debug mode...\n\n")
+        application.run(host='0.0.0.0',
+                        port=9990,
+                        debug=True,
+                        use_reloader=True)
+    else:
+        application.run(host='0.0.0.0', port=9990)
     return 0
 
 

@@ -27,11 +27,11 @@ class AWSInstanceInfo():
 instance_type_map = {
     "gpu": ["p3", "p2"],
     "compute": ["c6", "c5"],
-    "compute_minimal": ["c6."],
+    "compute_minimal": ["c5."],
     "memory": ["r6g", "r5"],
     "memory_minimal": ["r6."],
-    "general": ["a1", "t4g"],
-    "general_minimal": ["a1."],
+    "general": ["t3", "a1", "t4g"],
+    "general_minimal": ["t3."],
 }
 
 __location__ = os.path.realpath(
