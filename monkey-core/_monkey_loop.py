@@ -115,7 +115,6 @@ def check_for_dead_jobs(self):
         if job.state == state.MONKEY_STATE_RUNNING:
             if (job.run_timeout_time != -1 and job.run_timeout_time != 0) \
                 and time_elapsed > job.run_timeout_time:
-                if (instance is not None)
                 logger.info(
                     "Reached maximum running time: {}.  Killing job".format(
                         job.job_uid))
