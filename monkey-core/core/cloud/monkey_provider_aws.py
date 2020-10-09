@@ -3,6 +3,7 @@ import os
 import subprocess
 import time
 from concurrent.futures import Future
+from datetime import datetime, timedelta
 from threading import Thread
 
 import ansible_runner
@@ -21,6 +22,9 @@ logging.getLogger("botocore").setLevel(logging.WARNING)
 class MonkeyProviderAWS(MonkeyProvider):
 
     raw_provider_info = dict()
+    instances = dict()
+    last_instance_fetch = datetime.now() - timedelta(minutes=10)
+    instance_list_refresh_period = 10
 
     def get_dict(self):
         res = super().get_dict()
@@ -89,9 +93,7 @@ class MonkeyProviderAWS(MonkeyProvider):
             quiet=True)
 
         events = [e for e in runner.events]
-        if len(runner.stats.get("failures")) != 0:
-            printout_ansible_events(events)
-
+        if runner.status == "failed":
             print("Failed to mount the AWS S3 filesystem")
             return False
         print("Mount successful")
@@ -107,19 +109,36 @@ class MonkeyProviderAWS(MonkeyProvider):
         pass
 
     def list_instances(self):
-        instances = []
+        if (datetime.now() - self.last_instance_fetch
+            ).total_seconds() < self.instance_list_refresh_period:
+            return sorted(list(self.instances.values()))
         # MARK(alamp): AnsibleInternalAPI
         loader = DataLoader()
         inventory = InventoryManager(loader=loader,
                                      sources="ansible/inventory")
-        variable_manager = VariableManager(loader=loader, inventory=inventory)
         host_list = inventory.get_groups_dict().get("monkey_aws", [])
+        detected_instances = []
         for host in host_list:
             h = inventory.get_host(host)
             host_vars = h.get_vars()
             inst = MonkeyInstanceAWS(ansible_info=host_vars)
-            instances.append(inst)
-        return instances
+            detected_instances.append(inst)
+
+        detected_names = set([x.name for x in detected_instances])
+        for detected_instance in detected_instances:
+            if detected_instance.name in self.instances:
+                self.instances[detected_instance.name].update_instance_details(
+                    detected_instance)
+            else:
+                self.instances[detected_instance.name] = detected_instance
+
+        offline_instances = set(
+            self.instances.keys()).difference(detected_names)
+        for offline_instance in offline_instances:
+            self.instances[offline_instance].state = "offline"
+
+        self.last_instance_fetch = datetime.now()
+        return sorted(list(self.instances.values()))
 
     def get_instance(self, instance_name):
         """Attempts to get instance by name
@@ -181,11 +200,10 @@ class MonkeyProviderAWS(MonkeyProvider):
                                     quiet=monkey_global.QUIET_ANSIBLE)
         print(runner.stats)
 
-        if len(runner.stats.get("failures")) != 0:
-            printout_ansible_events([e for e in runner.events])
-
+        if runner.status == "failed":
+            print("Failed to create the instance")
             return None, False
-        retries = 4
+        retries = 1
         while retries > 0:
             loader = DataLoader()
             inventory = InventoryManager(loader=loader,
@@ -195,8 +213,16 @@ class MonkeyProviderAWS(MonkeyProvider):
                 h = inventory.get_host(machine_params["monkey_job_uid"])
                 host_vars = h.get_vars()
                 inst = MonkeyInstanceAWS(ansible_info=host_vars)
+                print(inst)
                 # TODO ensure machine is on
-                if inst is not None:
+                if inst is not None and inst.check_online():
+                    print("Instance found online")
+                    if inst.name in self.instances:
+                        self.instances[inst.name].update_instance_details(inst)
+                    else:
+                        print("Adding to provider instances")
+                        self.instances[inst.name] = inst
+
                     return inst, True
             except Exception as e:
                 print("Failed to get host", e)

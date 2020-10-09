@@ -401,7 +401,7 @@ def get_provider_aws(name):
                 machine_type)
             print("Current price of a {}: {:.2f}$/hr".format(
                 instance_info.name, instance_info.price_float))
-            discounts = [20, 40, 60, 70, 80, 90]
+            discounts = [20, 40, 60, 70, 80, 90, 95]
             options = []
             for disc in discounts:
                 price = instance_info.price_float * (100 - disc) / 100

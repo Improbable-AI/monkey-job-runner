@@ -52,9 +52,21 @@
         create: yes
         state: present
         line: "ansible_user: ubuntu"
-    - name: Add AWS private key to gcp_var file
+    - name: Add AWS private key to aws_var file
       lineinfile:
         dest: "{{ playbook_dir }}/aws_vars.yml"
         create: yes
         state: present
         line: "aws_ssh_private_key_file: {{playbook_dir}}/{{ aws_ssh_private_key_file }}"
+    - name: remove AWS private key if existing
+      lineinfile:
+        dest: "{{ playbook_dir }}/inventory/group_vars/monkey_aws.yml"
+        create: yes
+        state: absent
+        regexp: "aws_ssh_private_key_file*"
+    - name: Add AWS private key location to aws_var file
+      lineinfile:
+        dest: "{{ playbook_dir }}/inventory/group_vars/monkey_aws.yml"
+        create: yes
+        state: present
+        line: "aws_ssh_private_key_file: \"{{playbook_dir}}/{{ aws_ssh_private_key_file }}\""

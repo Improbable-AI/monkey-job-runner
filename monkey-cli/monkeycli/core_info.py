@@ -97,7 +97,6 @@ def list_instances(args, printout=False):
                          attrs=["bold"])
         print(header)
         print("")
-        print(res.items())
         for key, value in res.items():
             provider_header = ("Instance list for: {}, Total: {}".format(
                 colored(key, "green"), colored(len(value), "yellow")))

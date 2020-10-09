@@ -9,8 +9,8 @@ MONKEY_STATE_FINISHED = "FINISHED"
 
 MONKEY_TIMEOUT_DISPATCHING_MACHINE = 60 * 4  # 5 min to dispatch machine max
 MONKEY_TIMEOUT_DISPATCHING_INSTALLS = 60 * 5  # 5 min to dispatch installs max
-MONKEY_TIMEOUT_DISPATCHING_SETUP = 60 * 8  # 8 min to dispatch setup max
-MONKEY_TIMEOUT_CLEANUP = 60 * 5  # 5 min to dispatch machine max
+MONKEY_TIMEOUT_DISPATCHING_SETUP = 60 * 3  # 8 min to dispatch setup max
+MONKEY_TIMEOUT_CLEANUP = 30  # 30s to dispatch machine max
 
 
 def human_readable_state(state):
