@@ -47,3 +47,34 @@ class Completer(object):
         if len(line) == 1 and len(text) != 0:
             return self._complete_path(line[-1])[state]
         return None
+
+
+MONKEY_STATE_QUEUED = "QUEUED"
+MONKEY_STATE_DISPATCHING = "DISPATCHING"
+MONKEY_STATE_DISPATCHING_MACHINE = "DISPATCHING_MACHINE"
+MONKEY_STATE_DISPATCHING_INSTALLS = "DISPATCHING_INSTALLS"
+MONKEY_STATE_DISPATCHING_SETUP = "DISPATCHING_SETUP"
+MONKEY_STATE_RUNNING = "RUNNING"
+MONKEY_STATE_CLEANUP = "CLEANING_UP"
+MONKEY_STATE_FINISHED = "FINISHED"
+
+
+def human_readable_state(state):
+    if state == MONKEY_STATE_QUEUED:
+        return "Queued"
+    elif state == MONKEY_STATE_DISPATCHING:
+        return "Creating Machine"
+    elif state == MONKEY_STATE_DISPATCHING_MACHINE:
+        return "Creating Machine"
+    elif state == MONKEY_STATE_DISPATCHING_INSTALLS:
+        return "Installing Dependencies"
+    elif state == MONKEY_STATE_DISPATCHING_SETUP:
+        return "Installing Dependencies"
+    elif state == MONKEY_STATE_RUNNING:
+        return "Running"
+    elif state == MONKEY_STATE_CLEANUP:
+        return "Cleaning Up"
+    elif state == MONKEY_STATE_FINISHED:
+        return "Finished"
+    else:
+        return "unknown"

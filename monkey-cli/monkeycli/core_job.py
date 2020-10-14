@@ -58,13 +58,11 @@ def check_or_upload_dataset(dataset, provider_name, compression_type="tar"):
 
 def upload_persisted_folder(persist, job_uid, provider_name):
     print("Uploading persisted_folder...")
-    persist_name = persist["name"]
-    code_path = persist["path"]
-    ignore_filters = persist.get("ignore", [])
 
+    ignore_filters = []
     all_files = set([
         y.strip("/") for y in
-        [x.strip(".") for x in glob.glob(code_path + "/**", recursive=True)]
+        [x.strip(".") for x in glob.glob(persist + "**", recursive=True)]
     ])
     filenames = (n for n in all_files if not any(
         fnmatch.fnmatch(n, ignore) for ignore in ignore_filters))
@@ -74,9 +72,9 @@ def upload_persisted_folder(persist, job_uid, provider_name):
         all_files.remove("")
     with tempfile.NamedTemporaryFile(delete=False, suffix=".tar") as dir_tmp:
         code_tar = tarfile.open(dir_tmp.name, "w")
-        code_tar.add(persist_name)
-        # for file in all_files:
-        #     code_tar.add(file)
+        code_tar.add(persist)
+        for file in all_files:
+            code_tar.add(file)
         code_tar.close()
         success = False
         try:
@@ -103,7 +101,7 @@ def upload_persisted_folder(persist, job_uid, provider_name):
 def upload_codebase(code, job_uid, provider_name):
     print("Uploading Codebase...")
     code_path = code["path"]
-    ignore_filters = code.get("ignore", [])
+    ignore_filters = [x + "*" for x in code.get("ignore", [])]
 
     all_files = set([
         y.strip("/") for y in

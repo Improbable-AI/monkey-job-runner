@@ -1,24 +1,22 @@
 import datetime
+import functools
 import json
 import logging
 import os
-import random
-import string
 import threading
-import time
 
 import ansible_runner
 import monkey_global
 import requests
 import yaml
 from core.monkey_instance import MonkeyInstance
-from setup.utils import aws_cred_file_environment, get_aws_vars
+from setup.utils import (aws_cred_file_environment, get_aws_vars,
+                         printout_ansible_events)
 
 logger = logging.getLogger(__name__)
 
 
 class MonkeyInstanceAWS(MonkeyInstance):
-
     ansible_info = None
 
     def __str__(self):
@@ -41,8 +39,11 @@ name: {}, ip: {}, state: {}
         machine_zone = ansible_info["placement"]["availability_zone"]
         # Look for public IP
 
-        self.ip_address = ansible_info["network_interfaces"][0]["association"][
-            "public_ip"]
+        try:
+            self.ip_address = ansible_info["network_interfaces"][0][
+                "association"]["public_ip"]
+        except:
+            self.ip_address = None
 
         super().__init__(name=name,
                          machine_zone=machine_zone,
@@ -50,17 +51,32 @@ name: {}, ip: {}, state: {}
         self.ansible_info = ansible_info
         self.state = ansible_info["state"]["name"]
 
+    def update_instance_details(self, other):
+        super().update_instance_details(other)
+        self.ansible_info = other.ansible_info
+        self.state = other.state
+
+    def check_online(self):
+        return super().check_online() and self.state == "running"
+
     def install_dependency(self, dependency):
         print("Instance installing: ", dependency)
+
+        uuid = self.update_uuid()
         runner = ansible_runner.run(
             host_pattern=self.name,
             private_data_dir="ansible",
             module="include_role",
             module_args="name=install/{}".format(dependency),
-            quiet=monkey_global.QUIET_ANSIBLE)
+            quiet=monkey_global.QUIET_ANSIBLE,
+            cancel_callback=self.ansible_runner_uuid_cancel(uuid))
 
-        if len(runner.stats.get("failures")) != 0:
+        print(runner.status)
+        if runner.status == "failed" or self.get_uuid() != uuid:
+            print("Installing Dependency: ", dependency, " failed!")
             return False
+
+        print("Installing Dependency: ", dependency, " succeeded!")
         return True
 
     def setup_data_item(self, data_item, monkeyfs_path, home_dir_path):
@@ -76,13 +92,15 @@ name: {}, ip: {}, state: {}
         print("Copying dataset from", dataset_full_path, " to ",
               installation_location)
 
+        uuid = self.update_uuid()
         runner = ansible_runner.run(
             host_pattern=self.name,
             private_data_dir="ansible",
             module="file",
             module_args="path={} state=directory".format(
                 installation_location),
-            quiet=monkey_global.QUIET_ANSIBLE)
+            quiet=monkey_global.QUIET_ANSIBLE,
+            cancel_callback=self.ansible_runner_uuid_cancel(uuid))
 
         runner = ansible_runner.run(
             host_pattern=self.name,
@@ -90,43 +108,53 @@ name: {}, ip: {}, state: {}
             module="unarchive",
             module_args="src={} remote_src=True dest={} creates=yes".format(
                 dataset_full_path, installation_location),
-            quiet=monkey_global.QUIET_ANSIBLE)
+            quiet=monkey_global.QUIET_ANSIBLE,
+            cancel_callback=self.ansible_runner_uuid_cancel(uuid))
         print(runner.stats)
-        if len(runner.stats.get("failures")) != 0:
+        if runner.status == "failed" or self.get_uuid() != uuid:
+            print("Failed to setup data item")
             return False, "Failed to extract archive"
 
+        print("Successfully setup data item")
         return True, "Successfully setup data item"
 
     def unpack_code_and_persist(self, job_uid, monkeyfs_path, home_dir_path):
         job_path = os.path.join(monkeyfs_path, "jobs", job_uid)
 
+        uuid = self.update_uuid()
         runner = ansible_runner.run(
             host_pattern=self.name,
             private_data_dir="ansible",
             module="copy",
             module_args="src={} dest={} remote_src=true".format(
                 job_path + "/", home_dir_path),
-            quiet=monkey_global.QUIET_ANSIBLE)
-        if len(runner.stats.get("failures")) != 0:
+            quiet=monkey_global.QUIET_ANSIBLE,
+            cancel_callback=self.ansible_runner_uuid_cancel(uuid))
+        if runner.status == "failed" or self.get_uuid() != uuid:
+            print("Failed to copy directory")
             return False, "Failed to copy directory"
 
+        uuid = self.update_uuid()
         runner = ansible_runner.run(
             host_pattern=self.name,
             private_data_dir="ansible",
             module="unarchive",
             module_args="src={} remote_src=True dest={} creates=yes".format(
                 os.path.join(job_path, "code.tar"), home_dir_path),
-            quiet=monkey_global.QUIET_ANSIBLE)
-        if len(runner.stats.get("failures")) != 0:
+            quiet=monkey_global.QUIET_ANSIBLE,
+            cancel_callback=self.ansible_runner_uuid_cancel(uuid))
+        if runner.status == "failed" or self.get_uuid() != uuid:
+            print("Failed to extract archive")
             return False, "Failed to extract archive"
 
+        print("Unpacked code and persisted directory successfully")
         return True, "Unpacked code and persisted directories successfully"
 
     def setup_persist_folder(self, job_uid, monkeyfs_bucket_name,
                              home_dir_path, persist):
         print("Persisting folder: ", persist)
-        persist_path = persist["path"]
-        persist_name = "." + persist_path.replace("/", "_") + "_sync.sh"
+        persist_path = persist
+        persist_name = "." + persist.replace("/", "_") + "_sync.sh"
         script_path = os.path.join(home_dir_path, persist_name)
         monkeyfs_output_folder = \
             os.path.join("/monkeyfs", "jobs", job_uid, persist_path)
@@ -134,6 +162,8 @@ name: {}, ip: {}, state: {}
 
         print("Output folder: ", monkeyfs_output_folder)
         print("Input folder: ", persist_folder_path)
+
+        uuid = self.update_uuid()
         runner = ansible_runner.run(
             host_pattern=self.name,
             private_data_dir="ansible",
@@ -144,9 +174,11 @@ name: {}, ip: {}, state: {}
                 "persist_script_path": script_path,
                 "bucket_path": monkeyfs_output_folder,
             },
-            quiet=monkey_global.QUIET_ANSIBLE)
+            quiet=monkey_global.QUIET_ANSIBLE,
+            cancel_callback=self.ansible_runner_uuid_cancel(uuid))
 
-        if len(runner.stats.get("failures")) != 0:
+        if runner.status == "failed" or self.get_uuid() != uuid:
+            print("Failed to create persisted directory: " + persist_path)
             return False, "Failed to create persisted directory: " + persist_path
         return True, "Setup persist ran successfully"
 
@@ -156,6 +188,7 @@ name: {}, ip: {}, state: {}
         monkeyfs_output_folder = "gs://" + \
             os.path.join(monkeyfs_bucket_name, "jobs", job_uid, "logs")
         script_path = os.path.join(home_dir_path, ".logs_sync.sh")
+        uuid = self.update_uuid()
         runner = ansible_runner.run(
             host_pattern=self.name,
             private_data_dir="ansible",
@@ -167,9 +200,11 @@ name: {}, ip: {}, state: {}
                 "bucket_path": monkeyfs_output_folder,
                 "persist_time": 3,
             },
-            quiet=monkey_global.QUIET_ANSIBLE)
+            quiet=monkey_global.QUIET_ANSIBLE,
+            cancel_callback=self.ansible_runner_uuid_cancel(uuid))
 
-        if len(runner.stats.get("failures")) != 0:
+        if runner.status == "failed" or self.get_uuid() != uuid:
+            print("Failed to create persisted logs folder")
             return False, "Failed to create persisted logs folder"
         return True, "Setup logs persistence ran successfully"
 
@@ -185,6 +220,7 @@ name: {}, ip: {}, state: {}
         print("Mounting filesystem...")
         cred_environment = aws_cred_file_environment(credential_file)
 
+        uuid = self.update_uuid()
         runner = ansible_runner.run(
             host_pattern=self.name,
             private_data_dir="ansible",
@@ -196,9 +232,11 @@ name: {}, ip: {}, state: {}
                 "access_key_id": cred_environment["AWS_ACCESS_KEY_ID"],
                 "access_key_secret": cred_environment["AWS_SECRET_ACCESS_KEY"]
             },
-            quiet=monkey_global.QUIET_ANSIBLE)
+            quiet=monkey_global.QUIET_ANSIBLE,
+            cancel_callback=self.ansible_runner_uuid_cancel(uuid))
         print(runner.stats)
-        if len(runner.stats.get("failures")) != 0:
+        if runner.status == "failed" or self.get_uuid() != uuid:
+            print("Failed to mount filesystem")
             return False, "Failed to mount filesystem"
 
         home_dir_path = "/home/ubuntu"
@@ -250,28 +288,33 @@ name: {}, ip: {}, state: {}
         print("Env type: ", env_type)
         print("Env file: ", env_file)
 
+        uuid = self.update_uuid()
         if env_type == "conda":
-            runner = ansible_runner.run(host_pattern=self.name,
-                                        private_data_dir="ansible",
-                                        module="include_role",
-                                        module_args="name=run/setup_conda",
-                                        extravars={
-                                            "environment_file": env_file,
-                                        },
-                                        quiet=monkey_global.QUIET_ANSIBLE)
+            runner = ansible_runner.run(
+                host_pattern=self.name,
+                private_data_dir="ansible",
+                module="include_role",
+                module_args="name=run/setup_conda",
+                extravars={
+                    "environment_file": env_file,
+                },
+                quiet=monkey_global.QUIET_ANSIBLE,
+                cancel_callback=self.ansible_runner_uuid_cancel(uuid))
         elif env_type == "pip":
-            runner = ansible_runner.run(host_pattern=self.name,
-                                        private_data_dir="ansible",
-                                        module="include_role",
-                                        module_args="name=run/setup_pip",
-                                        extravars={
-                                            "environment_file": env_file,
-                                        },
-                                        quiet=monkey_global.QUIET_ANSIBLE)
+            runner = ansible_runner.run(
+                host_pattern=self.name,
+                private_data_dir="ansible",
+                module="include_role",
+                module_args="name=run/setup_pip",
+                extravars={
+                    "environment_file": env_file,
+                },
+                quiet=monkey_global.QUIET_ANSIBLE,
+                cancel_callback=self.ansible_runner_uuid_cancel(uuid))
         else:
             return False, "Provided or missing dependency manager"
 
-        if len(runner.stats.get("failures")) != 0:
+        if runner.status == "failed" or self.get_uuid() != uuid:
             return False, "Failed to initialize environment manager"
 
         return True, "Successfully created dependency manager and stored initialization in .monkey_activate"
@@ -280,15 +323,21 @@ name: {}, ip: {}, state: {}
         print("Executing cmd: ", cmd)
         print("Environment Variables:", run_yml.get("env", dict()))
         final_command = ". ~/.monkey_activate; " + cmd + " 2>&1 | tee logs/run.log"
-        runner = ansible_runner.run(host_pattern=self.name,
-                                    private_data_dir="ansible",
-                                    module="include_role",
-                                    module_args="name=run/cmd",
-                                    extravars={"run_command": cmd},
-                                    envvars=run_yml.get("env", dict()),
-                                    quiet=monkey_global.QUIET_ANSIBLE)
 
-        if len(runner.stats.get("failures")) != 0:
+        uuid = self.update_uuid()
+        runner = ansible_runner.run(
+            host_pattern=self.name,
+            private_data_dir="ansible",
+            module="include_role",
+            module_args="name=run/cmd",
+            extravars={"run_command": cmd},
+            envvars=run_yml.get("env", dict()),
+            quiet=monkey_global.QUIET_ANSIBLE,
+            cancel_callback=self.ansible_runner_uuid_cancel(uuid))
+
+        print(runner.stats)
+        events = list(runner.events)
+        if runner.status == "failed" or self.get_uuid() != uuid:
             return False, "Failed to run command properly: " + cmd
 
         return True, "Successfully ran job"
@@ -325,14 +374,17 @@ name: {}, ip: {}, state: {}
         for key, val in get_aws_vars().items():
             delete_instance_params[key] = val
 
-        runner = ansible_runner.run(host_pattern="localhost",
-                                    private_data_dir="ansible",
-                                    module="include_role",
-                                    module_args="name=aws/delete",
-                                    extravars=delete_instance_params,
-                                    quiet=monkey_global.QUIET_ANSIBLE)
+        runner = ansible_runner.run(
+            host_pattern="localhost",
+            private_data_dir="ansible",
+            module="include_role",
+            module_args="name=aws/delete",
+            extravars=delete_instance_params,
+            quiet=monkey_global.QUIET_ANSIBLE,
+            cancel_callback=self.ansible_runner_uuid_cancel(
+                self.update_uuid()))
 
-        if len(runner.stats.get("failures")) != 0:
+        if runner.status == "failed":
             print("Failed Deletion of machine")
             return False, "Failed to cleanup job after completion"
         return True, "Succesfully cleaned up job"

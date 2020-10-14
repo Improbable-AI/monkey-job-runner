@@ -50,6 +50,10 @@
   register: gcsfuse_found
   ignore_errors: true
 
+- name: Configure dpkg if stopped mid-installation
+  become: true
+  shell: "dpkg --configure -a"
+
 - name: Install GCSFuse and Python dependencies
   when: gcsfuse_found.rc != 0
   block:

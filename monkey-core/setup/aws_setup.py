@@ -34,7 +34,7 @@ def check_aws_provider(yaml):
                                 },
                                 quiet=True)
     events = [e for e in runner.events]
-    if len(runner.stats.get("failures")) != 0:
+    if runner.status == "failed":
         printout_ansible_events(events)
 
         print("Failed to mount the AWS S3 filesystem")
@@ -83,14 +83,14 @@ def create_aws_provider(provider_name, yaml, args):
                 print("Failed to read file")
 
     region_input = args.region or "us-east-1"
-    zone_input = args.zone or region_input + "c"
+    zone_input = args.zone or region_input + "a"
     monkeyfs_input = args.storage_name or "monkeyfs-" + \
         ''.join(random.choice(string.ascii_lowercase) for _ in range(6))
     if args.noinput == False:
         region_input = input("Set project region (us-east-1): ") or "us-east-1"
         zone_input = input(
             "Set project zone ({}): ".format(region_input +
-                                             "c")) or region_input + "c"
+                                             "a")) or region_input + "a"
         if monkeyfs_input is None:
             monkeyfs_input = input("Set the monkey_fs aws s3 bucket name ({})".format("monkeyfs-XXXXXX")) \
                 or "monkeyfs-" + ''.join(random.choice(string.ascii_lowercase) for _ in range(6))
@@ -210,7 +210,7 @@ def create_aws_monkeyfs(storage_name):
                                 quiet=False)
     events = [e for e in runner.events]
 
-    if len(runner.stats.get("failures")) != 0:
+    if runner.status == "failed":
         print("Failed installing and setting up monkeyfs")
         return False
     print("Successfully created AWS S3 bucket: {}".format(storage_name))
@@ -235,7 +235,7 @@ def mount_aws_monkeyfs(yaml):
                                 },
                                 quiet=False)
     events = [e for e in runner.events]
-    if len(runner.stats.get("failures")) != 0:
+    if runner.status == "failed":
         print("Failed to mount the AWS S3 filesystem")
         return False
 

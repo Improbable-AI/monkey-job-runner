@@ -47,11 +47,11 @@ class MonkeyCLI(Cmd):
     def list_providers(self, printout=False):
         return monkeycli.core_info.list_providers(printout)
 
-    def list_instances(self, providers, printout=False):
-        return monkeycli.core_info.list_instances(providers, printout)
+    def list_instances(self, args, printout=False):
+        return monkeycli.core_info.list_instances(args, printout)
 
-    def list_jobs(self, providers, printout=False):
-        return monkeycli.core_info.list_jobs(providers, printout)
+    def list_jobs(self, args, printout=False):
+        return monkeycli.core_info.list_jobs(args, printout)
 
     def check_or_upload_dataset(self,
                                 dataset,
@@ -143,7 +143,7 @@ class MonkeyCLI(Cmd):
         self.parse_args(["run"] + cmd.split(" "), printout=True)
 
     def parse_args(self, input_args, printout=True):
-        print("Parsing args: {}".format(input_args))
+        print("Parsing args: {}\n".format(input_args))
         parser = argparse.ArgumentParser(description='Parses monkey commands')
 
         subparser = parser.add_subparsers(help="Monkey Commands",
@@ -161,10 +161,10 @@ class MonkeyCLI(Cmd):
                                            help="Info on the specified item")
         info_subparser = info_parser.add_subparsers(description="Info options",
                                                     dest="info_option")
-        info_jobs_parser = list_subparser.add_parser(
-            "job", help="Gets the info on the specified job")
-        info_providers_parser = list_subparser.add_parser(
-            "instance", help="List the info of the specified instance")
+        # info_jobs_parser = list_subparser.add_parser(
+        #     "job", help="Gets the info on the specified job")
+        # info_providers_parser = list_subparser.add_parser(
+        #     "instance", help="List the info of the specified instance")
 
         init_parser = monkeycli.parsers.get_empty_parser(
             subparser=subparser,
@@ -209,12 +209,9 @@ class MonkeyCLI(Cmd):
                 return False
         elif args.command == "list":
             if args.list_option == "jobs":
-                raise NotImplementedError("Not implemented yet")
-                return self.list_jobs(providers=args.providers,
-                                      printout=printout)
+                return self.list_jobs(args=vars(args), printout=printout)
             elif args.list_option == "instances":
-                return self.list_instances(providers=args.providers,
-                                           printout=printout)
+                return self.list_instances(args=vars(args), printout=printout)
             elif args.list_option == "providers":
                 return self.list_providers(printout=printout)
             else:

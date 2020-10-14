@@ -21,15 +21,11 @@ def get_list_parser(subparser):
         default=[],
         help='The provider you wish to use.  Should be defined in providers.yml'
     )
-    list_instances_parser.add_argument(
-        '-p',
-        '--provider',
-        dest='providers',
-        type=str,
-        required=False,
-        default=[],
-        help='The provider you wish to use.  Should be defined in providers.yml'
-    )
+    list_jobs_parser.add_argument('-n',
+                                  '--num-jobs',
+                                  dest='num_jobs',
+                                  type=int,
+                                  help='The number of jobs to display')
     return list_parser, list_subparser
 
 

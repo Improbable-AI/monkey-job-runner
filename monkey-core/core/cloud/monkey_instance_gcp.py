@@ -60,7 +60,7 @@ name: {}, ip: {}, state: {}
             module="include_role",
             module_args="name=install/{}".format(dependency))
 
-        if len(runner.stats.get("failures")) != 0:
+        if runner.status == "failed":
             return False
         return True
 
@@ -97,7 +97,7 @@ name: {}, ip: {}, state: {}
             module_args="src={} remote_src=True dest={} creates=yes".format(
                 dataset_full_path, installation_location))
         print(runner.stats)
-        if len(runner.stats.get("failures")) != 0:
+        if runner.status == "failed":
             return False, "Failed to extract archive"
 
         return True, "Successfully setup data item"
@@ -111,7 +111,7 @@ name: {}, ip: {}, state: {}
             module="copy",
             module_args="src={} dest={} remote_src=true".format(
                 job_path + "/", home_dir_path))
-        if len(runner.stats.get("failures")) != 0:
+        if runner.status == "failed":
             return False, "Failed to copy directory"
 
         runner = ansible_runner.run(
@@ -120,7 +120,7 @@ name: {}, ip: {}, state: {}
             module="unarchive",
             module_args="src={} remote_src=True dest={} creates=yes".format(
                 os.path.join(job_path, "code.tar"), home_dir_path))
-        if len(runner.stats.get("failures")) != 0:
+        if runner.status == "failed":
             return False, "Failed to extract archive"
 
         return True, "Unpacked code and persisted directories successfully"
@@ -148,7 +148,7 @@ name: {}, ip: {}, state: {}
                 "bucket_path": monkeyfs_output_folder,
             })
 
-        if len(runner.stats.get("failures")) != 0:
+        if runner.status == "failed":
             return False, "Failed to create persisted directory: " + persist_path
         return True, "Setup persist ran successfully"
 
@@ -170,7 +170,7 @@ name: {}, ip: {}, state: {}
                 "persist_time": 3,
             })
 
-        if len(runner.stats.get("failures")) != 0:
+        if runner.status == "failed":
             return False, "Failed to create persisted logs folder"
         return True, "Setup logs persistence ran successfully"
 
@@ -195,7 +195,7 @@ name: {}, ip: {}, state: {}
                                         "monkeyfs_path": monkeyfs_path
                                     })
         print(runner.stats)
-        if len(runner.stats.get("failures")) != 0:
+        if runner.status == "failed":
             return False, "Failed to mount filesystem"
 
         home_dir_path = self.get_home_directory_from_service_key(
@@ -261,7 +261,7 @@ name: {}, ip: {}, state: {}
         else:
             return False, "Provided or missing dependency manager"
 
-        if len(runner.stats.get("failures")) != 0:
+        if runner.status == "failed":
             return False, "Failed to initialize environment manager"
 
         return True, "Successfully created dependency manager and stored initialization in .monkey_activate"
@@ -277,7 +277,7 @@ name: {}, ip: {}, state: {}
                                     extravars={"run_command": cmd},
                                     envvars=run_yml.get("env", dict()))
 
-        if len(runner.stats.get("failures")) != 0:
+        if runner.status == "failed":
             return False, "Failed to run command properly: " + cmd
 
         return True, "Successfully ran job"
@@ -320,7 +320,7 @@ name: {}, ip: {}, state: {}
                                     extravars=delete_instance_params)
 
         print(runner.stats)
-        if len(runner.stats.get("failures")) != 0:
+        if runner.status == "failed":
             print("Failed Deletion of machine")
             return False, "Failed to cleanup job after completion"
         return True, "Succesfully cleaned up job"

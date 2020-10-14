@@ -32,8 +32,6 @@ def get_gcp_vars():
 
 
 def printout_ansible_events(events):
-    for e in events:
-        print(e)
     events = [(x.get("event_data", {}).get("task", "unknown"),
                x.get("event_data", {}).get("playbook", "unknown"),
                x.get("event_data", {}).get("task_action", "unknown"),
