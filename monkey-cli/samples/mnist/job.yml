@@ -55,5 +55,5 @@ providers:
 # Ubuntu 20.04 x86 ( ami-0dba2cb6798deb6d8 )
     base_image: ami-0dba2cb6798deb6d8
     spot: true
-# 95%  $0.01/hr -> $0.001/hr
-    spot_price: 0.00052
+# 40%  $0.01/hr -> $0.006/hr
+    spot_price: 0.00624

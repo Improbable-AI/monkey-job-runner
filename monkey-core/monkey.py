@@ -38,7 +38,7 @@ class Monkey():
         self.providers = []
         self.instantiate_providers(providers_path=providers_path)
         if start_loop:
-            threading.Thread(target=self.daemon_loop).start()
+            threading.Thread(target=self.daemon_loop, daemon=True).start()
 
     def instantiate_providers(self, providers_path="providers.yml"):
         providers = dict()

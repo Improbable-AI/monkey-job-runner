@@ -12,7 +12,13 @@ def get_job_uid():
 
 
 def list_jobs(args, printout=False):
-    r = requests.get(build_url("list/jobs"), params=args)
+    try:
+        r = requests.get(build_url("list/jobs"), params=args)
+    except:
+        if printout:
+            print("Unable to connect to Monkey Core: {}".format(
+                build_url("list/jobs")))
+            return []
     if printout:
         res = r.json()
         print("Listing Jobs available")
@@ -72,7 +78,13 @@ def list_jobs(args, printout=False):
 
 
 def list_providers(printout=False):
-    r = requests.get(build_url("list/providers"))
+    try:
+        r = requests.get(build_url("list/providers"))
+    except:
+        if printout:
+            print("Unable to connect to Monkey Core: {}".format(
+                build_url("list/providers")))
+            return []
     response = r.json()["response"]
     if printout:
         print("Listing Providers available")
@@ -88,7 +100,13 @@ def list_providers(printout=False):
 
 
 def list_instances(args, printout=False):
-    r = requests.get(build_url("list/instances"), params=args)
+    try:
+        r = requests.get(build_url("list/instances"), params=args)
+    except:
+        if printout:
+            print("Unable to connect to Monkey Core: {}".format(
+                build_url("list/instances")))
+            return []
     if printout:
         res = r.json()
         print("Listing Instances available\n")

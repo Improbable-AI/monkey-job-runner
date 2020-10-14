@@ -31,7 +31,8 @@ def check_for_queued_jobs(self):
             continue
         job.set_state(state=state.MONKEY_STATE_DISPATCHING)
         threading.Thread(target=self.run_job,
-                         args=(found_provider, job.job_yml)).start()
+                         args=(found_provider, job.job_yml),
+                         daemon=True).start()
 
 
 def print_jobs(self, jobs):
