@@ -25,7 +25,7 @@ def check_gcp_provider(yaml):
                                 private_data_dir='ansible',
                                 quiet=False)
     events = [e for e in runner.events]
-    if len(runner.stats.get("failures")) != 0:
+    if runner.status == "failed":
         print("Failed to mount the GCS filesystem")
         return False
     print("Mount successful")
@@ -222,7 +222,7 @@ def create_gcp_monkeyfs(storage_name):
                                 quiet=False)
     events = [e for e in runner.events]
 
-    if len(runner.stats.get("failures")) != 0:
+    if runner.status == "failed":
         print("Failed installing and setting up monkeyfs")
         return False
     print("Successfully created GCS bucket: {}".format(storage_name))
@@ -238,7 +238,7 @@ def mount_gcp_monkeyfs(yaml):
                                 private_data_dir='ansible',
                                 quiet=False)
     events = [e for e in runner.events]
-    if len(runner.stats.get("failures")) != 0:
+    if runner.status == "failed":
         print("Failed to mount the GCS filesystem")
         return False
 

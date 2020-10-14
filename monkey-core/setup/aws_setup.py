@@ -34,7 +34,7 @@ def check_aws_provider(yaml):
                                 },
                                 quiet=True)
     events = [e for e in runner.events]
-    if len(runner.stats.get("failures")) != 0:
+    if runner.status == "failed":
         printout_ansible_events(events)
 
         print("Failed to mount the AWS S3 filesystem")
@@ -210,7 +210,7 @@ def create_aws_monkeyfs(storage_name):
                                 quiet=False)
     events = [e for e in runner.events]
 
-    if len(runner.stats.get("failures")) != 0:
+    if runner.status == "failed":
         print("Failed installing and setting up monkeyfs")
         return False
     print("Successfully created AWS S3 bucket: {}".format(storage_name))
@@ -235,7 +235,7 @@ def mount_aws_monkeyfs(yaml):
                                 },
                                 quiet=False)
     events = [e for e in runner.events]
-    if len(runner.stats.get("failures")) != 0:
+    if runner.status == "failed":
         print("Failed to mount the AWS S3 filesystem")
         return False
 

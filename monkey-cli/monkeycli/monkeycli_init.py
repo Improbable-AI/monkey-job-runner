@@ -399,7 +399,7 @@ def get_provider_aws(name):
 
             instance_info = monkeycli.aws_instance_types.get_instance_info(
                 machine_type)
-            print("Current price of a {}: {:.2f}$/hr".format(
+            print("Current price of a {}: {:.3f}$/hr".format(
                 instance_info.name, instance_info.price_float))
             discounts = [20, 40, 60, 70, 80, 90]
             options = []
@@ -410,7 +410,8 @@ def get_provider_aws(name):
                 options.append((readable, price))
 
             spot_price = -1
-            while spot_price is -1:
+            spot_price_readable = None
+            while spot_price == -1:
                 spot_price = list_options_readable_tuples(
                     "Spot Price",
                     options, [("Skip", None)],
@@ -421,7 +422,16 @@ def get_provider_aws(name):
                             if val == spot_price:
                                 spot_price_readable = readable
                         spot_price = float(spot_price)
-                    except:
+
+                        if spot_price_readable is None:
+
+                            spot_price_readable = "{:.0f}%  ${:.3f}/hr -> ${:.3f}/hr".format(
+                                (instance_info.price_float - spot_price) /
+                                instance_info.price_float * 100,
+                                instance_info.price_float, spot_price)
+                            print(spot_price_readable)
+                    except Exception as e:
+                        print(e)
                         spot_price = -1
 
     details["spot"] = spot

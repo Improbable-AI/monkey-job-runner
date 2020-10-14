@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 
 from mongoengine import *
 
-from mongo.mongo_global import *
+import mongo.mongo_global as monkey_state
 
 
 class MonkeyJob(DynamicDocument):
@@ -24,7 +24,7 @@ class MonkeyJob(DynamicDocument):
     run_dispatch_machine_start_date = DateTimeField(required=False)
     run_dispatch_installs_start_date = DateTimeField(required=False)
     run_dispatch_setup_start_date = DateTimeField(required=False)
-    run_runing_start_date = DateTimeField(required=False)
+    run_running_start_date = DateTimeField(required=False)
     run_cleanup_start_date = DateTimeField(required=False)
     completion_date = DateTimeField(required=False)
 
@@ -51,25 +51,26 @@ class MonkeyJob(DynamicDocument):
         """
         print("Setting job: {} state to: {}, from: {}".format(
             self.job_uid, state, self.state))
+
+        if (self.state == monkey_state.MONKEY_STATE_RUNNING) and (
+                state != monkey_state.MONKEY_STATE_RUNNING):
+            self.run_elapsed_time += self.time_elapsed_in_state()
+
         self.state = state
-        if state == MONKEY_STATE_DISPATCHING_MACHINE:
+        if state == monkey_state.MONKEY_STATE_DISPATCHING_MACHINE:
             self.run_dispatch_machine_start_date = datetime.now()
-        elif state == MONKEY_STATE_DISPATCHING_INSTALLS:
+        elif state == monkey_state.MONKEY_STATE_DISPATCHING_INSTALLS:
             self.run_dispatch_installs_start_date = datetime.now()
-        elif state == MONKEY_STATE_DISPATCHING_SETUP:
+        elif state == monkey_state.MONKEY_STATE_DISPATCHING_SETUP:
             self.run_dispatch_setup_start_date = datetime.now()
-        elif state == MONKEY_STATE_RUNNING:
+        elif state == monkey_state.MONKEY_STATE_RUNNING:
             self.run_running_start_date = datetime.now()
-        elif state == MONKEY_STATE_CLEANUP:
+        elif state == monkey_state.MONKEY_STATE_CLEANUP:
             self.run_cleanup_start_date = datetime.now()
-        elif state == MONKEY_STATE_FINISHED:
+        elif state == monkey_state.MONKEY_STATE_FINISHED:
             self.completion_date = datetime.now()
             self.total_wall_time = (datetime.now() -
                                     self.creation_date).total_seconds()
-            if self.run_cleanup_start_date is None:
-                # Ensures cleanup will be run immediately
-                self.run_cleanup_start_date = datetime.now() - timedelta(
-                    days=5)
         self.last_state_change = datetime.now()
         self.save()
 

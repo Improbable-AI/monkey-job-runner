@@ -143,7 +143,7 @@ class MonkeyCLI(Cmd):
         self.parse_args(["run"] + cmd.split(" "), printout=True)
 
     def parse_args(self, input_args, printout=True):
-        print("Parsing args: {}".format(input_args))
+        print("Parsing args: {}\n".format(input_args))
         parser = argparse.ArgumentParser(description='Parses monkey commands')
 
         subparser = parser.add_subparsers(help="Monkey Commands",

@@ -31,11 +31,12 @@ def check_for_queued_jobs(self):
             continue
         job.set_state(state=state.MONKEY_STATE_DISPATCHING)
         threading.Thread(target=self.run_job,
-                         args=(found_provider, job.job_yml)).start()
+                         args=(found_provider, job.job_yml),
+                         daemon=True).start()
 
 
 def print_jobs(self, jobs):
-    header = colored("{:^26} {:^24} {:^11} {:^11} ".format(
+    header = colored("{:^26} {:^24} {:^19} {:^13} ".format(
         "Job Name", "State", "Elapsed(s)", "Timeout(s)"),
                      attrs=["bold"])
     print("")
@@ -92,10 +93,25 @@ def check_for_dead_jobs(self):
 
         timeout_for_state = state.state_to_timeout(job.state)
         time_elapsed = job.time_elapsed_in_state()
-        if timeout_for_state is not None and time_elapsed > timeout_for_state:
+        if timeout_for_state is not None and time_elapsed > timeout_for_state and job.state != state.MONKEY_STATE_CLEANUP:
             print("Found Timed out job with state {}.  Requeueing job".format(
                 job.state))
             job.set_state(state.MONKEY_STATE_QUEUED)
+
+        instance = found_provider.get_instance(job.job_uid)
+
+        if (job.state not in [
+                state.MONKEY_STATE_QUEUED, state.MONKEY_STATE_FINISHED,
+                state.MONKEY_STATE_DISPATCHING_MACHINE,
+                state.MONKEY_STATE_DISPATCHING, state.MONKEY_STATE_CLEANUP
+        ]):
+            # Instance can't be found and should have been created already
+            if (instance is None
+                    and job.state != state.MONKEY_STATE_DISPATCHING_MACHINE):
+                job.set_state(state.MONKEY_STATE_QUEUED)
+            # Instance found and is offline
+            elif (instance is not None and not instance.check_online()):
+                job.set_state(state.MONKEY_STATE_QUEUED)
 
         if job.state == state.MONKEY_STATE_RUNNING:
             if (job.run_timeout_time != -1 and job.run_timeout_time != 0) \
@@ -110,23 +126,22 @@ def check_for_dead_jobs(self):
             if instance is None:
                 print("Skipping cleanup, machine already destroyed")
                 job.set_state(state.MONKEY_STATE_FINISHED)
-            elif time_elapsed > state.MONKEY_TIMEOUT_CLEANUP:
-                print("RESTARTING CLEANUP\n\nCLEANUP TIMEOUT TRIGGERED\n\n")
+
+            if (job.run_cleanup_start_date is None) or (
+                ((time_elapsed > state.MONKEY_TIMEOUT_CLEANUP) and
+                 (instance is not None and instance.check_online() == True))):
                 threading.Thread(target=instance.cleanup_job,
                                  args=(job.job_yml,
                                        found_provider.get_dict())).start()
                 job.run_cleanup_start_date = datetime.now()
+            elif (instance is not None and instance.check_online() == False):
+                job.set_state(state.MONKEY_STATE_FINISHED)
         elif job.state == state.MONKEY_STATE_FINISHED:
             # Check if there are finished jobs that haven't been cleaned
             instance = found_provider.get_instance(job.job_uid)
-            if instance is not None:
-                print(
-                    "Found finished machine with existing instance.  \n\nCLEANUP STATE SET\n\n"
-                )
+            if instance is not None and instance.check_online() == True:
+                print("Machine found existing in finished state, cleaning...")
                 job.set_state(state.MONKEY_STATE_CLEANUP)
-                threading.Thread(target=instance.cleanup_job,
-                                 args=(job.job_yml,
-                                       found_provider.get_dict())).start()
         job.save()
 
 

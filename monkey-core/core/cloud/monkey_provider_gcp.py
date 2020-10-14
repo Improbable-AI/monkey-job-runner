@@ -156,7 +156,7 @@ class MonkeyProviderGCP(MonkeyProvider):
                                     extravars=machine_params)
         print(runner.stats)
 
-        if len(runner.stats.get("failures")) != 0:
+        if runner.status == "failed":
             return None, False
         print(machine_params)
         retries = 4
