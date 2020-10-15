@@ -1,0 +1,54 @@
+---
+
+- name: Download CUDA pin
+  become: true
+  get_url:
+    url: https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/cuda-ubuntu1804.pin  
+    dest: /etc/apt/preferences.d/cuda-repository-pin-600
+- name: Get Apt Key
+  become: true
+  apt_key:
+    url: https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub
+    state: present
+
+- name: Get Apt Repository
+  become: true
+  apt:
+    deb: http://developer.download.nvidia.com/compute/cuda/10.2/Prod/local_installers/cuda-repo-ubuntu1804-10-2-local-10.2.89-440.33.01_1.0-1_amd64.deb 
+
+- name: Install CUDA package
+  become: true
+  async: 1200
+  poll: 5
+  apt:
+    name: cuda
+    update_cache: yes
+
+- name: Install CUDA Toolkit
+  become: true
+  async: 1200
+  poll: 5
+  apt:
+    name: nvidia-cuda-toolkit
+    update_cache: yes
+
+- name: Download cuDNN tarball
+  become: true
+  ignore_errors: yes
+  get_url:
+    url: 	https://developer.download.nvidia.com/compute/machine-learning/cudnn/secure/8.0.4/10.2_20200923/cudnn-10.2-linux-x64-v8.0.4.30.tgz?3AGER9mxQkc-oHZdTg4S1SwvAjCqQ_cGac1Yo7MfR20qlH8CJTQoXrb52e4388Gggs4zBHEZBcQIhEAZww2ZeRvcsghtCJuK6e8TypgYkKxdt6ar8IAHAFA_Vg0qASs5pUX4oNleyukR3Nd-1j6195RWJN91ZEAN9bc4GVfxfgP-AX_dlcdNlF48Qm1FMgxAGIa_gvuJPNCkcXM 
+    dest: /tmp/cudnn.tgz
+ 
+- name: Install cuDNN deb
+  become: true
+  ignore_errors: yes
+  shell:
+    cmd: tar -xzvf /tmp/cudnn.tgz -C /tmp
+
+- name: Copy 
+  become: true
+  ignore_errors: yes
+  shell: |
+    cp /tmp/cuda/include/cudnn*.h /usr/local/cuda/include
+    cp /tmp/cuda/lib64/libcudnn* /usr/local/cuda/lib64
+    chmod a+r /usr/local/cuda/include/cudnn*.h /usr/local/cuda/lib64/libcudnn*

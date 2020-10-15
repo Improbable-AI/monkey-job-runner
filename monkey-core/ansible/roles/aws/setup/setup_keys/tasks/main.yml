@@ -20,12 +20,19 @@
   block:
 
     - name: remove existing ec2 key pair
+      environment:
+        "AWS_ACCESS_KEY_ID": "{{access_key_id}}"
+        "AWS_SECRET_ACCESS_KEY": "{{access_key_secret}}"
       ec2_key:
         name: "{{aws_key_name}}"
         region: "{{aws_region}}"
         state: absent
+      ignore_errors: yes
 
     - name: create a new ec2 key pair, returns generated private key
+      environment:
+        "AWS_ACCESS_KEY_ID": "{{access_key_id}}"
+        "AWS_SECRET_ACCESS_KEY": "{{access_key_secret}}"
       register: aws_key_creation
       ec2_key:
         name: "{{aws_key_name}}"

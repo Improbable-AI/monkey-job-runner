@@ -12,3 +12,4 @@
     mode: create
     region: "{{ aws_region }}"
     permission: "private"
+  register: aws_create_s3

@@ -1,0 +1,7 @@
+---
+- name: 20.04 Cuda 10.2 Install Script
+  debug:
+    msg:  "No specific 20.04 install enabled, using 18.04"
+
+- name: 18.04 Cuda 10.2 Install
+  import_tasks: ubuntu18.04.yml

@@ -90,6 +90,7 @@
         update_cache: true
 
     - name: Reload Docker Service
+      become: true
       systemd:
         name: docker
         state: restarted

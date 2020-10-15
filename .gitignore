@@ -3,5 +3,7 @@ __pycache__
 *.pyc
 *key*.csv
 *key*.json
+*Key*.csv
+*Key*.json
 .vscode/
 *.DS_Store

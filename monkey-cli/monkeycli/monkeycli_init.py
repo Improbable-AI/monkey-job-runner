@@ -132,15 +132,20 @@ def list_options_readable_tuples(
 def get_name():
     top_dir = run_command(["git", "rev-parse", "--show-toplevel"])
     default_name = None
+    default_workflow_name = os.path.basename(os.getcwd())
     if top_dir is not None:
         default_name = run_command(["basename", top_dir])
 
-    name = list_options("Project Name", [default_name])
+    project_name = None
+    workflow_name = None
 
-    if name == "" or name is None:
-        print("Invalid name: '{}'".format(name))
-        return get_name()
-    return name
+    while project_name == "" or project_name is None:
+        project_name = list_options("Project Name", [default_name])
+
+    while workflow_name == "" or workflow_name is None:
+        workflow_name = list_options("Workflow Name", [default_workflow_name])
+
+    return project_name, workflow_name
 
 
 def get_environment():
@@ -149,7 +154,7 @@ def get_environment():
         or "dockerfile" in x.lower()
     ]
     file_map = defaultdict(list)
-    valid_env_types = ["conda", "docker", "pip"]
+    valid_env_types = ["conda", "docker", "pip", "none"]
     for f in files:
         if "req" in f.lower():
             file_map["pip"].append(f)
@@ -160,10 +165,14 @@ def get_environment():
 
     env_type = None
     while env_type not in valid_env_types:
-        print("Please input your environment manager. Valid options: ({})".
-              format(", ".join(valid_env_types)))
-        env_type = list_options("Environment Type",
-                                sorted(list(file_map.keys())))
+        print("Please input your environment manager.")
+        # print("Please input your environment manager. Valid options: ({})".
+        #       format(", ".join(valid_env_types)))
+        env_type = list_options_readable_tuples("Environment Type",
+                                                [(x.capitalize(), x)
+                                                 for x in valid_env_types])
+        # env_type = list_options("Environment Type",
+        #                         sorted(list(file_map.keys())))
 
     default_options = file_map[env_type] if env_type in file_map else []
     env_file = None
@@ -185,7 +194,10 @@ def get_environment():
 
 
 def get_installs(env_type):
-    return [env_type]
+    if env_type in ("conda", "pip"):
+        return [env_type]
+    if env_type == "docker":
+        return ["nvidia-docker"]
 
 
 def get_dataset(dir_ignore):
@@ -197,14 +209,32 @@ def get_dataset(dir_ignore):
     dir_sizes = [("{} {:.1f}MB".format(dirname, size), dirname)
                  for size, dirname in dir_sizes]
 
+    dataset_folders = []
+
     while True:
         print(
             "Please choose a folder for your dataset (if there is one). \nA dataset has a checksum before copying to save time on network transfer and storage."
         )
-        dataset_response = list_options_readable_tuples(
-            "Dataset Folder", dir_sizes, [("None", None)])
-        if dataset_response is None or valid_dir(dataset_response):
-            return dataset_response
+        if len(dataset_folders) > 0:
+            print("Selected folders: {}\n".format(", ".join(dataset_folders)))
+
+            dataset_response = list_options_readable_tuples(
+                "Dataset Folder(s)", dir_sizes, [("Continue", None)])
+        else:
+            dataset_response = list_options_readable_tuples(
+                "Dataset Folder(s)", dir_sizes, [("None/Continue", None)])
+        if dataset_response is None:
+            break
+        elif valid_dir(dataset_response):
+            dataset_folders.append(dataset_response)
+
+            remove_option = None
+            for readable_dirname, dirname in dir_sizes in dir_sizes:
+                if dirname == dataset_response:
+                    remove_option = (readable_dirname, dirname)
+            if remove_option is not None and remove_option in dir_sizes:
+                dir_sizes.remove(remove_option)
+    return dataset_folders
 
 
 def get_persisted_folders(dir_ignore):
@@ -343,6 +373,8 @@ def get_provider_aws(name):
     print("Selected {}GB".format(disk_size))
 
     details["disk_size"] = disk_size
+    details.yaml_set_comment_before_after_key("disk_size",
+                                              before="Disk Size (GB)")
     details["disk_type"] = "gp2"
     # details.yaml_add_eol_comment("General purpose SSD", "disk_type")
     details.yaml_set_comment_before_after_key(
@@ -392,53 +424,64 @@ def get_provider_aws(name):
     while spot is None:
         spot = query_yes_no(
             "Would you like your instance to be a Spot instance?", "yes")
+        instance_info = monkeycli.aws_instance_types.get_instance_info(
+            machine_type)
+        print("Current price of a {}: {:.3f}$/hr".format(
+            instance_info.name, instance_info.price_float))
         if spot:
-            print(
-                "How much of a discount are you looking for (with lower prices it may take longer)?\n"
-            )
+            spot_price = instance_info.price_float
+        # if spot:
+        #     print(
+        #         "How much of a discount are you looking for?\nBidding will only run under the price specified"
+        #     )
 
-            instance_info = monkeycli.aws_instance_types.get_instance_info(
-                machine_type)
-            print("Current price of a {}: {:.3f}$/hr".format(
-                instance_info.name, instance_info.price_float))
-            discounts = [20, 40, 60, 70, 80, 90]
-            options = []
-            for disc in discounts:
-                price = instance_info.price_float * (100 - disc) / 100
-                readable = "{}%  ${:.2f}/hr -> ${:.3f}/hr".format(
-                    disc, instance_info.price_float, price)
-                options.append((readable, price))
+        #     instance_info = monkeycli.aws_instance_types.get_instance_info(
+        #         machine_type)
+        #     print("Current price of a {}: {:.3f}$/hr".format(
+        #         instance_info.name, instance_info.price_float))
+        #     discounts = [20, 40, 60, 70]
+        #     options = []
+        #     for disc in discounts:
+        #         price = instance_info.price_float * (100 - disc) / 100
+        #         readable = "{}%  ${:.2f}/hr -> ${:.3f}/hr".format(
+        #             disc, instance_info.price_float, price)
+        #         options.append((readable, price))
 
-            spot_price = -1
-            spot_price_readable = None
-            while spot_price == -1:
-                spot_price = list_options_readable_tuples(
-                    "Spot Price",
-                    options, [("Skip", None)],
-                    helptext="Put a number or enter your own price")
-                if spot_price is not None:
-                    try:
-                        for readable, val in options:
-                            if val == spot_price:
-                                spot_price_readable = readable
-                        spot_price = float(spot_price)
+        #     spot_price = -1
+        #     spot_price_readable = None
+        #     while spot_price == -1:
+        #         spot_price = list_options_readable_tuples(
+        #             "Spot Price",
+        #             options, [("Skip", None)],
+        #             helptext="Put a number or enter your own price")
+        #         if spot_price is not None:
+        #             try:
+        #                 for readable, val in options:
+        #                     if val == spot_price:
+        #                         spot_price_readable = readable
+        #                 spot_price = float(spot_price)
 
-                        if spot_price_readable is None:
+        #                 if spot_price_readable is None:
 
-                            spot_price_readable = "{:.0f}%  ${:.3f}/hr -> ${:.3f}/hr".format(
-                                (instance_info.price_float - spot_price) /
-                                instance_info.price_float * 100,
-                                instance_info.price_float, spot_price)
-                            print(spot_price_readable)
-                    except Exception as e:
-                        print(e)
-                        spot_price = -1
+        #                     spot_price_readable = "{:.0f}%  ${:.3f}/hr -> ${:.3f}/hr".format(
+        #                         (instance_info.price_float - spot_price) /
+        #                         instance_info.price_float * 100,
+        #                         instance_info.price_float, spot_price)
+        #                     print(spot_price_readable)
+        #             except Exception as e:
+        #                 print(e)
+        #                 spot_price = -1
 
     details["spot"] = spot
     details["spot_price"] = spot_price
-    if spot_price_readable is not None:
-        details.yaml_set_comment_before_after_key("spot_price",
-                                                  before=spot_price_readable)
+    details.yaml_set_comment_before_after_key(
+        "spot_price",
+        before=
+        "This is the maximum bid price you are willing to give for the machine. "
+    )
+    # if spot_price_readable is not None:
+    #     details.yaml_set_comment_before_after_key("spot_price",
+    #                                               before=spot_price_readable)
 
     return details
 
@@ -446,6 +489,8 @@ def get_provider_aws(name):
 def get_provider_setup():
     providers = []
     core_providers = list_providers()
+    if core_providers == []:
+        raise ValueError("Unable to connect to Monkey Core")
     core_provider_text = [
         ("Name: {}, Type: {}".format(colored(x["name"], "green"),
                                      colored(x["type"],
@@ -506,12 +551,14 @@ def get_provider_setup():
     return providers
 
 
-def runfile_write(project_name, env_type, env_file, env_ignore, installs,
-                  dataset, persisted_folders, providers):
+def runfile_write(project_name, workflow_name, env_type, env_file, env_ignore,
+                  installs, dataset, persisted_folders, providers):
 
-    full_file = round_trip_load(str({
-        "name": project_name,
-    }))
+    full_file = round_trip_load(
+        str({
+            "name": workflow_name,
+            "project_name": project_name,
+        }))
     full_file.fa.set_block_style()
 
     #######
@@ -547,7 +594,7 @@ def runfile_write(project_name, env_type, env_file, env_ignore, installs,
     #######
     code_yml = round_trip_load(str({"path": "."}))
     code_yml.fa.set_block_style()
-    code_yml["ignore"] = env_ignore + [dataset] + persisted_folders
+    code_yml["ignore"] = env_ignore + dataset + persisted_folders
     code_yml.yaml_set_comment_before_after_key(
         "ignore",
         before=
@@ -576,7 +623,7 @@ Persisted folders will be unpacked in the order they are listed
     data_yml = round_trip_load(str([]))
     data_yml.fa.set_block_style()
     count = 0
-    for ds in [dataset]:
+    for ds in dataset:
         inner_yml = round_trip_load(
             str({
                 "name": project_name + "-data-{}".format(count),
@@ -600,10 +647,11 @@ optional compression type. (Must have compression packages available on machine)
             """)
         count += 1
         data_yml.append(inner_yml)
-    data_yml.yaml_set_start_comment("""
+    full_file["data"] = data_yml
+    full_file.yaml_set_comment_before_after_key("data",
+                                                before="""
 Dataset folders will be checksummed before re-uploading
     """)
-    full_file["data"] = data_yml
 
     #######
     # Providers Section
@@ -631,7 +679,7 @@ Dataset folders will be checksummed before re-uploading
 
 def init_runfile():
     print("\n\nInitiating default run.yml\n")
-    project_name = get_name()
+    project_name, workflow_name = get_name()
     print("")
     env_type, env_file, env_ignore = get_environment()
     print("")
@@ -641,11 +689,11 @@ def init_runfile():
     print("")
     dataset = get_dataset(env_ignore)
     print("")
-    persisted_folders = get_persisted_folders(env_ignore + [dataset])
+    persisted_folders = get_persisted_folders(env_ignore + dataset)
     print("")
 
     providers = get_provider_setup()
     print("")
 
-    runfile_write(project_name, env_type, env_file, env_ignore, installs,
-                  dataset, persisted_folders, providers)
+    runfile_write(project_name, workflow_name, env_type, env_file, env_ignore,
+                  installs, dataset, persisted_folders, providers)
