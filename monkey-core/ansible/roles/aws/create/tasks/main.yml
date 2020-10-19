@@ -6,7 +6,7 @@
 
 - name: Set default instance params
   set_fact:
-    disk_size_gb: "{{disk_size_gb | default('10')}}"
+    disk_size_gb: "{{disk_size | default('10')}}"
     disk_type: "{{disk_type | default('gp2')}}"
     machine_type: "{{machine_type | default('t2.micro')}}"
     base_image: "{{base_image | default('ami-0bcc094591f354be2')}}"

@@ -311,6 +311,17 @@ name: {}, ip: {}, state: {}
                 },
                 quiet=monkey_global.QUIET_ANSIBLE,
                 cancel_callback=self.ansible_runner_uuid_cancel(uuid))
+        elif env_type == "docker":
+            runner = ansible_runner.run(
+                host_pattern=self.name,
+                private_data_dir="ansible",
+                module="include_role",
+                module_args="name=run/setup_docker",
+                extravars={
+                    "environment_file": env_file,
+                },
+                quiet=monkey_global.QUIET_ANSIBLE,
+                cancel_callback=self.ansible_runner_uuid_cancel(uuid))
         else:
             return False, "Provided or missing dependency manager"
 
