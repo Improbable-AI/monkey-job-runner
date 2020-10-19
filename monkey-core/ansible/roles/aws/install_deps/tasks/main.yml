@@ -45,14 +45,14 @@
       command: "swapon /swapfile"
 
  
+- name: Configure dpkg if stopped mid-installation
+  become: true
+  shell: "dpkg --configure -a"
+
 - name: apt update 
   become: true
   apt:
     update_cache: yes
-
-- name: Configure dpkg if stopped mid-installation
-  become: true
-  shell: "dpkg --configure -a"
 
 - name: apt update install s3fs python3 nginx
   become: true

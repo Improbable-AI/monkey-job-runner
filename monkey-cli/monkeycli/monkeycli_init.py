@@ -398,14 +398,20 @@ def get_provider_aws(name):
         color_matching_ARM = colored(
             "ARM", "green") if "ARM" == detected_architecture else "ARM"
 
-        options = [("Ubuntu 20.04 {} ( ami-0dba2cb6798deb6d8 )".format(
-            color_matching_x86), "ami-0dba2cb6798deb6d8"),
-                   ("Ubuntu 20.04 {} ( ami-0ea142bd244023692 )".format(
-                       color_matching_ARM), "ami-0ea142bd244023692"),
-                   ("Ubuntu 18.04 {} ( ami-0817d428a6fb68645 )".format(
-                       color_matching_x86), "ami-0817d428a6fb68645"),
-                   ("Ubuntu 18.04 {} ( ami-0f2b111fdc1647918 )".format(
-                       color_matching_ARM), "ami-0f2b111fdc1647918")]
+        options = [
+            ("Deep Learning Ubuntu 18.04 {} ( ami-01aad86525617098d )".format(
+                color_matching_x86), "ami-01aad86525617098d"),
+            ("Ubuntu 20.04 {} ( ami-0dba2cb6798deb6d8 )".format(
+                color_matching_x86), "ami-0dba2cb6798deb6d8"),
+            ("Ubuntu 20.04 {} ( ami-0dba2cb6798deb6d8 )".format(
+                color_matching_x86), "ami-0dba2cb6798deb6d8"),
+            ("Ubuntu 20.04 {} ( ami-0ea142bd244023692 )".format(
+                color_matching_ARM), "ami-0ea142bd244023692"),
+            ("Ubuntu 18.04 {} ( ami-0817d428a6fb68645 )".format(
+                color_matching_x86), "ami-0817d428a6fb68645"),
+            ("Ubuntu 18.04 {} ( ami-0f2b111fdc1647918 )".format(
+                color_matching_ARM), "ami-0f2b111fdc1647918")
+        ]
         source_image = list_options_readable_tuples(
             "Source image",
             options,
@@ -488,7 +494,13 @@ def get_provider_aws(name):
 
 def get_provider_setup():
     providers = []
-    core_providers = list_providers()
+    try:
+        core_providers = list_providers()
+    except:
+        print(
+            "Unable to connect to Monkey Core.  Please make sure core is started then retry"
+        )
+        raise ValueError("Unable to connect to Monkey Core")
     if core_providers == []:
         raise ValueError("Unable to connect to Monkey Core")
     core_provider_text = [
