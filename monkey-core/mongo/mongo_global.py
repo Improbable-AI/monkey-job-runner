@@ -7,9 +7,9 @@ MONKEY_STATE_RUNNING = "RUNNING"
 MONKEY_STATE_CLEANUP = "CLEANING_UP"
 MONKEY_STATE_FINISHED = "FINISHED"
 
-MONKEY_TIMEOUT_DISPATCHING_MACHINE = 60 * 4  # 5 min to dispatch machine max
-MONKEY_TIMEOUT_DISPATCHING_INSTALLS = 60 * 5  # 5 min to dispatch installs max
-MONKEY_TIMEOUT_DISPATCHING_SETUP = 60 * 3  # 8 min to dispatch setup max
+MONKEY_TIMEOUT_DISPATCHING_MACHINE = 60 * 4  # 4 min to dispatch machine max
+MONKEY_TIMEOUT_DISPATCHING_INSTALLS = 60 * 10  # 10 min to dispatch installs max
+MONKEY_TIMEOUT_DISPATCHING_SETUP = 60 * 3  # 3 min to dispatch setup max
 MONKEY_TIMEOUT_CLEANUP = 30  # 30s to dispatch machine max
 
 

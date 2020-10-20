@@ -6,11 +6,11 @@ run:
     env_type: docker
 # Please set it to the requirements.txt file or environment.yml file
     env_file: None
-install:
+install: []
 # Installs each of the system dependencies.
 # Current available options include: docker, cuda10.2,
-  - cuda11.1
-  - nvidia-docker
+#  - cuda11.1
+#  - nvidia-docker
 code:
 # Defines the codebase path
     path: .
@@ -41,6 +41,8 @@ providers:
     disk_type: gp2
 # Currently only Ubuntu 18.04/20.04 is supported. 
 # Deep Learning Ubuntu 18.04 x86 ( ami-01aad86525617098d )
-    base_image: ami-0dba2cb6798deb6d8
-    #base_image: ami-01aad86525617098d
+    base_image: ami-006754dc3c3752a8e
+    # base_image: ami-0dba2cb6798deb6d8  # Normal base image
+    # base_image: ami-01aad86525617098d
     spot: true
+    spot_price: 3

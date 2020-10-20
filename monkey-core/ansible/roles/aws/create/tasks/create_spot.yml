@@ -12,6 +12,7 @@
     instance_tags:
       Name: "{{ monkey_job_uid }}"
       Monkey: "Monkey_AWS"
+      MonkeyStorage: "{{storage_name}}"
     state: running
     wait: yes
     group: Monkey_Security_Group
@@ -27,7 +28,7 @@
     spot_type: "one-time"
     spot_wait_timeout: 120
     instance_initiated_shutdown_behavior: "terminate"
-  register: existing_instance_spot
+  register: existing_instance_spot_price_defined
 
 
 - name: Turn on ec2 Instance Spot
@@ -41,6 +42,7 @@
     instance_tags:
       Name: "{{ monkey_job_uid }}"
       Monkey: "Monkey_AWS"
+      MonkeyStorage: "{{storage_name}}"
     state: running
     wait: yes
     group: Monkey_Security_Group
@@ -53,9 +55,10 @@
         volume_size: "{{disk_size_gb}}"
         volume_type: "{{disk_type}}"
     spot_type: "one-time"
+    spot_price: 100
     spot_wait_timeout: 120
     instance_initiated_shutdown_behavior: "terminate"
-  register: existing_instance_spot
+  register: existing_instance_spot_max_price
 
 - name: Create ec2 Instance Spot
   when:
@@ -69,6 +72,7 @@
     instance_tags:
       Name: "{{ monkey_job_uid }}"
       Monkey: "Monkey_AWS"
+      MonkeyStorage: "{{storage_name}}"
     image: "{{base_image}}"
     key_name: "{{ aws_key_name }}"
     wait: yes
@@ -86,7 +90,7 @@
     spot_type: "one-time"
     spot_wait_timeout: 120
     instance_initiated_shutdown_behavior: "terminate"
-  register: instance_spot
+  register: instance_spot_price_defined
 
 - name: Create ec2 Instance Spot
   when:
@@ -100,6 +104,7 @@
     instance_tags:
       Name: "{{ monkey_job_uid }}"
       Monkey: "Monkey_AWS"
+      MonkeyStorage: "{{storage_name}}"
     image: "{{base_image}}"
     key_name: "{{ aws_key_name }}"
     wait: yes
@@ -114,21 +119,49 @@
         volume_size: "{{disk_size_gb}}"
         volume_type: "{{disk_type}}"
     spot_type: "one-time"
+    spot_price: 100
     spot_wait_timeout: 120
     instance_initiated_shutdown_behavior: "terminate"
-  register: instance_spot
+  register: instance_spot_max_price
+
+- name: Debug
+  debug:
+    msg: "{{ existing_instance_spot_price_defined}}\n {{ existing_instance_spot_max_price}} \n{{instance_spot_price_defined}}\n{{ instance_spot_max_price }}"
 
 
-- name: Set facts for existing spot
+- name: Set facts for existing spot set price
   when:
     - existing_found is true
+    - spot_price is defined
     - spot is true
   set_fact:
-    instance: "{{ existing_instance_spot.instances.0 }}"
+    instance: "{{ existing_instance_spot_price_defined.instances.0 }}"
 
-- name: Set facts for existing spot
+- name: Set facts for existing spot max price
+  when:
+    - existing_found is true
+    - spot_price is not defined
+    - spot is true
+  set_fact:
+    instance: "{{ existing_instance_spot_max_price.instances.0 }}"
+
+- name: Set facts for existing spot set price
   when:
     - existing_found is false
+    - spot_price is defined
     - spot is true
   set_fact:
-    instance: "{{ instance_spot.tagged_instances.0 }}"
+    instance: "{{ instance_spot_price_defined.tagged_instances.0 }}"
+
+- name: Set facts for existing spot max price
+  when:
+    - existing_found is false
+    - spot_price is not defined
+    - spot is true
+  set_fact:
+    instance: "{{ instance_spot_max_price.tagged_instances.0 }}"
+
+
+- name: Debug instance
+  debug:
+    msg: "Instance: {{instance}}"

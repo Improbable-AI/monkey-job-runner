@@ -72,7 +72,6 @@ def get_monkey_fs():
 def aws_cred_file_environment(file):
     with open(file) as f:
         lines = f.readlines()
-        print(lines)
         names = [x.strip() for x in lines[0].split(",")]
         values = [x.strip() for x in lines[1].split(",")]
         d = dict(zip(names, values))

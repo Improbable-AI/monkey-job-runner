@@ -1,8 +1,15 @@
 ---
 
+- name: Set Zone Number
+  set_fact:
+    zone_number: "{{ {'a':'0', 'b':'1', 'c': '2', 'd':'3', 'e':'4', 'f':'5'}[aws_zone[-1]]   }}"
+
 - name: Set Subnet CIDR
   set_fact:
-    monkey_subnet_cidr: 10.0.0.0/24
+    monkey_subnet_cidr: "10.0.{{zone_number}}.0/24"
+- name: Debug
+  debug:
+    msg: "cidr: {{ monkey_subnet_cidr }}"
 
 - name: Create VPC
   environment:

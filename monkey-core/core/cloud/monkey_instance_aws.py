@@ -185,8 +185,8 @@ name: {}, ip: {}, state: {}
     def setup_logs_folder(self, job_uid, monkeyfs_bucket_name, home_dir_path):
         print("Persisting logs: ")
         logs_path = os.path.join(home_dir_path, "logs")
-        monkeyfs_output_folder = "gs://" + \
-            os.path.join(monkeyfs_bucket_name, "jobs", job_uid, "logs")
+        monkeyfs_output_folder = \
+            os.path.join("/monkeyfs", "jobs", job_uid, "logs")
         script_path = os.path.join(home_dir_path, ".logs_sync.sh")
         uuid = self.update_uuid()
         runner = ansible_runner.run(

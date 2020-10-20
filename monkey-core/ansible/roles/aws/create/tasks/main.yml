@@ -43,12 +43,12 @@
 
 - name: Run Spot Creation
   when: spot is true
-  import_tasks: create_spot.yml
+  include_tasks: create_spot.yml
 
 
 - name: Run Normal Creation
   when: spot is false
-  import_tasks: create_normal.yml
+  include_tasks: create_normal.yml
 
 - name:  Debug instance
   debug:

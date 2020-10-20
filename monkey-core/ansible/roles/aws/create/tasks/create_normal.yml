@@ -3,6 +3,7 @@
 - name: Turn on ec2 Instance
   when:
     - existing_found is true
+    - spot is false
   amazon.aws.ec2:
     count_tag: 
       Name: "{{ monkey_job_uid }}"
@@ -10,6 +11,7 @@
     instance_tags:
       Name: "{{ monkey_job_uid }}"
       Monkey: "Monkey_AWS"
+      MonkeyStorage: "{{storage_name}}"
     state: running
     wait: yes
     group: Monkey_Security_Group
@@ -25,6 +27,7 @@
 - name: Create ec2 Instance
   when:
     - existing_found is false
+    - spot is false
   amazon.aws.ec2:
     exact_count: 1
     count_tag: 
@@ -33,6 +36,7 @@
     instance_tags:
       Name: "{{ monkey_job_uid }}"
       Monkey: "Monkey_AWS"
+      MonkeyStorage: "{{storage_name}}"
     image: "{{base_image}}"
     key_name: "{{ aws_key_name }}"
     wait: yes
@@ -51,10 +55,12 @@
 - name: Set facts for existing 
   when:
     - existing_found is true
+    - spot is false
   set_fact:
     instance: "{{ existing_instance.instances.0 }}"
 - name: Set facts for existing
   when:
     - existing_found is false
+    - spot is false
   set_fact:
     instance: "{{ instance.tagged_instances.0 }}"
