@@ -72,7 +72,7 @@ def create_aws_provider(provider_name, yaml, args):
         while valid == False:
             aws_key_file = input(
                 "AWS Account File (should have Access key ID and Secret Access Key in csv form)\nKey: "
-            )
+            ).strip()
             aws_key_file = os.path.abspath(aws_key_file)
             try:
                 cred_environment = aws_cred_file_environment(aws_key_file)
@@ -91,6 +91,7 @@ def create_aws_provider(provider_name, yaml, args):
         zone_input = input(
             "Set project zone ({}): ".format(region_input +
                                              "a")) or region_input + "a"
+        print("Zone: ", zone_input)
         if monkeyfs_input is None:
             monkeyfs_input = input("Set the monkey_fs aws s3 bucket name ({})".format("monkeyfs-XXXXXX")) \
                 or "monkeyfs-" + ''.join(random.choice(string.ascii_lowercase) for _ in range(6))
@@ -154,7 +155,7 @@ def create_aws_provider(provider_name, yaml, args):
     # Creation of FS OK, now mounting FS to local mount point
     if mount_aws_monkeyfs(details) == False:
         print(
-            "Terminating, please ensure you have gcsfuse installed on the core machine"
+            "Terminating, please ensure you have s3fs installed on the core machine"
         )
         exit(1)
 
