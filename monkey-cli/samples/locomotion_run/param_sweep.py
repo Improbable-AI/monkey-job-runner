@@ -13,4 +13,8 @@ gait_3 = "learn_gp_ppo.py --env_name=CheetahMPCEnvICRA-v0 --episode_steps=100 --
 
 print("\n\n----------------------------------------------\n")
 monkey = MonkeyCLI()
-monkey.run(base_command + flat_policy)
+#monkey.run(base_command + flat_policy)
+#monkey.run(base_command + flat_policy2)
+monkey.run(base_command + gait_1)
+monkey.run(base_command + gait_2)
+monkey.run(base_command + gait_3)
