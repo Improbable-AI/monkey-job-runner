@@ -6,9 +6,9 @@ import string
 import ansible_runner
 from ruamel.yaml import YAML, round_trip_load
 
-from setup.utils import (Completer, aws_cred_file_environment,
-                         check_for_existing_local_command,
-                         printout_ansible_events)
+from setup_scripts.utils import (Completer, aws_cred_file_environment,
+                                 check_for_existing_local_command,
+                                 printout_ansible_events)
 
 comp = Completer()
 # we want to treat '/' as part of a word, so override the delimiters
@@ -76,6 +76,8 @@ def create_aws_provider(provider_name, yaml, args):
             aws_key_file = os.path.abspath(aws_key_file)
             try:
                 cred_environment = aws_cred_file_environment(aws_key_file)
+                for key, value in cred_environment.items():
+                    os.environ[key] = value
                 valid = True
             except:
                 print("Failed to read file")
@@ -142,8 +144,7 @@ def create_aws_provider(provider_name, yaml, args):
         write_vars_file(aws_vars)
 
         # Create filesystem and check if succeeded
-        filesystem_ok = create_aws_monkeyfs(details["storage_name"],
-                                            cred_environment=cred_environment)
+        filesystem_ok = create_aws_monkeyfs(details["storage_name"])
 
         if filesystem_ok == False:
             monkeyfs_input = "monkeyfs-" + \
@@ -160,8 +161,6 @@ def create_aws_provider(provider_name, yaml, args):
     print("\nWriting ansible inventory file...")
     aws_inventory = round_trip_load(
         str({
-            "aws_access_key_id": cred_environment["AWS_ACCESS_KEY_ID"],
-            "aws_secret_access_key": cred_environment["AWS_SECRET_ACCESS_KEY"],
             "plugin": "aws_ec2",
             "regions": [region_input],
             "groups": {
@@ -203,18 +202,13 @@ def write_vars_file(aws_vars):
     write_commented_file(aws_vars_file, aws_vars)
 
 
-def create_aws_monkeyfs(storage_name, cred_environment):
+def create_aws_monkeyfs(storage_name):
     print("\nSetting up monkeyfs...")
 
     runner = ansible_runner.run(playbook='aws_create_fs.yml',
                                 private_data_dir='ansible',
-                                extravars={
-                                    "access_key_id":
-                                    cred_environment["AWS_ACCESS_KEY_ID"],
-                                    "access_key_secret":
-                                    cred_environment["AWS_SECRET_ACCESS_KEY"],
-                                },
                                 quiet=False)
+    events = [e for e in runner.events]
 
     if runner.status == "failed":
         print("Failed installing and setting up monkeyfs")

@@ -13,7 +13,8 @@ from ansible.parsing.dataloader import DataLoader
 from ansible.vars.manager import VariableManager
 from core.cloud.monkey_instance_aws import MonkeyInstanceAWS
 from core.monkey_provider import MonkeyProvider
-from setup.utils import aws_cred_file_environment, printout_ansible_events
+from setup_scripts.utils import (aws_cred_file_environment,
+                                 printout_ansible_events)
 
 logger = logging.getLogger(__name__)
 logging.getLogger("botocore").setLevel(logging.WARNING)

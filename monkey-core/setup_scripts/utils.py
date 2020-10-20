@@ -72,17 +72,15 @@ def get_monkey_fs():
 def aws_cred_file_environment(file):
     with open(file) as f:
         lines = f.readlines()
-        names = [x.strip() for x in lines[0].split(",")]
-        values = [x.strip() for x in lines[1].split(",")]
-        d = dict(zip(names, values))
+        names = lines[0].split(",")
+        values = lines[1].split(",")
 
-        if "Access key ID" not in d or "Secret access key" not in d:
-            print("The AWS Cred File does not look like a csv cred file")
+        if names[2] != "Access key ID" or names[3] != "Secret access key":
             raise ValueError(
                 "The AWS Cred File does not look like a csv cred file")
 
-        access_key_id = d["Access key ID"]
-        access_key_secret = d["Secret access key"]
+        access_key_id = values[2]
+        access_key_secret = values[3]
         return {
             "AWS_ACCESS_KEY_ID": access_key_id,
             "AWS_SECRET_ACCESS_KEY": access_key_secret,

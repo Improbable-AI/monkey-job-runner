@@ -20,7 +20,7 @@ from werkzeug.datastructures import FileStorage
 
 import monkey_global
 from monkey import Monkey
-from setup.utils import get_monkey_fs
+from setup_scripts.utils import get_monkey_fs
 
 application = Flask(__name__)
 logging.getLogger("werkzeug").setLevel(logging.WARNING)

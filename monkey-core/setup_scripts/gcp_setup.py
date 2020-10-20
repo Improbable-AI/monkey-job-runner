@@ -6,7 +6,7 @@ import string
 import ansible_runner
 from ruamel.yaml import YAML, round_trip_load
 
-from setup.utils import Completer, check_for_existing_local_command
+from setup_scripts.utils import Completer, check_for_existing_local_command
 
 comp = Completer()
 # we want to treat '/' as part of a word, so override the delimiters

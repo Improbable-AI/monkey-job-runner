@@ -87,6 +87,7 @@ def check_for_dead_jobs(self):
             logger.error(
                 "Provider should have been defined for the job to be submitted: {}"
                 .format(job))
+            continue
 
         job.total_wall_time = (datetime.now() -
                                job.creation_date).total_seconds()

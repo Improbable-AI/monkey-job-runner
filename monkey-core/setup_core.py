@@ -7,10 +7,10 @@ import readline
 from ruamel.yaml import YAML, round_trip_load
 from termcolor import colored, cprint
 
-from setup.aws_setup import check_aws_provider, create_aws_provider
-from setup.gcp_setup import check_gcp_provider, create_gcp_provider
-from setup.mongo_utils import get_monkey_db
-from setup.utils import Completer, get_monkey_fs
+from setup_scripts.aws_setup import check_aws_provider, create_aws_provider
+from setup_scripts.gcp_setup import check_gcp_provider, create_gcp_provider
+from setup_scripts.mongo_utils import get_monkey_db
+from setup_scripts.utils import Completer, get_monkey_fs
 
 comp = Completer()
 # we want to treat '/' as part of a word, so override the delimiters

@@ -10,8 +10,8 @@ import monkey_global
 import requests
 import yaml
 from core.monkey_instance import MonkeyInstance
-from setup.utils import (aws_cred_file_environment, get_aws_vars,
-                         printout_ansible_events)
+from setup_scripts.utils import (aws_cred_file_environment, get_aws_vars,
+                                 printout_ansible_events)
 
 logger = logging.getLogger(__name__)
 
