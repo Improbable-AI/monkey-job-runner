@@ -1,5 +1,6 @@
 ---
-name: monkey
+name: mnist
+project_name: monkey
 run:
 # Supported env_type options: conda, pip, docker
     env_type: conda
@@ -25,10 +26,10 @@ persist:
 # Persisted folders will be unpacked in the order they are listed
 #     
   - output
-data:
-# 
+
 # Dataset folders will be checksummed before re-uploading
 #     
+data:
   - name: monkey-data-0
 
 # Dataset type options are fore copy or mount.  Mount will directly mount the dataset bucket while copy will copy the dataset to local memory (highly recommended and only supported)
@@ -48,6 +49,7 @@ providers:
   - name: aws
 # Pick an AWS instance type (https://aws.amazon.com/ec2/instance-types/)
     machine_type: t3.micro
+# Disk Size (GB)
     disk_size: 10
 # Available disk types (gp2, st1) (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-volume-types.html)
     disk_type: gp2
@@ -55,5 +57,5 @@ providers:
 # Ubuntu 20.04 x86 ( ami-0dba2cb6798deb6d8 )
     base_image: ami-0dba2cb6798deb6d8
     spot: true
-# 40%  $0.01/hr -> $0.006/hr
-    spot_price: 0.00624
+# This is the maximum bid price you are willing to give for the machine. 
+    spot_price: 0.0104
