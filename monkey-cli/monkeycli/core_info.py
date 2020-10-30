@@ -6,9 +6,31 @@ from termcolor import colored
 from monkeycli.utils import build_url, human_readable_state
 
 
-def get_job_uid():
-    r = requests.get(build_url("get/job_uid"))
+def get_new_job_uid():
+    r = requests.get(build_url("get/new_job_uid"))
     return r.text
+
+
+def print_time_delta(delta, timeunits=False):
+    seconds = delta.total_seconds()
+    if seconds > 3600:
+        if timeunits:
+            return "{:02}h {:02}m {:02}s".format(int(seconds // 3600),
+                                                 int((seconds % 3600) // 60),
+                                                 int(seconds % 60))
+        else:
+            return "{:02}:{:02}:{:02}".format(int(seconds // 3600),
+                                              int((seconds % 3600) // 60),
+                                              int(seconds % 60))
+    elif seconds > 60:
+        if timeunits:
+            return "{:02}m {:02}s".format(int((seconds % 3600) // 60),
+                                          int(seconds % 60))
+        else:
+            return "{:02}:{:02}".format(int((seconds % 3600) // 60),
+                                        int(seconds % 60))
+    else:
+        return "{:.1f}s".format(seconds)
 
 
 def list_jobs(args, printout=False):
@@ -32,27 +54,6 @@ def list_jobs(args, printout=False):
         print("")
         print(header)
         date_format = "%m/%d/%y %H:%M"
-
-        def print_time_delta(delta, timeunits=False):
-            seconds = delta.total_seconds()
-            if seconds > 3600:
-                if timeunits:
-                    return "{:02}h {:02}m {:02}s".format(
-                        int(seconds // 3600), int((seconds % 3600) // 60),
-                        int(seconds % 60))
-                else:
-                    return "{:02}:{:02}:{:02}".format(
-                        int(seconds // 3600), int((seconds % 3600) // 60),
-                        int(seconds % 60))
-            elif seconds > 60:
-                if timeunits:
-                    return "{:02}m {:02}s".format(int((seconds % 3600) // 60),
-                                                  int(seconds % 60))
-                else:
-                    return "{:02}:{:02}".format(int((seconds % 3600) // 60),
-                                                int(seconds % 60))
-            else:
-                return "{:.1f}s".format(seconds)
 
         for date, job in job_dates:
             job_str = job["job_uid"].split("-")
@@ -129,3 +130,67 @@ def list_instances(args, printout=False):
                     colored(inst["state"], "yellow"))
                 print(line)
     return r.json()
+
+
+def get_full_uid(job_uid, printout=False):
+    try:
+        r = requests.get(build_url("get/job_uid"), params={"job_uid": job_uid})
+    except:
+        if printout:
+            print("Unable to connect to Monkey Core: {}".format(
+                build_url("get/job_uid")))
+        return None
+    full_uid = r.json().get("job_uid", None)
+    return full_uid
+
+
+def info_jobs(job_uids, printout=False):
+    info = []
+    for job_uid in job_uids:
+        if printout:
+            print(f"Retrieving info for {job_uid}")
+        full_job_uid = get_full_uid(job_uid, printout)
+        if full_job_uid is None:
+            continue
+
+        try:
+            r = requests.get(build_url("get/job_info"),
+                             params={"job_uid": full_job_uid})
+        except:
+            if printout:
+                print("Unable to connect to Monkey Core: {}".format(
+                    build_url("get/job_uid")))
+            continue
+        result = r.json()
+        job_info = result["job_info"]
+
+        date_format = "%-I:%M %p %-m-%d-%y"
+        print()
+        print((job_info.keys()))
+        print(job_info)
+        print()
+        print()
+
+        if printout:
+
+            def print_colon_value(name, value):
+                print(f"{name +':' :35} {value}")
+
+            print_colon_value("Full monkey uid", full_job_uid)
+            creation_date = datetime.datetime.utcfromtimestamp(
+                job_info["creation_date"]["$date"] / 1000.0)
+            print_colon_value("Created", creation_date.strftime(date_format))
+            job_command = job_info["job_yml"]["cmd"]
+            print_colon_value("Command run", job_command)
+            elapsed_time = print_time_delta(datetime.datetime.now() -
+                                            creation_date,
+                                            timeunits=True)
+            print(elapsed_time)
+
+        info.append(job_info)
+    return info
+
+
+def info_provider(provider, printout=False):
+    if printout:
+        print(f"Retrieving info for {provider}")

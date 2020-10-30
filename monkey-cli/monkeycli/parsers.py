@@ -65,7 +65,7 @@ def get_run_parser(subparser):
         "Optionial specification of provider (Defaults to first listed provider)"
     )
     run_parser.add_argument("--job_file",
-                            "-j",
+                            "-jf",
                             required=False,
                             default="job.yml",
                             dest="job_yaml_file",
@@ -76,14 +76,31 @@ def get_run_parser(subparser):
         required=False,
         action='store_true',
         help="Run in foreground or detach when successfully sent")
-    run_parser.add_argument(
-        "--job_uid",
-        "-juid",
-        required=False,
-        default=None,
-        dest="job_uid",
-        help="Run in foreground or detach when successfully sent")
     return run_parser
+
+
+def get_info_parser(subparser):
+    info_parser = subparser.add_parser("info",
+                                       help="Get info on the specified item")
+    info_subparser = info_parser.add_subparsers(
+        description="Info command options", dest="info_option")
+
+    info_jobs_parser = info_subparser.add_parser("job",
+                                                 help="List the info of a job")
+    info_jobs_parser.add_argument(
+        "job_uids",
+        default=[],
+        nargs="+",
+        help=
+        "Get information about a job(s) (full specifier or three letter terminator)"
+    )
+    info_provider_parser = info_subparser.add_parser(
+        "provider", help="List the info of a given provider")
+
+    info_provider_parser.add_argument(
+        "provider", help="Name of the provider to get info for")
+
+    return info_parser
 
 
 def get_empty_parser(subparser, name, helptext):

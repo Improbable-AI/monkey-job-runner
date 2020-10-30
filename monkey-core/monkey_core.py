@@ -56,8 +56,8 @@ def ping():
     return 'pong!'
 
 
-@application.route('/get/job_uid')
-def get_job_uid():
+@application.route('/get/new_job_uid')
+def get_new_job_uid():
     with lock:
         global date_format, instance_number, last_date
         new_date = datetime.now().strftime(date_format)
@@ -71,7 +71,38 @@ def get_job_uid():
         if UNIQUE_UIDS == True:
             return last_date + str(instance_number) + "-" + ''.join(
                 random.choice(string.ascii_lowercase) for _ in range(3))
-        return last_date + str(instance_number)
+    return last_date + str(instance_number)
+
+
+@application.route('/get/job_uid')
+def get_job_uid():
+    print(request.args)
+    job_uid = request.args.get("job_uid", None)
+    if job_uid is None:
+        return jsonify({"success": False, "msg": "No job_uid provided"})
+    job_uid = monkey.get_job_uid(job_uid)
+    if job_uid is None:
+        return jsonify({"success": False, "msg": "No job_uid provided"})
+    else:
+        return jsonify({
+            "success": True,
+            "msg": "Found matching job",
+            "job_uid": job_uid
+        })
+
+
+@application.route('/get/job_info')
+def get_job_info():
+    print(request.args)
+    job_uid = request.args.get("job_uid", None)
+    if job_uid is None:
+        return jsonify({"success": False, "msg": "No job_uid provided"})
+    else:
+        return jsonify({
+            "success": True,
+            "msg": "Found matching job",
+            "job_info": monkey.get_job_info(job_uid)
+        })
 
 
 @application.route('/list/providers')
@@ -133,11 +164,9 @@ def check_checksum_path(local_path, provider_path, directory, name, checksum):
         sync_directories(local_path, provider_path)
 
     return jsonify({
-        "msg":
-        f"Found existing {directory}.  Continuing..."
+        "msg": f"Found existing {directory}"
         if local_found else f"Need to upload {directory}...",
-        "found":
-        local_found,
+        "found": local_found,
     })
 
 

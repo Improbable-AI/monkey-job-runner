@@ -8,6 +8,7 @@ import mongo.mongo_global as monkey_state
 
 class MonkeyJob(DynamicDocument):
     job_uid = StringField(required=True, unique=True)
+    job_random_suffix = StringField(required=False, unique=False)
     job_yml = DictField(required=True)
     state = StringField(required=True)
     provider_type = StringField(required=True)
