@@ -10,7 +10,10 @@ from mongo.monkey_job import MonkeyJob
 logging.basicConfig()
 logging.getLogger().setLevel(logging.DEBUG)
 logger = logging.getLogger(__name__)
-DAEMON_THREAD_TIME = 5
+from monkey_global import DAEMON_THREAD_TIME
+
+if DAEMON_THREAD_TIME is None:
+    DAEMON_THREAD_TIME = 5
 
 
 def check_for_queued_jobs(self):

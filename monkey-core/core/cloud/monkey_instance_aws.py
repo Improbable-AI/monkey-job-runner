@@ -118,7 +118,7 @@ name: {}, ip: {}, state: {}
         print("Successfully setup data item")
         return True, "Successfully setup data item"
 
-    def unpack_code_and_persist(self, job_uid, monkeyfs_path, home_dir_path):
+    def unpack_job_dir(self, job_uid, monkeyfs_path, home_dir_path):
         job_path = os.path.join(monkeyfs_path, "jobs", job_uid)
 
         uuid = self.update_uuid()
@@ -126,21 +126,46 @@ name: {}, ip: {}, state: {}
             host_pattern=self.name,
             private_data_dir="ansible",
             module="copy",
-            module_args="src={} dest={} remote_src=true".format(
-                job_path + "/", home_dir_path),
+            module_args=
+            f"src={job_path + '/' } dest={home_dir_path} remote_src=true",
             quiet=monkey_global.QUIET_ANSIBLE,
             cancel_callback=self.ansible_runner_uuid_cancel(uuid))
         if runner.status == "failed" or self.get_uuid() != uuid:
             print("Failed to copy directory")
             return False, "Failed to copy directory"
 
+        print("Unpacked code and persisted directory successfully")
+        return True, "Unpacked code and persisted directories successfully"
+
+    def unpack_code_and_persist(self, code_item, monkeyfs_path, home_dir_path):
+        print(code_item)
+        run_name = code_item["run_name"]
+        checksum = code_item["codebase_checksum"]
+        extension = code_item["codebase_extension"]
+        code_tar_path = os.path.join(monkeyfs_path, "code", run_name, checksum,
+                                     "code" + extension)
+
+        # home_tar_path = os.path.join(home_dir_path, "code.tar")
+        # uuid = self.update_uuid()
+        # runner = ansible_runner.run(
+        #     host_pattern=self.name,
+        #     private_data_dir="ansible",
+        #     module="copy",
+        #     module_args=
+        #     f"src={code_tar_path} dest={home_tar_path} remote_src=true",
+        #     quiet=monkey_global.QUIET_ANSIBLE,
+        #     cancel_callback=self.ansible_runner_uuid_cancel(uuid))
+        # if runner.status == "failed" or self.get_uuid() != uuid:
+        #     print("Failed to copy directory")
+        #     return False, "Failed to copy directory"
+
         uuid = self.update_uuid()
         runner = ansible_runner.run(
             host_pattern=self.name,
             private_data_dir="ansible",
             module="unarchive",
-            module_args="src={} remote_src=True dest={} creates=yes".format(
-                os.path.join(job_path, "code.tar"), home_dir_path),
+            module_args=
+            f"src={code_tar_path} remote_src=True dest={home_dir_path} creates=yes",
             quiet=monkey_global.QUIET_ANSIBLE,
             cancel_callback=self.ansible_runner_uuid_cancel(uuid))
         if runner.status == "failed" or self.get_uuid() != uuid:
@@ -239,6 +264,7 @@ name: {}, ip: {}, state: {}
             print("Failed to mount filesystem")
             return False, "Failed to mount filesystem"
 
+        # TODO(alamp): Different home dirs if using non ubuntu distributions
         home_dir_path = "/home/ubuntu"
 
         for data_item in job.get("data", []):
@@ -246,23 +272,30 @@ name: {}, ip: {}, state: {}
             success, msg = self.setup_data_item(data_item=data_item,
                                                 monkeyfs_path=monkeyfs_path,
                                                 home_dir_path=home_dir_path)
-            if success == False:
+            if not success:
                 return success, msg
 
-        success, msg = self.unpack_code_and_persist(
-            job_uid=job_uid,
-            monkeyfs_path=monkeyfs_path,
-            home_dir_path=home_dir_path)
-        if success == False:
+        success, msg = self.unpack_job_dir(job_uid=job_uid,
+                                           monkeyfs_path=monkeyfs_path,
+                                           home_dir_path=home_dir_path)
+        if not success:
             return success, msg
-        print("Success in unpacking all datasets")
+
+        for code_item in job.get("code", []):
+            success, msg = self.unpack_code_and_persist(
+                code_item=code_item,
+                monkeyfs_path=monkeyfs_path,
+                home_dir_path=home_dir_path)
+            if not success:
+                return success, msg
+            print("Success in unpacking all datasets")
 
         print("Setting up logs folder")
         success, msg = self.setup_logs_folder(
             job_uid=job_uid,
             monkeyfs_bucket_name=aws_storage_name,
             home_dir_path=home_dir_path)
-        if success == False:
+        if not success:
             return success, msg
 
         for persist_item in job.get("persist", []):
@@ -272,12 +305,12 @@ name: {}, ip: {}, state: {}
                 monkeyfs_bucket_name=aws_storage_name,
                 home_dir_path=home_dir_path,
                 persist=persist_item)
-            if success == False:
+            if not success:
                 return success, msg
 
         print("Setting up dependency manager...")
         success, msg = self.setup_dependency_manager(job["run"])
-        if success == False:
+        if not success:
             return success, msg
 
         return True, "Successfully setup the job"

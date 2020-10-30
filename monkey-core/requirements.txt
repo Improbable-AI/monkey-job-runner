@@ -17,6 +17,7 @@ cffi==1.14.0
 chardet==3.0.4
 click==7.1.2
 cryptography==2.9.2
+dirhash==0.2.1
 distro==1.5.0
 docker==4.2.1
 docker-compose==1.26.0
@@ -84,6 +85,7 @@ rsa==4.0
 ruamel.yaml==0.16.10
 ruamel.yaml.clib==0.2.0
 s3transfer==0.3.3
+scantree==0.0.1
 six==1.15.0
 soupsieve==2.0.1
 termcolor==1.1.0

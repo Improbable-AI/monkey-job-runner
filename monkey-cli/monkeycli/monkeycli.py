@@ -64,8 +64,12 @@ class MonkeyCLI(Cmd):
         return monkeycli.core_job.upload_persisted_folder(
             persist, job_uid, provider_name)
 
-    def upload_codebase(self, code, job_uid, provider_name):
-        return monkeycli.core_job.upload_codebase(code, job_uid, provider_name)
+    def check_or_upload_codebase(self, code, job_uid, run_name, provider_name):
+        return monkeycli.core_job.check_or_upload_codebase(
+            code=code,
+            job_uid=job_uid,
+            run_name=run_name,
+            provider_name=provider_name)
 
     def submit_job(self, job):
         return monkeycli.core_job.submit_job(job)
@@ -110,12 +114,20 @@ class MonkeyCLI(Cmd):
         job_yaml["cmd"] = cmd
         print("Creating job with id: ", colored(job_uid, "green"), "\n")
 
+        run_name = job_yaml["project_name"] + "-" + job_yaml["name"]
+
         # Check Data
-        for dataset in job_yaml.get("data", []):
+        data_yaml = job_yaml.get("data", None)
+        if data_yaml is not None and type(data_yaml) is not list:
+            data_yaml = [data_yaml]
+
+        for dataset in data_yaml:
             dataset_checksum, dataset_filename = self.check_or_upload_dataset(
                 dataset=dataset, provider_name=provider)
             dataset["dataset_checksum"] = dataset_checksum
             dataset["dataset_filename"] = dataset_filename
+
+        job_yaml["data"] = data_yaml
 
         # Upload persisted folder
         for persist_dir in job_yaml.get("persist", []):
@@ -124,17 +136,31 @@ class MonkeyCLI(Cmd):
                                          provider_name=provider)
 
         # Upload codebase
-        if "code" not in job_yaml:
+        code_yaml = job_yaml.get("code", None)
+        if code_yaml is None:
             print("Please define your codebase in the yaml")
             raise ValueError("code undefined in job.yml")
+
+        if code_yaml is not None and type(code_yaml) is not list:
+            code_yaml = [code_yaml]
+
+        for codebase in code_yaml:
+            codebase_params = self.check_or_upload_codebase(
+                code=job_yaml["code"],
+                job_uid=job_uid,
+                run_name=run_name,
+                provider_name=provider)
+            codebase["codebase_checksum"] = codebase_params[
+                "codebase_checksum"]
+            codebase["codebase_extension"] = codebase_params[
+                "codebase_extension"]
+            codebase["run_name"] = codebase_params["run_name"]
+        job_yaml["code"] = code_yaml
 
         # Setup extra job args
         job_yaml["foreground"] = foreground
 
-        self.upload_codebase(code=job_yaml["code"],
-                             job_uid=job_uid,
-                             provider_name=provider)
-
+        print(job_yaml)
         # Submit job
         self.submit_job(job=job_yaml)
 
