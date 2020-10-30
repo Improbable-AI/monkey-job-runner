@@ -47,6 +47,20 @@ def printout_ansible_events(events):
             print("stdout: ", stdout, "\n")
 
 
+def sync_directories(dir1, dir2):
+    if not os.path.isdir(dir1):
+        return False
+
+    dir1 = os.path.join(os.path.normpath(dir1), "")
+    dir2 = os.path.join(os.path.normpath(dir2), "")
+    os.makedirs(dir1, exist_ok=True)
+    os.makedirs(dir2, exist_ok=True)
+    print(dir1)
+    print(dir2)
+    p = subprocess.run(f"rsync -ra {dir1} {dir2}", shell=True, check=True)
+    return p.returncode == 0
+
+
 def get_monkey_fs():
     # Check env variable MONKEYFS_PATH first
     fs_path = os.environ.get("MONKEYFS_PATH", None)

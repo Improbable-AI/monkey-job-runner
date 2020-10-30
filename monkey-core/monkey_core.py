@@ -16,11 +16,12 @@ from datetime import datetime
 
 import yaml
 from flask import Flask, jsonify, request
+from ruamel.yaml import YAML, round_trip_load
 from werkzeug.datastructures import FileStorage
 
 import monkey_global
 from monkey import Monkey
-from setup_scripts.utils import get_monkey_fs
+from setup_scripts.utils import get_monkey_fs, sync_directories
 
 application = Flask(__name__)
 logging.getLogger("werkzeug").setLevel(logging.WARNING)
@@ -33,6 +34,8 @@ lock = threading.Lock()
 monkey = Monkey()
 
 UNIQUE_UIDS = True
+
+MONKEYFS_LOCAL_PATH = "ansible/monkeyfs"
 
 
 def get_local_filesystem_for_provider(provider_name):
@@ -99,6 +102,45 @@ def get_list_jobs():
     return jsonify(jobs_list)
 
 
+def existing_dir(path):
+    return os.path.isdir(path)
+
+
+def get_codebase_path(run_name, codebase_checksum, monkeyfs_path):
+    return os.path.abspath(
+        os.path.join(monkeyfs_path, "code", run_name, codebase_checksum))
+
+
+def get_dataset_path(dataset_name, dataset_checksum, monkeyfs_path):
+    return os.path.abspath(
+        os.path.join(monkeyfs_path, "data", dataset_name, dataset_checksum))
+
+
+def check_checksum_path(local_path, provider_path, directory, name, checksum):
+    def get_checksum_path(base_path):
+        abs_path = os.path.abspath(
+            os.path.join(base_path, directory, name, checksum))
+        return abs_path, existing_dir(abs_path)
+
+    local_path, local_found = get_checksum_path(base_path=local_path)
+    provider_path, provider_found = get_checksum_path(base_path=provider_path)
+
+    print(
+        f"local: {local_path}, provider path: {provider_path}, local_found: {local_found}, provider_found: {provider_found}"
+    )
+
+    if local_found and not provider_found:
+        sync_directories(local_path, provider_path)
+
+    return jsonify({
+        "msg":
+        f"Found existing {directory}.  Continuing..."
+        if local_found else f"Need to upload {directory}...",
+        "found":
+        local_found,
+    })
+
+
 @application.route('/check/dataset')
 def check_dataset():
     dataset_name = request.args.get('dataset_name', None)
@@ -114,38 +156,107 @@ def check_dataset():
         })
 
     monkeyfs_path = get_local_filesystem_for_provider(provider)
-    print("Monkeyfs path", monkeyfs_path, "provider", provider)
-    dataset_path = os.path.join(monkeyfs_path, "data", dataset_name,
-                                dataset_checksum)
 
-    return jsonify({
-        "msg":
-        "Found existing dataset.  Continuing..."
-        if os.path.isdir(dataset_path) else "Need to upload dataset...",
-        "found":
-        os.path.isdir(dataset_path),
-    })
+    return check_checksum_path(local_path=MONKEYFS_LOCAL_PATH,
+                               provider_path=monkeyfs_path,
+                               directory="data",
+                               name=dataset_name,
+                               checksum=dataset_checksum)
 
 
-@application.route('/submit/job')
-def submit_job():
-    job_args = copy.deepcopy(request.get_json())
-    print("Received job to submit:", job_args["job_uid"])
+@application.route('/upload/dataset', methods=["POST"])
+def upload_dataset():
+    print("Received upload dataset request")
+    dataset_name = request.args.get('dataset_name', None)
+    dataset_checksum = request.args.get('dataset_checksum', None)
+    dataset_path = request.args.get('dataset_path', None)
+    dataset_extension = request.args.get('dataset_extension', None)
+    provider = request.args.get('provider', None)
+    dataset_yaml = {
+        "dataset_name": dataset_name,
+        "dataset_checksum": dataset_checksum,
+        "dataset_path": dataset_path,
+        "dataset_extension": dataset_extension,
+    }
+    print(dataset_name, dataset_checksum, dataset_path)
+    if dataset_name is None or dataset_checksum is None or dataset_path is None \
+            or dataset_extension is None or provider is None:
+        return jsonify({
+            "msg":
+            "Did not provide dataset_name or dataset_checksum or dataset_path or dataset_extension or provider",
+            "success": False
+        })
+    monkeyfs_path = get_local_filesystem_for_provider(provider)
+    local_path = get_dataset_path(dataset_name=dataset_name,
+                                  dataset_checksum=dataset_checksum,
+                                  monkeyfs_path=MONKEYFS_LOCAL_PATH)
 
-    foreground = job_args["foreground"]
-    print("Foreground", foreground)
+    provider_path = get_dataset_path(dataset_name=dataset_name,
+                                     dataset_checksum=dataset_checksum,
+                                     monkeyfs_path=monkeyfs_path)
 
-    success, msg = monkey.submit_job(job_args, foreground=foreground)
-    res = {"msg": msg, "success": success}
+    doc_yaml_path = os.path.join(local_path, "dataset.yaml")
+    os.makedirs(local_path, exist_ok=True)
+    FileStorage(request.stream).save(
+        os.path.join(local_path, "data" + dataset_extension))
+    print("Saved file to: {}".format(
+        os.path.join(local_path, "data" + dataset_extension)))
+    with open(doc_yaml_path, "w") as doc_yaml_file:
+        yaml.dump(dataset_yaml, doc_yaml_file)
+    sync_directories(local_path, provider_path)
+    return jsonify({"msg": "Successfully uploaded dataset", "success": True})
 
-    print("Finished submitting job")
-    return jsonify(res)
+
+@application.route('/check/codebase')
+def check_codebase():
+    run_name = request.args.get('run_name', None)
+    codebase_checksum = request.args.get('codebase_checksum', None)
+    print("Checking codebase: {}:{}".format(run_name, codebase_checksum))
+    provider = request.args.get('provider', None)
+
+    if run_name is None or codebase_checksum is None or provider is None:
+        return jsonify({
+            "msg": "Did not provide run_name or codebase_checksum or provider",
+            "found": False
+        })
+
+    monkeyfs_path = get_local_filesystem_for_provider(provider)
+    return check_checksum_path(local_path=MONKEYFS_LOCAL_PATH,
+                               provider_path=monkeyfs_path,
+                               directory="code",
+                               name=run_name,
+                               checksum=codebase_checksum)
 
 
 @application.route('/upload/codebase', methods=["POST"])
 def upload_codebase():
     job_uid = request.args.get('job_uid', None)
     provider = request.args.get('provider', None)
+    run_name = request.args.get('run_name', None)
+    checksum = request.args.get('codebase_checksum', None)
+    already_uploaded = request.args.get("already_uploaded", False)
+    codebase_extension = request.args.get('codebase_extension', None)
+
+    if already_uploaded is not None:
+        try:
+            if type(already_uploaded) is str:
+                if already_uploaded.lower() == "false":
+                    already_uploaded = False
+                elif already_uploaded.lower() == "true":
+                    already_uploaded = True
+                else:
+                    already_uploaded = False
+        except Exception:
+            already_uploaded = False
+
+    codebase_yaml = {
+        "run_name": run_name,
+        "checksum": checksum,
+        "provider": provider,
+        "codebase_extension": codebase_extension
+    }
+    print(codebase_yaml)
+
     print("Received upload codebase request:", job_uid)
     if job_uid is None or provider is None:
         return jsonify({
@@ -153,16 +264,70 @@ def upload_codebase():
             "success": False
         })
     monkeyfs_path = get_local_filesystem_for_provider(provider)
-    create_folder_path = os.path.join(monkeyfs_path, "jobs", job_uid)
-    os.makedirs(os.path.join(create_folder_path, "logs"), exist_ok=True)
-    if not os.path.exists(os.path.join(create_folder_path, "logs", "run.log")):
-        with open(os.path.join(create_folder_path, "logs", "run.log"),
+
+    job_folder_path = os.path.join(MONKEYFS_LOCAL_PATH, "jobs", job_uid)
+    provider_job_folder_path = os.path.join(monkeyfs_path, "jobs", job_uid)
+    os.makedirs(os.path.join(job_folder_path, "logs"), exist_ok=True)
+    if not os.path.exists(os.path.join(job_folder_path, "logs", "run.log")):
+        with open(os.path.join(job_folder_path, "logs", "run.log"), "a") as f:
+            f.write("Initializing machines...")
+
+    try:
+        with open(os.path.join(job_folder_path, "code.yaml"), "r") as f:
+            code_yaml = YAML().load(f)
+    except Exception:
+        code_yaml = round_trip_load("---\ncodebases: []")
+
+    code_array = code_yaml.get("codebases", [])
+    code_array.append(codebase_yaml)
+    code_yaml["codebases"] = code_array
+    with open(os.path.join(job_folder_path, "code.yaml"), "w") as f:
+        y = YAML()
+        code_yaml.fa.set_block_style()
+        y.explicit_start = True
+        y.default_flow_style = False
+        y.dump(code_yaml, f)
+
+    print("Syncing job folders")
+    sync_directories(job_folder_path, provider_job_folder_path)
+
+    def get_codebase_folder_path(base_path):
+        path = os.path.abspath(
+            os.path.join(base_path, "code", run_name, checksum, ""))
+        os.makedirs(path, exist_ok=True)
+        return path
+
+    local_codebase_folder_path = get_codebase_folder_path(MONKEYFS_LOCAL_PATH)
+    provider_codebase_folder_path = get_codebase_folder_path(monkeyfs_path)
+
+    print(f"Already uploaded: {already_uploaded}")
+
+    if not already_uploaded:
+        print(
+            "local_path: ",
+            os.path.join(local_codebase_folder_path,
+                         "code" + codebase_extension))
+        local_path = os.path.join(local_codebase_folder_path,
+                                  "code" + codebase_extension)
+        print(f"Local path: {local_path}")
+        FileStorage(request.stream).save(
+            os.path.join(local_codebase_folder_path,
+                         "code" + codebase_extension))
+        print("Saved file to: {}".format(
+            os.path.join(local_codebase_folder_path,
+                         "code" + codebase_extension)))
+        with open(os.path.join(local_codebase_folder_path, "code.yaml"),
                   "w") as f:
-            pass
-    FileStorage(request.stream).save(
-        os.path.join(create_folder_path, "code.tar"))
-    print("Saved file to: {}".format(
-        os.path.join(create_folder_path, "code.tar")))
+            y = YAML()
+            code_yaml.fa.set_block_style()
+            y.explicit_start = True
+            y.default_flow_style = False
+            y.dump(code_yaml, f)
+        sync_directories(local_codebase_folder_path,
+                         provider_codebase_folder_path)
+    else:
+        print("Skipping uploading codebase")
+
     return jsonify({"msg": "Successfully uploaded codebase", "success": True})
 
 
@@ -189,40 +354,19 @@ def upload_persist():
     return jsonify({"msg": "Successfully uploaded codebase", "success": True})
 
 
-@application.route('/upload/dataset', methods=["POST"])
-def upload_dataset():
-    print("Received upload dataset request")
-    dataset_name = request.args.get('dataset_name', None)
-    dataset_checksum = request.args.get('dataset_checksum', None)
-    dataset_path = request.args.get('dataset_path', None)
-    dataset_extension = request.args.get('dataset_extension', None)
-    provider = request.args.get('provider', None)
-    dataset_yaml = {
-        "dataset_name": dataset_name,
-        "dataset_checksum": dataset_checksum,
-        "dataset_path": dataset_path,
-        "dataset_extension": dataset_extension,
-    }
-    print(dataset_name, dataset_checksum, dataset_path)
-    if dataset_name is None or dataset_checksum is None or dataset_path is None \
-            or dataset_extension is None or provider is None:
-        return jsonify({
-            "msg":
-            "Did not provide dataset_name or dataset_checksum or dataset_path or dataset_extension or provider",
-            "success": False
-        })
-    monkeyfs_path = get_local_filesystem_for_provider(provider)
-    create_folder_path = os.path.join(monkeyfs_path, "data", dataset_name,
-                                      dataset_checksum)
-    doc_yaml_path = os.path.join(create_folder_path, "dataset.yaml")
-    os.makedirs(create_folder_path, exist_ok=True)
-    FileStorage(request.stream).save(
-        os.path.join(create_folder_path, "data" + dataset_extension))
-    print("Saved file to: {}".format(
-        os.path.join(create_folder_path, "data" + dataset_extension)))
-    with open(doc_yaml_path, "w") as doc_yaml_file:
-        yaml.dump(dataset_yaml, doc_yaml_file)
-    return jsonify({"msg": "Successfully uploaded dataset", "success": True})
+@application.route('/submit/job')
+def submit_job():
+    job_args = copy.deepcopy(request.get_json())
+    print("Received job to submit:", job_args["job_uid"])
+
+    foreground = job_args["foreground"]
+    print("Foreground", foreground)
+
+    success, msg = monkey.submit_job(job_args, foreground=foreground)
+    res = {"msg": msg, "success": success}
+
+    print("Finished submitting job")
+    return jsonify(res)
 
 
 @application.route('/state')

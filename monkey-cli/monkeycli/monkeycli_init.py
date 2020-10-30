@@ -229,7 +229,7 @@ def get_dataset(dir_ignore):
             dataset_folders.append(dataset_response)
 
             remove_option = None
-            for readable_dirname, dirname in dir_sizes in dir_sizes:
+            for readable_dirname, dirname in dir_sizes:
                 if dirname == dataset_response:
                     remove_option = (readable_dirname, dirname)
             if remove_option is not None and remove_option in dir_sizes:
