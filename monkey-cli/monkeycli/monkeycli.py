@@ -45,13 +45,36 @@ class MonkeyCLI(Cmd):
     #                                        machine_params=machine_overrides)
 
     def list_providers(self, printout=False):
-        return monkeycli.core_info.list_providers(printout)
+        return
 
-    def list_instances(self, args, printout=False):
-        return monkeycli.core_info.list_instances(args, printout)
+    def list_command(self, list_parser, args, printout=False):
+        if args.list_option == "jobs":
+            return monkeycli.core_info.list_jobs(vars(args), printout)
+        if args.list_option == "instances":
+            return monkeycli.core_info.list_instances(vars(args), printout)
+        if args.list_option == "providers":
+            return monkeycli.core_info.list_providers(printout)
+        else:
+            list_parser.print_help()
+            return False
 
-    def list_jobs(self, args, printout=False):
-        return monkeycli.core_info.list_jobs(args, printout)
+    def info_command(self, info_parser, args, printout=False):
+        print(args)
+        print()
+        if args.info_option == "jobs" or args.info_option == "job":
+            return monkeycli.core_info.info_jobs(job_uids=args.job_uids,
+                                                 printout=printout)
+        if args.info_option == "providers":
+            return monkeycli.core_info.info_provider(provider=args.provider,
+                                                     printout=printout)
+        else:
+            info_parser.print_help()
+            return False
+
+    def output_command(self, output_parser, args, printout=False):
+        print(args)
+        return monkeycli.core_info.job_output(job_uid=args.job_uid,
+                                              printout=printout)
 
     def check_or_upload_dataset(self,
                                 dataset,
@@ -74,13 +97,12 @@ class MonkeyCLI(Cmd):
     def submit_job(self, job):
         return monkeycli.core_job.submit_job(job)
 
-    def get_job_uid(self):
-        return monkeycli.core_info.get_job_uid()
+    def get_new_job_uid(self):
+        return monkeycli.core_info.get_new_job_uid()
 
     def run_job(self,
                 cmd,
                 job_yaml_file="job.yml",
-                job_uid=None,
                 foreground=False,
                 provider=None,
                 printout=False):
@@ -108,8 +130,7 @@ class MonkeyCLI(Cmd):
         provider = job_yaml["provider"]
         print("Running on provider: {}".format(provider))
 
-        if job_uid is None:
-            job_uid = self.get_job_uid()
+        job_uid = self.get_new_job_uid()
         job_yaml["job_uid"] = job_uid
         job_yaml["cmd"] = cmd
         print("Creating job with id: ", colored(job_uid, "green"), "\n")
@@ -183,14 +204,10 @@ class MonkeyCLI(Cmd):
         list_parser, list_subparser = monkeycli.parsers.get_list_parser(
             subparser=subparser)
 
-        info_parser = subparser.add_parser("info",
-                                           help="Info on the specified item")
-        info_subparser = info_parser.add_subparsers(description="Info options",
-                                                    dest="info_option")
-        # info_jobs_parser = list_subparser.add_parser(
-        #     "job", help="Gets the info on the specified job")
-        # info_providers_parser = list_subparser.add_parser(
-        #     "instance", help="List the info of the specified instance")
+        info_parser = monkeycli.parsers.get_info_parser(subparser=subparser)
+
+        output_parser = monkeycli.parsers.get_output_parser(
+            subparser=subparser)
 
         init_parser = monkeycli.parsers.get_empty_parser(
             subparser=subparser,
@@ -211,7 +228,6 @@ class MonkeyCLI(Cmd):
         if args.command == "run":
             return self.run_job(cmd=" ".join(remaining_args),
                                 job_yaml_file=args.job_yaml_file,
-                                job_uid=args.job_uid,
                                 foreground=args.foreground,
                                 provider=args.provider,
                                 printout=printout)
@@ -234,15 +250,17 @@ class MonkeyCLI(Cmd):
                 create_parser.print_help()
                 return False
         elif args.command == "list":
-            if args.list_option == "jobs":
-                return self.list_jobs(args=vars(args), printout=printout)
-            elif args.list_option == "instances":
-                return self.list_instances(args=vars(args), printout=printout)
-            elif args.list_option == "providers":
-                return self.list_providers(printout=printout)
-            else:
-                list_parser.print_help()
-                return False
+            self.list_command(list_parser=list_parser,
+                              args=(args),
+                              printout=printout)
+        elif args.command == "info":
+            return self.info_command(info_parser=info_parser,
+                                     args=(args),
+                                     printout=printout)
+        elif args.command == "output":
+            return self.output_command(output_parser=output_parser,
+                                       args=(args),
+                                       printout=printout)
         elif args.command == "init":
             return init_runfile()
         elif args.command == "help":

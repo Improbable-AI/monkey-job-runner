@@ -10,17 +10,15 @@ from mongo.monkey_job import MonkeyJob
 logging.basicConfig()
 logging.getLogger().setLevel(logging.DEBUG)
 logger = logging.getLogger(__name__)
-from monkey_global import DAEMON_THREAD_TIME
-
-if DAEMON_THREAD_TIME is None:
-    DAEMON_THREAD_TIME = 5
+import monkey_global
 
 
 def check_for_queued_jobs(self):
     """Checks for all queued jobs and dispatches if necessary
     """
     queued_jobs = MonkeyJob.objects(state=state.MONKEY_STATE_QUEUED)
-    print("Found", len(queued_jobs), "queued jobs")
+    if not monkey_global.QUIET_PERIODIC_PRINTOUT:
+        print("Found", len(queued_jobs), "queued jobs")
     for job in queued_jobs:
         print("Dispatching Job: ", job.job_uid)
         found_provider = None
@@ -71,12 +69,15 @@ def check_for_dead_jobs(self):
     recently_finished_jos = [
         x for x in pending_jobs if x.state == state.MONKEY_STATE_FINISHED
     ]
-    print("Found: {} jobs in pending state".format(pending_job_num))
-    print("Checking: {} jobs for late cleanup".format(
-        potential_missed_cleanup_num))
 
-    self.print_jobs(
-        [x for x in pending_jobs if x.state != state.MONKEY_STATE_FINISHED])
+    if not monkey_global.QUIET_PERIODIC_PRINTOUT:
+        print("Found: {} jobs in pending state".format(pending_job_num))
+        print("Checking: {} jobs for late cleanup".format(
+            potential_missed_cleanup_num))
+
+        self.print_jobs([
+            x for x in pending_jobs if x.state != state.MONKEY_STATE_FINISHED
+        ])
 
     # TODO (averylamp): retry counts
     for job in pending_jobs:
@@ -150,12 +151,13 @@ def check_for_dead_jobs(self):
 
 
 def daemon_loop(self):  #
-    threading.Timer(DAEMON_THREAD_TIME, self.daemon_loop).start()
+    threading.Timer(monkey_global.DAEMON_THREAD_TIME, self.daemon_loop).start()
     with self.lock:
-        print(
-            colored(
-                "\n======================================================================",
-                "blue"))
-        print("{}:Running periodic check".format(datetime.now()))
+        if not monkey_global.QUIET_PERIODIC_PRINTOUT:
+            print(
+                colored(
+                    "\n======================================================================",
+                    "blue"))
+            print("{}:Running periodic check".format(datetime.now()))
         self.check_for_queued_jobs()
         self.check_for_dead_jobs()

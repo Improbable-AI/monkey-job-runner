@@ -1,0 +1,25 @@
+---
+- name: Ensure sync directory exists
+  file:
+    path: "~/sync"
+    state: directory
+- name: template sync command
+  template:
+    src: templates/persist_all_loop.sh
+    dest: "{{ persist_loop_script_path }}"
+    mode: u=rwx,g=r,o=r
+- name: template sync command
+  template:
+    src: templates/persist_all.sh
+    dest: "{{ persist_script_path }}"
+    mode: u=rwx,g=r,o=r
+- name: Cancel previous persist all requests
+  shell: "killall persist_all_loop.sh"
+  ignore_errors: true
+
+- name: Persist folder by running async rsync
+  shell: "{{ persist_loop_script_path }}"
+  args:
+    executable: /bin/bash
+  async: 2592000               # 60*60*24*30 – 1 month
+  poll: 0

@@ -27,8 +27,8 @@ class Monkey():
     lock = threading.Lock()
     providers = []
 
-    from _monkey_list import (get_list_instances, get_list_jobs,
-                              get_list_providers)
+    from _monkey_list import (get_job_info, get_job_uid, get_list_instances,
+                              get_list_jobs, get_list_providers)
     from _monkey_loop import (check_for_dead_jobs, check_for_queued_jobs,
                               daemon_loop, print_jobs)
 
@@ -94,8 +94,10 @@ class Monkey():
         if found_provider is None:
             return False, "No matching provider found"
 
+        job_random_suffix = job_yml["job_uid"].split("-")[-1]
         # Add job to monkeydb
         job = MonkeyJob(job_uid=job_yml["job_uid"],
+                        job_random_suffix=job_random_suffix,
                         job_yml=job_yml,
                         state=mongo_state.MONKEY_STATE_QUEUED,
                         provider_name=provider_name,

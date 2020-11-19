@@ -1,4 +1,5 @@
 QUIET = False
 QUIET_ANSIBLE = False
+QUIET_PERIODIC_PRINTOUT = False
 LOG_FILE = "monkey-core.log"
 DAEMON_THREAD_TIME = 10

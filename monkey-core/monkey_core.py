@@ -15,7 +15,7 @@ import time
 from datetime import datetime
 
 import yaml
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_file
 from ruamel.yaml import YAML, round_trip_load
 from werkzeug.datastructures import FileStorage
 
@@ -56,8 +56,8 @@ def ping():
     return 'pong!'
 
 
-@application.route('/get/job_uid')
-def get_job_uid():
+@application.route('/get/new_job_uid')
+def get_new_job_uid():
     with lock:
         global date_format, instance_number, last_date
         new_date = datetime.now().strftime(date_format)
@@ -71,7 +71,79 @@ def get_job_uid():
         if UNIQUE_UIDS == True:
             return last_date + str(instance_number) + "-" + ''.join(
                 random.choice(string.ascii_lowercase) for _ in range(3))
-        return last_date + str(instance_number)
+    return last_date + str(instance_number)
+
+
+@application.route('/get/job_uid')
+def get_job_uid():
+    print(request.args)
+    job_uid = request.args.get("job_uid", None)
+    if job_uid is None:
+        return jsonify({"success": False, "msg": "No job_uid provided"})
+    job_uid = monkey.get_job_uid(job_uid)
+    if job_uid is None:
+        return jsonify({"success": False, "msg": "No job_uid provided"})
+    else:
+        return jsonify({
+            "success": True,
+            "msg": "Found matching job",
+            "job_uid": job_uid
+        })
+
+
+@application.route('/get/job_info')
+def get_job_info():
+    print(request.args)
+    job_uid = request.args.get("job_uid", None)
+    if job_uid is None:
+        return jsonify({"success": False, "msg": "No job_uid provided"})
+    else:
+        return jsonify({
+            "success": True,
+            "msg": "Found matching job",
+            "job_info": monkey.get_job_info(job_uid)
+        })
+
+
+@application.route('/get/job/output')
+def get_job_output():
+    print(request.args)
+    job_uid = request.args.get("job_uid", None)
+    if job_uid is None:
+        print("No job_uid provided for output")
+        return jsonify({"success": False, "msg": "No job_uid provided"})
+    else:
+        print("Getting output for ", job_uid)
+        job_folder_path = os.path.join(MONKEYFS_LOCAL_PATH, "jobs", job_uid)
+        job_yaml_file = os.path.join(job_folder_path, "job.yaml")
+        print(job_yaml_file)
+        try:
+            with open(job_yaml_file, 'r') as job_file:
+                job_yaml = yaml.load(job_file, Loader=yaml.FullLoader)
+                print(job_yaml)
+        except:
+            print("Unable to parse job.yml, path: {}".format(job_yaml_file))
+            raise ValueError("Could not read job file")
+        provider = job_yaml["provider"]
+        monkeyfs_path = get_local_filesystem_for_provider(provider)
+        provider_job_folder_path = os.path.join(monkeyfs_path, "jobs", job_uid)
+        print(f"Syncing: {provider_job_folder_path} {job_folder_path}")
+        sync_directories(os.path.join(provider_job_folder_path, ""),
+                         os.path.join(job_folder_path, ""))
+
+        persisted_items = job_yaml.get("persist", [])
+        print("Retrieving persisted items: ", persisted_items)
+        with tempfile.NamedTemporaryFile(delete=False,
+                                         suffix=".tar") as dir_tmp:
+            code_tar = tarfile.open(dir_tmp.name, "w")
+            print(persisted_items)
+            for f in persisted_items:
+                if os.path.exists(os.path.join(job_folder_path, f)):
+                    code_tar.add(os.path.join(job_folder_path, f) + "/", f)
+            code_tar.close()
+            tar_name = dir_tmp.name
+            print(tar_name)
+        return send_file(tar_name)
 
 
 @application.route('/list/providers')
@@ -133,11 +205,9 @@ def check_checksum_path(local_path, provider_path, directory, name, checksum):
         sync_directories(local_path, provider_path)
 
     return jsonify({
-        "msg":
-        f"Found existing {directory}.  Continuing..."
+        "msg": f"Found existing {directory}"
         if local_found else f"Need to upload {directory}...",
-        "found":
-        local_found,
+        "found": local_found,
     })
 
 
@@ -237,6 +307,7 @@ def upload_codebase():
     already_uploaded = request.args.get("already_uploaded", False)
     codebase_extension = request.args.get('codebase_extension', None)
 
+    print("Already uploaded: ", already_uploaded is not None)
     if already_uploaded is not None:
         try:
             if type(already_uploaded) is str:
@@ -255,7 +326,6 @@ def upload_codebase():
         "provider": provider,
         "codebase_extension": codebase_extension
     }
-    print(codebase_yaml)
 
     print("Received upload codebase request:", job_uid)
     if job_uid is None or provider is None:
@@ -268,10 +338,15 @@ def upload_codebase():
     job_folder_path = os.path.join(MONKEYFS_LOCAL_PATH, "jobs", job_uid)
     provider_job_folder_path = os.path.join(monkeyfs_path, "jobs", job_uid)
     os.makedirs(os.path.join(job_folder_path, "logs"), exist_ok=True)
+    os.makedirs(os.path.join(provider_job_folder_path, "logs"), exist_ok=True)
     if not os.path.exists(os.path.join(job_folder_path, "logs", "run.log")):
         with open(os.path.join(job_folder_path, "logs", "run.log"), "a") as f:
             f.write("Initializing machines...")
-
+    if not os.path.exists(
+            os.path.join(provider_job_folder_path, "logs", "run.log")):
+        with open(os.path.join(job_folder_path, "logs", "run.log"), "a") as f:
+            f.write("Initializing machines...")
+    print("Writing local code.yaml")
     try:
         with open(os.path.join(job_folder_path, "code.yaml"), "r") as f:
             code_yaml = YAML().load(f)
@@ -288,8 +363,12 @@ def upload_codebase():
         y.default_flow_style = False
         y.dump(code_yaml, f)
 
-    print("Syncing job folders")
-    sync_directories(job_folder_path, provider_job_folder_path)
+    with open(os.path.join(provider_job_folder_path, "code.yaml"), "w") as f:
+        y = YAML()
+        code_yaml.fa.set_block_style()
+        y.explicit_start = True
+        y.default_flow_style = False
+        y.dump(code_yaml, f)
 
     def get_codebase_folder_path(base_path):
         path = os.path.abspath(
@@ -323,8 +402,10 @@ def upload_codebase():
             y.explicit_start = True
             y.default_flow_style = False
             y.dump(code_yaml, f)
+        print("Syncing codebase folder")
         sync_directories(local_codebase_folder_path,
                          provider_codebase_folder_path)
+        print("Syncing codebase folder: DONE")
     else:
         print("Skipping uploading codebase")
 
@@ -358,9 +439,26 @@ def upload_persist():
 def submit_job():
     job_args = copy.deepcopy(request.get_json())
     print("Received job to submit:", job_args["job_uid"])
+    job_uid = job_args["job_uid"]
 
     foreground = job_args["foreground"]
     print("Foreground", foreground)
+    provider = job_args["provider"]
+    monkeyfs_path = get_local_filesystem_for_provider(provider)
+    job_folder_path = os.path.join(MONKEYFS_LOCAL_PATH, "jobs", job_uid)
+    provider_job_folder_path = os.path.join(monkeyfs_path, "jobs", job_uid)
+
+    with open(os.path.join(job_folder_path, "job.yaml"), "w") as f:
+        y = YAML()
+        y.explicit_start = True
+        y.default_flow_style = False
+        y.dump(job_args, f)
+
+    with open(os.path.join(provider_job_folder_path, "job.yaml"), "w") as f:
+        y = YAML()
+        y.explicit_start = True
+        y.default_flow_style = False
+        y.dump(job_args, f)
 
     success, msg = monkey.submit_job(job_args, foreground=foreground)
     res = {"msg": msg, "success": success}
@@ -409,7 +507,14 @@ def parse_args(args):
                         default=None,
                         action="store_true",
                         dest="quietansible",
-                        help="Run quietly for all printouts")
+                        help="Run quietly for all ansible printouts")
+    parser.add_argument("--periodic-quiet",
+                        "-qp",
+                        required=False,
+                        default=None,
+                        action="store_true",
+                        dest="quietperiodic",
+                        help="Run quietly for all periodic printouts")
     parser.add_argument("--log-file",
                         required=False,
                         default=None,
@@ -419,9 +524,15 @@ def parse_args(args):
     if parsed_args.quiet is not None:
         monkey_global.QUIET = parsed_args.quiet
         monkey_global.QUIET_ANSIBLE = parsed_args.quiet
+        monkey_global.QUIET_PERIODIC_PRINTOUT = parsed_args.quiet
 
     if parsed_args.quietansible is not None:
+        print("Running with Quiet ansible")
         monkey_global.QUIET_ANSIBLE = parsed_args.quietansible
+
+    if parsed_args.quietperiodic is not None:
+        monkey_global.QUIET_PERIODIC_PRINTOUT = parsed_args.quietperiodic
+        print("Running with Quiet periodic")
 
     if parsed_args.log_file is not None:
         monkey_global.LOG_FILE = parsed_args.log_file

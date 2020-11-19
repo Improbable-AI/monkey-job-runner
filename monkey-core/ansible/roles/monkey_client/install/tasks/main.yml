@@ -72,6 +72,12 @@
         dest: /etc/nginx/sites-enabled/default
         state: link
         force: yes
+    - name: Add .yaml to text/plain 
+      become: true
+      lineinfile:
+        line: "    text/plain                            txt yml yaml;"
+        regex: "text/plain"
+        path: /etc/nginx/mime.types
     - name: Add .log to text/plain 
       become: true
       lineinfile:

@@ -4,6 +4,28 @@ logger = logging.getLogger(__name__)
 from mongo import *
 
 
+def get_job_uid(self, uid):
+    jobs = MonkeyJob.objects(job_uid=uid).order_by("-creation_date")
+    if len(jobs) > 0:
+        return jobs[0].job_uid
+    jobs = MonkeyJob.objects(job_random_suffix=uid).order_by("-creation_date")
+    if len(jobs) > 0:
+        return jobs[0].job_uid
+    return None
+
+
+def get_job_info(self, uid):
+    print(f"Getting job info for uid {uid}")
+    jobs = MonkeyJob.objects(job_uid=uid).order_by("-creation_date")
+    print(f"Monkey objects found {len(jobs)}")
+
+    print(jobs)
+    if len(jobs) == 0:
+        None
+    job = jobs[0]
+    return job.get_dict()
+
+
 # Fully implemented
 def get_list_providers(self):
     return [x.get_dict() for x in self.providers]

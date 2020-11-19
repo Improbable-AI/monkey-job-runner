@@ -1,4 +1,6 @@
 import datetime
+import os
+import tarfile
 
 import requests
 from termcolor import colored
@@ -6,9 +8,31 @@ from termcolor import colored
 from monkeycli.utils import build_url, human_readable_state
 
 
-def get_job_uid():
-    r = requests.get(build_url("get/job_uid"))
+def get_new_job_uid():
+    r = requests.get(build_url("get/new_job_uid"))
     return r.text
+
+
+def print_time_delta(delta, timeunits=False):
+    seconds = delta.total_seconds()
+    if seconds > 3600:
+        if timeunits:
+            return "{:02}h {:02}m {:02}s".format(int(seconds // 3600),
+                                                 int((seconds % 3600) // 60),
+                                                 int(seconds % 60))
+        else:
+            return "{:02}:{:02}:{:02}".format(int(seconds // 3600),
+                                              int((seconds % 3600) // 60),
+                                              int(seconds % 60))
+    elif seconds > 60:
+        if timeunits:
+            return "{:02}m {:02}s".format(int((seconds % 3600) // 60),
+                                          int(seconds % 60))
+        else:
+            return "{:02}:{:02}".format(int((seconds % 3600) // 60),
+                                        int(seconds % 60))
+    else:
+        return "{:.1f}s".format(seconds)
 
 
 def list_jobs(args, printout=False):
@@ -32,27 +56,6 @@ def list_jobs(args, printout=False):
         print("")
         print(header)
         date_format = "%m/%d/%y %H:%M"
-
-        def print_time_delta(delta, timeunits=False):
-            seconds = delta.total_seconds()
-            if seconds > 3600:
-                if timeunits:
-                    return "{:02}h {:02}m {:02}s".format(
-                        int(seconds // 3600), int((seconds % 3600) // 60),
-                        int(seconds % 60))
-                else:
-                    return "{:02}:{:02}:{:02}".format(
-                        int(seconds // 3600), int((seconds % 3600) // 60),
-                        int(seconds % 60))
-            elif seconds > 60:
-                if timeunits:
-                    return "{:02}m {:02}s".format(int((seconds % 3600) // 60),
-                                                  int(seconds % 60))
-                else:
-                    return "{:02}:{:02}".format(int((seconds % 3600) // 60),
-                                                int(seconds % 60))
-            else:
-                return "{:.1f}s".format(seconds)
 
         for date, job in job_dates:
             job_str = job["job_uid"].split("-")
@@ -129,3 +132,129 @@ def list_instances(args, printout=False):
                     colored(inst["state"], "yellow"))
                 print(line)
     return r.json()
+
+
+def get_full_uid(job_uid, printout=False):
+    try:
+        r = requests.get(build_url("get/job_uid"), params={"job_uid": job_uid})
+    except:
+        if printout:
+            print("Unable to connect to Monkey Core: {}".format(
+                build_url("get/job_uid")))
+        return None
+    full_uid = r.json().get("job_uid", None)
+    return full_uid
+
+
+def info_jobs(job_uids, printout=False):
+    info = []
+    for job_uid in job_uids:
+        if printout:
+            print(f"Retrieving info for {job_uid}")
+        full_job_uid = get_full_uid(job_uid, printout)
+        if full_job_uid is None:
+            continue
+
+        try:
+            r = requests.get(build_url("get/job_info"),
+                             params={"job_uid": full_job_uid})
+        except:
+            if printout:
+                print("Unable to connect to Monkey Core: {}".format(
+                    build_url("get/job_uid")))
+            continue
+        result = r.json()
+        job_info = result["job_info"]
+
+        date_format = "%-I:%M %p %-m-%d-%y"
+        print()
+        print((job_info.keys()))
+        print(job_info)
+        print()
+        print()
+
+        if printout:
+
+            def print_colon_value(name, value):
+                print(f"{name +':' :35} {value}")
+
+            print_colon_value("Full monkey uid", full_job_uid)
+            creation_date = datetime.datetime.utcfromtimestamp(
+                job_info["creation_date"]["$date"] / 1000.0)
+            print_colon_value("Created", creation_date.strftime(date_format))
+
+            job_command = job_info["job_yml"]["cmd"]
+            print_colon_value("Command run", job_command)
+
+            job_state = human_readable_state(job_info["state"])
+            print_colon_value("Job state", job_state)
+
+            if completion_date := job_info.get("completion_date", None):
+                elapsed_time = print_time_delta(
+                    datetime.datetime.utcfromtimestamp(
+                        completion_date["$date"] / 1000.0) - creation_date,
+                    timeunits=True)
+            else:
+                elapsed_time = print_time_delta(datetime.datetime.now() -
+                                                creation_date,
+                                                timeunits=True)
+            print_colon_value("Elapsed Time", elapsed_time)
+
+            # TODO(alamp): Add more useful printout
+
+        info.append(job_info)
+    return info
+
+
+def job_output(job_uid, printout=False):
+    cwd = os.getcwd()
+    full_uid = get_full_uid(job_uid)
+
+    # Search for existing monkey-output directory
+
+    def find_root_monkey_output(cwd):
+        original = cwd
+        root_dir_matches = ["job.yml", "monkey-output"]
+        while cwd != "/":
+            dir_items = os.listdir(cwd)
+            for m in root_dir_matches:
+                if m in dir_items:
+                    return cwd
+            cwd = os.path.split(cwd)[0]
+        return original
+
+    root_dir = find_root_monkey_output(cwd)
+    print(f"Full uid: {full_uid}")
+    output_dir = os.path.join(root_dir, "monkey-output", full_uid)
+    os.makedirs(output_dir, exist_ok=True)
+    if job_uid != full_uid:
+        symlink_dir = os.path.join(root_dir, "monkey-output", job_uid)
+        os.symlink(output_dir, symlink_dir)
+
+    args = {"job_uid": full_uid}
+    try:
+        r = requests.get(build_url("get/job/output"), params=args, stream=True)
+    except:
+        if printout:
+            print("Unable to connect to Monkey Core: {}".format(
+                build_url("get/job/output")))
+            return []
+
+    output_tar = os.path.join(output_dir, "output.tar")
+
+    with open(output_tar, "wb") as f:
+        for chunk in r.iter_content(32 * 1024):
+            f.write(chunk)
+
+    os.chdir(output_dir)
+    tf = tarfile.open(output_tar)
+    tf.extractall()
+    tf.close()
+    os.chdir(cwd)
+    print(f"\nTo see your output run:\ncd {output_dir}")
+    return f"cd {output_dir}"
+
+
+def info_provider(provider, printout=False):
+    if printout:
+        print(f"Retrieving info for {provider}")
