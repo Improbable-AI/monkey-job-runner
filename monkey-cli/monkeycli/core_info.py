@@ -1,4 +1,6 @@
 import datetime
+import os
+import tarfile
 
 import requests
 from termcolor import colored
@@ -180,15 +182,77 @@ def info_jobs(job_uids, printout=False):
             creation_date = datetime.datetime.utcfromtimestamp(
                 job_info["creation_date"]["$date"] / 1000.0)
             print_colon_value("Created", creation_date.strftime(date_format))
+
             job_command = job_info["job_yml"]["cmd"]
             print_colon_value("Command run", job_command)
-            elapsed_time = print_time_delta(datetime.datetime.now() -
-                                            creation_date,
-                                            timeunits=True)
-            print(elapsed_time)
+
+            job_state = human_readable_state(job_info["state"])
+            print_colon_value("Job state", job_state)
+
+            if completion_date := job_info.get("completion_date", None):
+                elapsed_time = print_time_delta(
+                    datetime.datetime.utcfromtimestamp(
+                        completion_date["$date"] / 1000.0) - creation_date,
+                    timeunits=True)
+            else:
+                elapsed_time = print_time_delta(datetime.datetime.now() -
+                                                creation_date,
+                                                timeunits=True)
+            print_colon_value("Elapsed Time", elapsed_time)
+
+            # TODO(alamp): Add more useful printout
 
         info.append(job_info)
     return info
+
+
+def job_output(job_uid, printout=False):
+    cwd = os.getcwd()
+    full_uid = get_full_uid(job_uid)
+
+    # Search for existing monkey-output directory
+
+    def find_root_monkey_output(cwd):
+        original = cwd
+        root_dir_matches = ["job.yml", "monkey-output"]
+        while cwd != "/":
+            dir_items = os.listdir(cwd)
+            for m in root_dir_matches:
+                if m in dir_items:
+                    return cwd
+            cwd = os.path.split(cwd)[0]
+        return original
+
+    root_dir = find_root_monkey_output(cwd)
+    print(f"Full uid: {full_uid}")
+    output_dir = os.path.join(root_dir, "monkey-output", full_uid)
+    os.makedirs(output_dir, exist_ok=True)
+    if job_uid != full_uid:
+        symlink_dir = os.path.join(root_dir, "monkey-output", job_uid)
+        os.symlink(output_dir, symlink_dir)
+
+    args = {"job_uid": full_uid}
+    try:
+        r = requests.get(build_url("get/job/output"), params=args, stream=True)
+    except:
+        if printout:
+            print("Unable to connect to Monkey Core: {}".format(
+                build_url("get/job/output")))
+            return []
+
+    output_tar = os.path.join(output_dir, "output.tar")
+
+    with open(output_tar, "wb") as f:
+        for chunk in r.iter_content(32 * 1024):
+            f.write(chunk)
+
+    os.chdir(output_dir)
+    tf = tarfile.open(output_tar)
+    tf.extractall()
+    tf.close()
+    os.chdir(cwd)
+    print(f"\nTo see your output run:\ncd {output_dir}")
+    return f"cd {output_dir}"
 
 
 def info_provider(provider, printout=False):

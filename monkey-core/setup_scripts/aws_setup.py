@@ -88,15 +88,20 @@ def create_aws_provider(provider_name, yaml, args):
     zone_input = args.zone or region_input + "a"
     monkeyfs_input = args.storage_name or "monkeyfs-" + \
         ''.join(random.choice(string.ascii_lowercase) for _ in range(6))
-    if args.noinput == False:
+    key_name = args.ssh_key_name
+    if not args.noinput:
         region_input = input("Set project region (us-east-1): ") or "us-east-1"
         zone_input = input(
             "Set project zone ({}): ".format(region_input +
                                              "a")) or region_input + "a"
+        key_name = input(
+            f"Set the access key name ({key_name if not None else 'monkey-aws'}): "
+        ) or "monkey-aws"
         print("Zone: ", zone_input)
         if monkeyfs_input is None:
             monkeyfs_input = input("Set the monkey_fs aws s3 bucket name ({})".format("monkeyfs-XXXXXX")) \
                 or "monkeyfs-" + ''.join(random.choice(string.ascii_lowercase) for _ in range(6))
+
     monkeyfs_path = os.path.join(os.getcwd(), "ansible/monkeyfs-aws")
 
     # Create filesystem bucket and pick a new id if failed
@@ -137,7 +142,7 @@ def create_aws_provider(provider_name, yaml, args):
         aws_vars = round_trip_load(
             str({
                 "aws_region": region_input,
-                "aws_key_name": "monkey-aws",  # Sets default key name
+                "aws_key_name": key_name,  # Sets default key name
                 "aws_zone": zone_input,
                 "firewall_rule": "monkey-ansible-firewall",
                 "storage_name": details["storage_name"],

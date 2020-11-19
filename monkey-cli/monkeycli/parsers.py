@@ -103,6 +103,20 @@ def get_info_parser(subparser):
     return info_parser
 
 
+def get_output_parser(subparser):
+    output_parser = subparser.add_parser("output",
+                                         help="Get the output of a job")
+    # output_subparser = output_parser.add_subparsers(
+    #     description="Info command options", dest="output_option")
+
+    output_parser.add_argument(
+        "job_uid",
+        help=
+        "Get the output of a job (full specifier or three letter terminator)")
+
+    return output_parser
+
+
 def get_empty_parser(subparser, name, helptext):
     parser = subparser.add_parser(name, help=helptext)
 

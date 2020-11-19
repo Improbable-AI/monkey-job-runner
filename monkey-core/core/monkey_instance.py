@@ -1,10 +1,12 @@
 import logging
 import threading
-import uuid
 from concurrent.futures import Future
 from datetime import datetime
 from threading import Thread
+from uuid import uuid1
 
+import ansible_runner
+import monkey_global
 import requests
 
 logger = logging.getLogger(__name__)
@@ -88,9 +90,7 @@ class MonkeyInstance():
 
     def update_uuid(self):
         with self.lock:
-            new_uuid = uuid.uuid1()
-            print("\n\nUpdating uuid\nfrom: {}\nto  :{}\n\n".format(
-                self.last_uuid, new_uuid))
+            new_uuid = uuid1()
             self.last_uuid = new_uuid
         return new_uuid
 
@@ -109,6 +109,45 @@ class MonkeyInstance():
             if self.last_uuid == uuid:
                 check = True
         return check
+
+    def run_ansible_role(self, rolename, uuid, extravars=None, envvars=None):
+        runner = ansible_runner.run(
+            host_pattern=self.name,
+            private_data_dir="ansible",
+            module="include_role",
+            module_args=f"name={rolename}",
+            quiet=monkey_global.QUIET_ANSIBLE,
+            extravars=extravars,
+            envvars=envvars,
+            cancel_callback=self.ansible_runner_uuid_cancel(uuid))
+        return runner
+
+    def run_ansible_module(self, modulename, args, uuid):
+        args_string = args
+        if type(args) is dict:
+            args_string = ""
+            for key, val in args.items():
+                args_string += f"{key}={val} "
+
+        runner = ansible_runner.run(
+            host_pattern=self.name,
+            private_data_dir="ansible",
+            module=modulename,
+            module_args=args_string,
+            quiet=monkey_global.QUIET_ANSIBLE,
+            cancel_callback=self.ansible_runner_uuid_cancel(uuid))
+        return runner
+
+    def run_ansible_shell(self, command, uuid):
+
+        runner = ansible_runner.run(
+            host_pattern=self.name,
+            private_data_dir="ansible",
+            module="shell",
+            module_args=f"cmd={command}",
+            quiet=monkey_global.QUIET_ANSIBLE,
+            cancel_callback=self.ansible_runner_uuid_cancel(uuid))
+        return runner
 
     def install_dependency(self, dependency):
         raise NotImplementedError("This is not implemented yet")

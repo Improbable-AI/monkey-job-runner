@@ -54,6 +54,11 @@ def parse_args():
                         required=False,
                         default=None,
                         help='Allows you to pass the key filepath')
+    parser.add_argument('--ssh-key-name',
+                        dest='ssh_key_name',
+                        required=False,
+                        default=None,
+                        help='Allows you to name your generated ssh-key')
 
     parser.add_argument(
         '--region',

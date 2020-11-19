@@ -66,6 +66,7 @@
       - python3-dev
       - nginx
       - tree
+      - moreutils
     state: present
   retries: 2
 

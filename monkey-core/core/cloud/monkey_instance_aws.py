@@ -63,14 +63,8 @@ name: {}, ip: {}, state: {}
         print("Instance installing: ", dependency)
 
         uuid = self.update_uuid()
-        runner = ansible_runner.run(
-            host_pattern=self.name,
-            private_data_dir="ansible",
-            module="include_role",
-            module_args="name=install/{}".format(dependency),
-            quiet=monkey_global.QUIET_ANSIBLE,
-            cancel_callback=self.ansible_runner_uuid_cancel(uuid))
-
+        runner = self.run_ansible_role(rolename=f"install/{dependency}",
+                                       uuid=uuid)
         print(runner.status)
         if runner.status == "failed" or self.get_uuid() != uuid:
             print("Installing Dependency: ", dependency, " failed!")
@@ -81,9 +75,7 @@ name: {}, ip: {}, state: {}
 
     def setup_data_item(self, data_item, monkeyfs_path, home_dir_path):
 
-        source_file = os.path.join(monkeyfs_path, "data")
         data_name = data_item["name"]
-        data_path = data_item["path"]
         data_checksum = data_item["dataset_checksum"]
         dataset_filename = data_item["dataset_filename"]
         installation_location = os.path.join(home_dir_path, data_item["path"])
@@ -93,23 +85,23 @@ name: {}, ip: {}, state: {}
               installation_location)
 
         uuid = self.update_uuid()
-        runner = ansible_runner.run(
-            host_pattern=self.name,
-            private_data_dir="ansible",
-            module="file",
-            module_args="path={} state=directory".format(
-                installation_location),
-            quiet=monkey_global.QUIET_ANSIBLE,
-            cancel_callback=self.ansible_runner_uuid_cancel(uuid))
 
-        runner = ansible_runner.run(
-            host_pattern=self.name,
-            private_data_dir="ansible",
-            module="unarchive",
-            module_args="src={} remote_src=True dest={} creates=yes".format(
-                dataset_full_path, installation_location),
-            quiet=monkey_global.QUIET_ANSIBLE,
-            cancel_callback=self.ansible_runner_uuid_cancel(uuid))
+        runner = self.run_ansible_module(modulename="file",
+                                         args={
+                                             "path": installation_location,
+                                             "state": "directory"
+                                         },
+                                         uuid=uuid)
+
+        runner = self.run_ansible_module(modulename="unarchive",
+                                         args={
+                                             "src": dataset_full_path,
+                                             "remote_src": "True",
+                                             "dest": installation_location,
+                                             "creates": "yes",
+                                         },
+                                         uuid=uuid)
+
         print(runner.stats)
         if runner.status == "failed" or self.get_uuid() != uuid:
             print("Failed to setup data item")
@@ -122,14 +114,10 @@ name: {}, ip: {}, state: {}
         job_path = os.path.join(monkeyfs_path, "jobs", job_uid)
 
         uuid = self.update_uuid()
-        runner = ansible_runner.run(
-            host_pattern=self.name,
-            private_data_dir="ansible",
-            module="copy",
-            module_args=
-            f"src={job_path + '/' } dest={home_dir_path} remote_src=true",
-            quiet=monkey_global.QUIET_ANSIBLE,
-            cancel_callback=self.ansible_runner_uuid_cancel(uuid))
+        runner = self.run_ansible_module(
+            modulename="copy",
+            args=f"src={job_path + '/' } dest={home_dir_path} remote_src=true",
+            uuid=uuid)
         if runner.status == "failed" or self.get_uuid() != uuid:
             print("Failed to copy directory")
             return False, "Failed to copy directory"
@@ -145,29 +133,15 @@ name: {}, ip: {}, state: {}
         code_tar_path = os.path.join(monkeyfs_path, "code", run_name, checksum,
                                      "code" + extension)
 
-        # home_tar_path = os.path.join(home_dir_path, "code.tar")
-        # uuid = self.update_uuid()
-        # runner = ansible_runner.run(
-        #     host_pattern=self.name,
-        #     private_data_dir="ansible",
-        #     module="copy",
-        #     module_args=
-        #     f"src={code_tar_path} dest={home_tar_path} remote_src=true",
-        #     quiet=monkey_global.QUIET_ANSIBLE,
-        #     cancel_callback=self.ansible_runner_uuid_cancel(uuid))
-        # if runner.status == "failed" or self.get_uuid() != uuid:
-        #     print("Failed to copy directory")
-        #     return False, "Failed to copy directory"
-
         uuid = self.update_uuid()
-        runner = ansible_runner.run(
-            host_pattern=self.name,
-            private_data_dir="ansible",
-            module="unarchive",
-            module_args=
-            f"src={code_tar_path} remote_src=True dest={home_dir_path} creates=yes",
-            quiet=monkey_global.QUIET_ANSIBLE,
-            cancel_callback=self.ansible_runner_uuid_cancel(uuid))
+        runner = self.run_ansible_module(modulename="unarchive",
+                                         args={
+                                             "src": code_tar_path,
+                                             "remote_src": "True",
+                                             "dest": home_dir_path,
+                                             "creates": "yes"
+                                         },
+                                         uuid=uuid)
         if runner.status == "failed" or self.get_uuid() != uuid:
             print("Failed to extract archive")
             return False, "Failed to extract archive"
@@ -175,62 +149,80 @@ name: {}, ip: {}, state: {}
         print("Unpacked code and persisted directory successfully")
         return True, "Unpacked code and persisted directories successfully"
 
-    def setup_persist_folder(self, job_uid, monkeyfs_bucket_name,
-                             home_dir_path, persist):
+    def setup_persist_folder(self, job_uid, home_dir_path, persist):
         print("Persisting folder: ", persist)
         persist_path = persist
-        persist_name = "." + persist.replace("/", "_") + "_sync.sh"
-        script_path = os.path.join(home_dir_path, persist_name)
+        persist_name = persist.replace("/", "_") + "_sync.sh"
+        script_path = os.path.join(home_dir_path, "sync", persist_name)
         monkeyfs_output_folder = \
-            os.path.join("/monkeyfs", "jobs", job_uid, persist_path)
-        persist_folder_path = os.path.join(home_dir_path, persist_path)
+            os.path.join("/monkeyfs", "jobs", job_uid, persist_path, "")
+        persist_folder_path = os.path.join(home_dir_path, persist_path, "")
 
         print("Output folder: ", monkeyfs_output_folder)
         print("Input folder: ", persist_folder_path)
 
         uuid = self.update_uuid()
-        runner = ansible_runner.run(
-            host_pattern=self.name,
-            private_data_dir="ansible",
-            module="include_role",
-            module_args="name=aws/configure/persist_folder",
-            extravars={
-                "persist_folder_path": persist_folder_path,
-                "persist_script_path": script_path,
-                "bucket_path": monkeyfs_output_folder,
-            },
-            quiet=monkey_global.QUIET_ANSIBLE,
-            cancel_callback=self.ansible_runner_uuid_cancel(uuid))
+        persist_folder_args = {
+            "persist_folder_path": persist_folder_path,
+            "persist_script_path": script_path,
+            "bucket_path": monkeyfs_output_folder,
+        }
+        runner = self.run_ansible_role(rolename="aws/configure/persist_folder",
+                                       extravars=persist_folder_args,
+                                       uuid=uuid)
 
         if runner.status == "failed" or self.get_uuid() != uuid:
             print("Failed to create persisted directory: " + persist_path)
-            return False, "Failed to create persisted directory: " + persist_path
+            return False, f"Failed to create persisted directory: {persist_path}"
         return True, "Setup persist ran successfully"
 
-    def setup_logs_folder(self, job_uid, monkeyfs_bucket_name, home_dir_path):
-        print("Persisting logs: ")
-        logs_path = os.path.join(home_dir_path, "logs")
+    def start_persist(self, job_uid, home_dir_path, persist):
+        print("Persisting folder: ", persist)
+        persist_path = persist
+        script_path = os.path.join(home_dir_path, "sync", "persist_all.sh")
+        script_loop_path = os.path.join(home_dir_path, "sync",
+                                        "persist_all_loop.sh")
         monkeyfs_output_folder = \
-            os.path.join("/monkeyfs", "jobs", job_uid, "logs")
+            os.path.join("/monkeyfs", "jobs", job_uid, persist_path, "")
+        persist_folder_path = os.path.join(home_dir_path, persist_path, "")
+
+        uuid = self.update_uuid()
+        start_persist_args = {
+            "persist_folder_path": persist_folder_path,
+            "persist_script_path": script_path,
+            "persist_loop_script_path": script_loop_path,
+            "bucket_path": monkeyfs_output_folder,
+        }
+        runner = self.run_ansible_role(rolename="aws/configure/start_persist",
+                                       extravars=start_persist_args,
+                                       uuid=uuid)
+
+        if runner.status == "failed" or self.get_uuid() != uuid:
+            print("Failed to create persisted directory: " + persist_path)
+            return False, "Failed to create persisted start script: "
+        return True, "Start persist ran successfully"
+
+    def setup_logs_folder(self, job_uid, home_dir_path):
+        print("Persisting logs: ")
+        logs_path = os.path.join(home_dir_path, "logs", "")
+        monkeyfs_output_folder = \
+            os.path.join("/monkeyfs", "jobs", job_uid, "logs", "")
         script_path = os.path.join(home_dir_path, ".logs_sync.sh")
         uuid = self.update_uuid()
-        runner = ansible_runner.run(
-            host_pattern=self.name,
-            private_data_dir="ansible",
-            module="include_role",
-            module_args="name=aws/configure/persist_folder",
-            extravars={
-                "persist_folder_path": logs_path,
-                "persist_script_path": script_path,
-                "bucket_path": monkeyfs_output_folder,
-                "persist_time": 3,
-            },
-            quiet=monkey_global.QUIET_ANSIBLE,
-            cancel_callback=self.ansible_runner_uuid_cancel(uuid))
+        persist_folder_args = {
+            "persist_folder_path": logs_path,
+            "persist_script_path": script_path,
+            "bucket_path": monkeyfs_output_folder,
+            "persist_time": 3,
+        }
+        runner = self.run_ansible_role(rolename="aws/configure/persist_folder",
+                                       extravars=persist_folder_args,
+                                       uuid=uuid)
 
         if runner.status == "failed" or self.get_uuid() != uuid:
             print("Failed to create persisted logs folder")
             return False, "Failed to create persisted logs folder"
+
         return True, "Setup logs persistence ran successfully"
 
     def setup_job(self, job, provider_info=dict()):
@@ -246,20 +238,16 @@ name: {}, ip: {}, state: {}
         cred_environment = aws_cred_file_environment(credential_file)
 
         uuid = self.update_uuid()
-        runner = ansible_runner.run(
-            host_pattern=self.name,
-            private_data_dir="ansible",
-            module="include_role",
-            module_args="name=aws/mount_fs",
-            extravars={
-                "aws_storage_name": aws_storage_name,
-                "monkeyfs_path": monkeyfs_path,
-                "access_key_id": cred_environment["AWS_ACCESS_KEY_ID"],
-                "access_key_secret": cred_environment["AWS_SECRET_ACCESS_KEY"]
-            },
-            quiet=monkey_global.QUIET_ANSIBLE,
-            cancel_callback=self.ansible_runner_uuid_cancel(uuid))
-        print(runner.stats)
+        setup_job_args = {
+            "aws_storage_name": aws_storage_name,
+            "monkeyfs_path": monkeyfs_path,
+            "access_key_id": cred_environment["AWS_ACCESS_KEY_ID"],
+            "access_key_secret": cred_environment["AWS_SECRET_ACCESS_KEY"]
+        }
+        runner = self.run_ansible_role(rolename="aws/mount_fs",
+                                       extravars=setup_job_args,
+                                       uuid=uuid)
+
         if runner.status == "failed" or self.get_uuid() != uuid:
             print("Failed to mount filesystem")
             return False, "Failed to mount filesystem"
@@ -291,10 +279,8 @@ name: {}, ip: {}, state: {}
             print("Success in unpacking all datasets")
 
         print("Setting up logs folder")
-        success, msg = self.setup_logs_folder(
-            job_uid=job_uid,
-            monkeyfs_bucket_name=aws_storage_name,
-            home_dir_path=home_dir_path)
+        success, msg = self.setup_logs_folder(job_uid=job_uid,
+                                              home_dir_path=home_dir_path)
         if not success:
             return success, msg
 
@@ -302,11 +288,17 @@ name: {}, ip: {}, state: {}
             print("Setting up persist item", persist_item)
             success, msg = self.setup_persist_folder(
                 job_uid=job_uid,
-                monkeyfs_bucket_name=aws_storage_name,
                 home_dir_path=home_dir_path,
                 persist=persist_item)
             if not success:
                 return success, msg
+
+        print("Starting Persist")
+        success, msg = self.start_persist(job_uid=job_uid,
+                                          home_dir_path=home_dir_path,
+                                          persist=persist_item)
+        if not success:
+            return success, msg
 
         print("Setting up dependency manager...")
         success, msg = self.setup_dependency_manager(job["run"])
@@ -322,39 +314,19 @@ name: {}, ip: {}, state: {}
         print("Env file: ", env_file)
 
         uuid = self.update_uuid()
+        env_args = {"environment_file": env_file}
         if env_type == "conda":
-            runner = ansible_runner.run(
-                host_pattern=self.name,
-                private_data_dir="ansible",
-                module="include_role",
-                module_args="name=run/setup_conda",
-                extravars={
-                    "environment_file": env_file,
-                },
-                quiet=monkey_global.QUIET_ANSIBLE,
-                cancel_callback=self.ansible_runner_uuid_cancel(uuid))
+            runner = self.run_ansible_role(rolename="run/setup_conda",
+                                           extravars=env_args,
+                                           uuid=uuid)
         elif env_type == "pip":
-            runner = ansible_runner.run(
-                host_pattern=self.name,
-                private_data_dir="ansible",
-                module="include_role",
-                module_args="name=run/setup_pip",
-                extravars={
-                    "environment_file": env_file,
-                },
-                quiet=monkey_global.QUIET_ANSIBLE,
-                cancel_callback=self.ansible_runner_uuid_cancel(uuid))
+            runner = self.run_ansible_role(rolename="run/setup_pip",
+                                           extravars=env_args,
+                                           uuid=uuid)
         elif env_type == "docker":
-            runner = ansible_runner.run(
-                host_pattern=self.name,
-                private_data_dir="ansible",
-                module="include_role",
-                module_args="name=run/setup_docker",
-                extravars={
-                    "environment_file": env_file,
-                },
-                quiet=monkey_global.QUIET_ANSIBLE,
-                cancel_callback=self.ansible_runner_uuid_cancel(uuid))
+            runner = self.run_ansible_role(rolename="run/setup_docker",
+                                           extravars=env_args,
+                                           uuid=uuid)
         else:
             return False, "Provided or missing dependency manager"
 
@@ -366,21 +338,13 @@ name: {}, ip: {}, state: {}
     def execute_command(self, cmd, run_yml):
         print("Executing cmd: ", cmd)
         print("Environment Variables:", run_yml.get("env", dict()))
-        final_command = ". ~/.monkey_activate; " + cmd + " 2>&1 | tee logs/run.log"
 
         uuid = self.update_uuid()
-        runner = ansible_runner.run(
-            host_pattern=self.name,
-            private_data_dir="ansible",
-            module="include_role",
-            module_args="name=run/cmd",
-            extravars={"run_command": cmd},
-            envvars=run_yml.get("env", dict()),
-            quiet=monkey_global.QUIET_ANSIBLE,
-            cancel_callback=self.ansible_runner_uuid_cancel(uuid))
+        runner = self.run_ansible_role(rolename="run/cmd",
+                                       extravars={"run_command": cmd},
+                                       envvars=run_yml.get("env", dict()),
+                                       uuid=uuid)
 
-        print(runner.stats)
-        events = list(runner.events)
         if runner.status == "failed" or self.get_uuid() != uuid:
             return False, "Failed to run command properly: " + cmd
 
@@ -390,20 +354,28 @@ name: {}, ip: {}, state: {}
         print("Running job: ", job)
         job_uid = job["job_uid"]
         credential_file = provider_info.get("aws_cred_file", None)
-        aws_storage_name = provider_info["storage_name"]
-        monkeyfs_path = provider_info.get("monkeyfs_path", "/monkeyfs")
         if credential_file is None:
             return False, "AWS Account Credential file is not provided"
 
         success, msg = self.execute_command(cmd=job["cmd"], run_yml=job["run"])
-        if success == False:
+        if not success:
             return success, msg
 
         print("\n\nRan job:", job_uid, " SUCCESSFULLY!\n\n")
 
+        print("\n\nForce Syncing outputs:", job_uid, " SUCCESSFULLY!\n\n")
+        script_path = os.path.join("/home/ubuntu", "sync", "persist_all.sh")
+        print(script_path)
+        uuid = self.update_uuid()
+        runner = self.run_ansible_shell(command=f"bash {script_path}",
+                                        uuid=uuid)
+        if runner.status == "failed" or self.get_uuid() != uuid:
+            return False, "Failed to run sync command properly: "
+        print("Ended syncing")
+
         return True, "Job completed"
 
-    def cleanup_job(self, job, provider_info=dict()):
+    def cleanup_job(self, job, provider_info={}):
         job_uid = job["job_uid"]
         print("\n\nTerminating Machine:", job_uid, "\n\n")
         # Cleanup skipped for now

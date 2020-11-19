@@ -71,6 +71,11 @@ class MonkeyCLI(Cmd):
             info_parser.print_help()
             return False
 
+    def output_command(self, output_parser, args, printout=False):
+        print(args)
+        return monkeycli.core_info.job_output(job_uid=args.job_uid,
+                                              printout=printout)
+
     def check_or_upload_dataset(self,
                                 dataset,
                                 provider_name,
@@ -201,6 +206,9 @@ class MonkeyCLI(Cmd):
 
         info_parser = monkeycli.parsers.get_info_parser(subparser=subparser)
 
+        output_parser = monkeycli.parsers.get_output_parser(
+            subparser=subparser)
+
         init_parser = monkeycli.parsers.get_empty_parser(
             subparser=subparser,
             name="init",
@@ -249,6 +257,10 @@ class MonkeyCLI(Cmd):
             return self.info_command(info_parser=info_parser,
                                      args=(args),
                                      printout=printout)
+        elif args.command == "output":
+            return self.output_command(output_parser=output_parser,
+                                       args=(args),
+                                       printout=printout)
         elif args.command == "init":
             return init_runfile()
         elif args.command == "help":
