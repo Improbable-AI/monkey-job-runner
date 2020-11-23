@@ -229,7 +229,11 @@ def job_output(job_uid, printout=False):
     os.makedirs(output_dir, exist_ok=True)
     if job_uid != full_uid:
         symlink_dir = os.path.join(root_dir, "monkey-output", job_uid)
-        os.symlink(output_dir, symlink_dir)
+        try:
+            os.symlink(output_dir, symlink_dir)
+        except Exception as e:
+            pass
+        output_dir = symlink_dir
 
     args = {"job_uid": full_uid}
     try:

@@ -134,6 +134,8 @@ name: {}, ip: {}, state: {}
                                      "code" + extension)
 
         uuid = self.update_uuid()
+        print("Code tar path: ", code_tar_path)
+        print("Home dir: ", home_dir_path)
         runner = self.run_ansible_module(modulename="unarchive",
                                          args={
                                              "src": code_tar_path,
@@ -143,7 +145,7 @@ name: {}, ip: {}, state: {}
                                          },
                                          uuid=uuid)
         if runner.status == "failed" or self.get_uuid() != uuid:
-            print("Failed to extract archive")
+            print("Unpacked code and persisted directory successfully")
             return False, "Failed to extract archive"
 
         print("Unpacked code and persisted directory successfully")

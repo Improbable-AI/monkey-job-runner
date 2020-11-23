@@ -1,0 +1,46 @@
+---
+name: tests
+project_name: monkey-client
+run:
+# Supported env_type options: conda, pip, docker
+    env_type: pip
+# Please set it to the requirements.txt file or environment.yml file
+    env_file: requirements.txt
+install:
+# Installs each of the system dependencies.
+# Current available options include: docker, cuda10.2,
+  - pip
+code:
+# Defines the codebase path
+    path: .
+# When packing up the codebase, monkey will ignore the following paths
+    ignore:
+      - outputs
+persist:
+# 
+# Define folders or files to persist throughout runs.
+# Should include your output or checkpoint directory
+# Any defined persist folder will be kept in persistent storage and applied over the codebase at start
+# Persisted folders will be unpacked in the order they are listed
+#     
+  - outputs
+
+# Dataset folders will be checksummed before re-uploading
+#     
+data: []
+providers:
+# 
+# AWS Provider: aws
+  - name: aws
+# Pick an AWS instance type (https://aws.amazon.com/ec2/instance-types/)
+    machine_type: t3.medium
+# Disk Size (GB)
+    disk_size: 10
+# Available disk types (gp2, st1) (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-volume-types.html)
+    disk_type: gp2
+# Currently only Ubuntu 18.04/20.04 is supported. 
+# Ubuntu 20.04 x86 ( ami-0dba2cb6798deb6d8 )
+    base_image: ami-0dba2cb6798deb6d8
+    spot: true
+# This is the maximum bid price you are willing to give for the machine. 
+    spot_price: 0.0416

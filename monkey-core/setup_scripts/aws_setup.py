@@ -88,7 +88,7 @@ def create_aws_provider(provider_name, yaml, args):
     zone_input = args.zone or region_input + "a"
     monkeyfs_input = args.storage_name or "monkeyfs-" + \
         ''.join(random.choice(string.ascii_lowercase) for _ in range(6))
-    key_name = args.ssh_key_name
+    key_name = args.ssh_key_name or "monkey-aws"
     if not args.noinput:
         region_input = input("Set project region (us-east-1): ") or "us-east-1"
         zone_input = input(

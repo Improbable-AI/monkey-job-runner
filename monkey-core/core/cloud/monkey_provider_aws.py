@@ -75,7 +75,7 @@ class MonkeyProviderAWS(MonkeyProvider):
                                    shell=True,
                                    capture_output=True).stdout.decode("utf-8")
         if fs_output is not None and fs_output != "":
-            return (fs_output.split()[0] == "s3fs"
+            return ("s3fs" in fs_output.split()[0] 
                     or fs_output.split()[0] == self.provider_info.get(
                         "storage_name", "monkeyfs"))
         return False

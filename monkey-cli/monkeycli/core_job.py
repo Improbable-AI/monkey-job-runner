@@ -138,6 +138,9 @@ def check_or_upload_codebase(code,
     filenames = (n for n in all_files if not any(
         fnmatch.fnmatch(n, ignore) for ignore in ignore_filters))
     all_files = sorted(list(filenames))
+    if len(all_files) == 0:
+        print("No files detected as staged.  Add your files to staged with git add . to make sure monkey can detect them")
+        exit(1)
     compression_suffix = compression_map[compression_type]
     files_checksum = calculate_file_list_checksum(all_files)
     print(f"Codebase checksum: {files_checksum}")
