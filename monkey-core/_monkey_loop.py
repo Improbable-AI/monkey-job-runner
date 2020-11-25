@@ -13,46 +13,49 @@ logger = logging.getLogger(__name__)
 import monkey_global
 
 
-def check_for_queued_jobs(self):
+def check_for_queued_jobs(self, log_file=None):
     """Checks for all queued jobs and dispatches if necessary
     """
     queued_jobs = MonkeyJob.objects(state=state.MONKEY_STATE_QUEUED)
-    if not monkey_global.QUIET_PERIODIC_PRINTOUT:
-        print("Found", len(queued_jobs), "queued jobs")
+    printout = f"Found {len(queued_jobs)}  queued jobs\n"
+
     for job in queued_jobs:
-        print("Dispatching Job: ", job.job_uid)
+        printout +=  f"Dispatching Job: {job.job_uid}\n"
         found_provider = None
         for p in self.providers:
             if p.name == job.provider_name:
                 found_provider = p
         if found_provider is None:
-            print(
-                "Provider should have been defined for the job to be submitted"
-            )
+            printout +=  "Provider should have been defined for the job to be submitted\n"
             continue
         job.set_state(state=state.MONKEY_STATE_DISPATCHING)
         threading.Thread(target=self.run_job,
                          args=(found_provider, job.job_yml),
                          daemon=True).start()
 
+    if not monkey_global.QUIET_PERIODIC_PRINTOUT:
+        print(printout)
+    if log_file:
+        log_file.write(printout)
 
-def print_jobs(self, jobs):
+
+def print_jobs_string(self, jobs):
+    printout = ""
     header = colored("{:^26} {:^24} {:^19} {:^13} ".format(
         "Job Name", "State", "Elapsed(s)", "Timeout(s)"),
                      attrs=["bold"])
-    print("")
-    print(header)
-    print("")
+    printout += f"\n{header}\n"
     for job in jobs:
         timeout = state.state_to_timeout(job.state) if state.state_to_timeout(
             job.state) is not None else ""
         line = colored("{:^26} {:^24} {:^19.1f} {:^13} ".format(
             job.job_uid, job.state, job.time_elapsed_in_state(), timeout))
-        print(line)
-    print("")
+        printout += f"{line}\n"
+    printout += "\n"
+    return printout
 
 
-def check_for_dead_jobs(self):
+def check_for_dead_jobs(self, log_file=None):
     pending_jobs = MonkeyJob.objects(creation_date__gte=(datetime.now() -
                                                          timedelta(days=10)))
 
@@ -70,14 +73,16 @@ def check_for_dead_jobs(self):
         x for x in pending_jobs if x.state == state.MONKEY_STATE_FINISHED
     ]
 
-    if not monkey_global.QUIET_PERIODIC_PRINTOUT:
-        print("Found: {} jobs in pending state".format(pending_job_num))
-        print("Checking: {} jobs for late cleanup".format(
-            potential_missed_cleanup_num))
+    printout= f"Found: {pending_job_num} jobs in pending state\n"
+    printout += f"Checking: {potential_missed_cleanup_num} jobs for late cleanup\n"
+    printout += self.print_jobs_string([x for x in pending_jobs if x.state != state.MONKEY_STATE_FINISHED])
 
-        self.print_jobs([
-            x for x in pending_jobs if x.state != state.MONKEY_STATE_FINISHED
-        ])
+    if not monkey_global.QUIET_PERIODIC_PRINTOUT:
+        print(printout)
+
+    if log_file:
+        log_file.write(printout)
+
 
     # TODO (averylamp): retry counts
     for job in pending_jobs:
@@ -153,11 +158,13 @@ def check_for_dead_jobs(self):
 def daemon_loop(self):  #
     threading.Timer(monkey_global.DAEMON_THREAD_TIME, self.daemon_loop).start()
     with self.lock:
-        if not monkey_global.QUIET_PERIODIC_PRINTOUT:
-            print(
-                colored(
-                    "\n======================================================================",
-                    "blue"))
-            print("{}:Running periodic check".format(datetime.now()))
-        self.check_for_queued_jobs()
-        self.check_for_dead_jobs()
+        with open(monkey_global.STATUS_LOG_FILE, "w") as f:
+            printout = colored(
+                "\n======================================================================\n",
+                "blue")
+            printout +=  f"{datetime.now()}: Running Periodic Check \n"
+            if not monkey_global.QUIET_PERIODIC_PRINTOUT:
+                print(printout)
+            f.write(printout)
+            self.check_for_queued_jobs(f)
+            self.check_for_dead_jobs(f)

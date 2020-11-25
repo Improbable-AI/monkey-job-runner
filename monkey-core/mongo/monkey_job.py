@@ -4,6 +4,8 @@ from datetime import datetime, timedelta
 from mongoengine import *
 
 import mongo.mongo_global as monkey_state
+import logging
+logger = logging.getLogger(__name__)
 
 
 class MonkeyJob(DynamicDocument):
@@ -50,7 +52,7 @@ class MonkeyJob(DynamicDocument):
         Args:
             state (MONKEY_STATE): The state to update to
         """
-        print("Setting job: {} state to: {}, from: {}".format(
+        logger.info("Setting job: {} state to: {}, from: {}".format(
             self.job_uid, state, self.state))
 
         if (self.state == monkey_state.MONKEY_STATE_RUNNING) and (

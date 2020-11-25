@@ -1,3 +1,5 @@
 env
 # Pegged file
 providers.yml
+monkey.log
+monkey.status

@@ -30,7 +30,7 @@ class Monkey():
     from _monkey_list import (get_job_info, get_job_uid, get_list_instances,
                               get_list_jobs, get_list_providers)
     from _monkey_loop import (check_for_dead_jobs, check_for_queued_jobs,
-                              daemon_loop, print_jobs)
+                              daemon_loop, print_jobs_string )
 
     def __init__(self, providers_path="providers.yml", start_loop=True):
         super().__init__()
@@ -123,8 +123,8 @@ class Monkey():
         """
         job_uid = job_yml["job_uid"]
         dbMonkeyJob = MonkeyJob.objects(job_uid=job_uid).get()
-        logger.info(dbMonkeyJob)
-        logger.info("Dispatching:".format(job_uid))
+        logger.info(dbMonkeyJob.get_dict())
+        logger.info(f"Dispatching: {job_uid}")
         machine_params = dict()
         for provider_yml in job_yml["providers"]:
             if provider_yml.get("name", "") == provider.name:
