@@ -57,7 +57,7 @@ class MonkeyProvider():
         return base
 
     @staticmethod
-    def create_cloud_handler(provider_info):
+    def create_handler(provider_info):
         provider_type = provider_info["type"]
         if provider_type == "gcp":
             from core.cloud.monkey_provider_gcp import MonkeyProviderGCP
@@ -65,6 +65,9 @@ class MonkeyProvider():
         elif provider_type == "aws":
             from core.cloud.monkey_provider_aws import MonkeyProviderAWS
             return MonkeyProviderAWS(provider_info)
+        elif provider_type == "local":
+            from core.monkey_provider_local import MonkeyProviderLocal
+            return MonkeyProviderLocal(provider_info)
         else:
             raise ValueError(
                 "{} type for provider not supported yet".format(provider_type))

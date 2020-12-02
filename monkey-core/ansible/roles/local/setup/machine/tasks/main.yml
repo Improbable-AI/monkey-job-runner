@@ -1,0 +1,5 @@
+---
+    
+- name: Printout fs name
+  debug:
+    msg: "Setting up host"

@@ -3,6 +3,9 @@ all:
   children:
     monkey_local:
       children:
+        avery:
+            hosts:
+                racoon:
         antonio:
             hosts:
                 visiongpu03: 

@@ -37,7 +37,6 @@ def threaded(fn):
 class MonkeyInstance():
 
     name = None
-    machine_zone = None
     creation_time = None
     destruction_time = None
     ip_address = None
@@ -48,10 +47,9 @@ class MonkeyInstance():
     offline_retries = 3
     last_uuid = None
 
-    def __init__(self, name, machine_zone, ip_address):
+    def __init__(self, name, ip_address):
         super().__init__()
         self.name = name
-        self.machine_zone = machine_zone
         self.ip_address = ip_address
         self.creation_time = datetime.now()
         # threading.Thread(target=self.heartbeat_loop, daemon=True)
@@ -80,7 +78,6 @@ class MonkeyInstance():
 
     def update_instance_details(self, other):
         self.name = other.name
-        self.machine_zone = other.machine_zone
         self.ip_address = other.ip_address
 
     def get_uuid(self):
@@ -134,6 +131,16 @@ class MonkeyInstance():
             private_data_dir="ansible",
             module=modulename,
             module_args=args_string,
+            quiet=monkey_global.QUIET_ANSIBLE,
+            cancel_callback=self.ansible_runner_uuid_cancel(uuid))
+        return runner
+
+    def run_ansible_playbook(self, playbook, extravars, uuid):
+        runner = ansible_runner.run(
+            host_pattern=self.name,
+            playbook=playbook,
+            private_data_dir="ansible",
+            extravars=extravars,
             quiet=monkey_global.QUIET_ANSIBLE,
             cancel_callback=self.ansible_runner_uuid_cancel(uuid))
         return runner

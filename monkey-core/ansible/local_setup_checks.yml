@@ -1,0 +1,14 @@
+---
+- hosts: localhost
+  name: Locate AWS Bucket and Ensure permissions
+  
+  pre_tasks:
+    - name: Import default vars
+      include_vars:
+        file: aws_vars.yml
+
+  roles:
+    - aws/setup/setup_keys
+    - aws/setup/setup_vpc
+    - aws/setup/create_fs
+    - aws/setup/mount_fs

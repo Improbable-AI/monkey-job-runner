@@ -9,6 +9,7 @@ from termcolor import colored, cprint
 
 from setup_scripts.aws_setup import check_aws_provider, create_aws_provider
 from setup_scripts.gcp_setup import check_gcp_provider, create_gcp_provider
+from setup_scripts.local_setup import check_local_provider, create_local_provider
 from setup_scripts.mongo_utils import get_monkey_db
 from setup_scripts.utils import Completer, get_monkey_fs
 
@@ -127,14 +128,15 @@ def main():
 
     create = args.create
     if args.noinput == False:
-        create = input("Create a new provider? (y/N): ")
-        create = create.lower() in ["y", "yes"]
+        create = input("Create a new provider? (Y/n): ")
+        create = create.lower()  not in ["n", "no"]
     if create:
         print("Creating New Provider...")
 
         provider_type = args.provider_type
         if args.noinput == False:
             provider_type = input("Provider type? (gcp, local, aws) : ")
+            provider_type = "local"
 
         provider_name = args.provider_name
         if "gcp" == provider_type:
@@ -143,8 +145,6 @@ def main():
             provider_name = "aws"
         elif "local" == provider_type:
             provider_name = "local"
-            print("Currently unsupported provider type")
-            exit(1)
         else:
             print("Unsupported provider type: '{}'".format(provider_type))
             exit(1)
@@ -179,8 +179,7 @@ def main():
         elif "aws" == provider_type:
             create_aws_provider(provider_name, provider_yaml, args)
         elif "local" == provider_type:
-            print("Currently unsupported provider type")
-            exit(1)
+            create_local_provider(provider_name, provider_yaml, args)
 
     db_connection_success = get_monkey_db()
     if db_connection_success:

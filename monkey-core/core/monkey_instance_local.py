@@ -16,7 +16,7 @@ from setup_scripts.utils import (aws_cred_file_environment, get_aws_vars,
 logger = logging.getLogger(__name__)
 
 
-class MonkeyInstanceAWS(MonkeyInstance):
+class MonkeyInstanceLocal(MonkeyInstance):
     ansible_info = None
 
     def __str__(self):
@@ -29,35 +29,67 @@ name: {}, ip: {}, state: {}
             "name": self.name,
             "ip_address": self.ip_address,
             "state": self.state,
-            "machine_zone": self.machine_zone,
         }
 
     # Passes compute_api in order to restart instances
-    def __init__(self, ansible_info):
-
-        name = ansible_info["tags"]["Name"]
-        machine_zone = ansible_info["placement"]["availability_zone"]
-        # Look for public IP
-
-        try:
-            self.ip_address = ansible_info["network_interfaces"][0][
-                "association"]["public_ip"]
-        except:
-            self.ip_address = None
-
+    def __init__(self, provider, name, hostname):
+        print("Creating local instance")
         super().__init__(name=name,
-                         ip_address=self.ip_address)
-        self.ansible_info = ansible_info
-        self.state = ansible_info["state"]["name"]
+                         ip_address=hostname
+                         )
+        self.provider = provider
+        self.state = "unknown"
+        print("Creating local instance")
+        passes_setup = self.check_setup()
+        if passes_setup:
+            print(f"Instance {self.name} successfully created and configured")
+        else:
+            raise Exception("Failed to create instance")
+
 
     def update_instance_details(self, other):
         super().update_instance_details(other)
         self.ansible_info = other.ansible_info
         self.state = other.state
-        self.machine_zone = other.machine_zone
+    def check_setup(self):
+        print("Checking setup of instance")
+
+        uuid = self.update_uuid()
+        runner = self.run_ansible_module(modulename="ping",
+                                         args=dict(),
+                                       uuid=uuid)
+        print(runner.status)
+        if runner.status == "failed" or self.get_uuid() != uuid:
+            print("Failed to ping machine")
+            return False
+
+        uuid = self.update_uuid()
+        runner = self.run_ansible_playbook(playbook="local_setup_machine.yml",
+                                           extravars=dict(),
+                                       uuid=uuid)
+        print(runner.status)
+        if runner.status == "failed" or self.get_uuid() != uuid:
+            print("Failed to setup machine")
+            return False
+
+
+        return True
+
 
     def check_online(self):
-        return super().check_online() and self.state == "running"
+
+        try:
+            r = requests.get("http://{}:9991/ping".format(self.ip_address),
+                             timeout=4)
+        except:
+            self.offline_count += 1
+            return self.offline_count >= self.offline_retries
+        if not r.ok:
+            self.offline_count += 1
+        if self.offline_count >= self.offline_retries:
+            return False
+        self.offline_count = 0
+        return True
 
     def install_dependency(self, dependency):
         print("Instance installing: ", dependency)

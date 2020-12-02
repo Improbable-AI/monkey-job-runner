@@ -1,0 +1,4 @@
+---
+monkeyfs_path: ~/monkeyfs
+local_monkeyfs_path: /Users/avery/Developer/projects/monkey-project/monkey-core/ansible/monkeyfs
+local_instance_details: local.yml
