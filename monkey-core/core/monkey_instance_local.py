@@ -21,7 +21,7 @@ class MonkeyInstanceLocal(MonkeyInstance):
     ansible_info = None
 
     def __str__(self):
-        return """Monkey AWS Instance
+        return """Monkey Local Instance
 name: {}, ip: {}, state: {}
         """.format(self.ip_address, self.name, self.state)
 
@@ -67,16 +67,7 @@ name: {}, ip: {}, state: {}
         self.state = other.state
 
     def check_setup(self):
-        print("Checking setup of instance")
-
-        uuid = self.update_uuid()
-        runner = self.run_ansible_module(modulename="ping",
-                                         args=dict(),
-                                         uuid=uuid)
-        print(runner.status)
-        if runner.status == "failed" or self.get_uuid() != uuid:
-            print("Failed to ping machine")
-            return False
+        print(f"Checking setup of instance: {self.name}")
 
         uuid = self.update_uuid()
         runner = self.run_ansible_role(

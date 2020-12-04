@@ -47,6 +47,7 @@ class MonkeyProviderLocal(MonkeyProvider):
         logger.info("Local Handler Instantiating {}".format(self.name))
 
         self.check_filesystem_existence()
+        self.load_monkey_instances()
 
     def get_local_vars(self):
         with open("ansible/local_vars.yml", 'r') as local_vars_file:
@@ -61,13 +62,34 @@ class MonkeyProviderLocal(MonkeyProvider):
         print(f"running: stat {local_monkeyfs_path}")
 
         fs_output = subprocess.run(f"stat {local_monkeyfs_path}",
+                                   check=False,
                                    shell=True,
                                    capture_output=True).stdout.decode("utf-8")
         print("Check filesystem mounted printout: ", fs_output)
         if fs_output is not None and fs_output != "":
-            return true
-        os.mkdir(local_monkeyfs_path)
+            return True
+        os.mkdir(local_monkeyfs_path, exist_ok=True)
         return True
+
+    def load_monkey_instances(self):
+        print("Loading monkey instances")
+        try:
+            with open("local.yml", "r") as local_yaml_file:
+                local_yaml = yaml.full_load(local_yaml_file)
+                local_hosts = local_yaml.get("hosts", [])
+                hostnames = [x[0] for x in local_hosts]
+                for hostname in hostnames:
+                    inst = self.create_local_instance(name=hostname,
+                                                      hostname=hostname)
+                    self.instances[inst.name] = inst
+
+                print(local_yaml)
+                print("Instances Registered: ")
+                for hostname, inst in self.instances.items():
+                    print(f"{hostname}: {inst}")
+
+        except Exception as e:
+            print(f"Exception found: {e}")
 
     def check_provider(self):
         return True

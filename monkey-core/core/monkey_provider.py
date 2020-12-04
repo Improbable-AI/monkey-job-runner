@@ -101,8 +101,7 @@ class MonkeyProvider():
         raise NotImplementedError("This is not implemented yet")
 
     def is_valid(self):
-        return not (self.zone == None or self.name == None
-                    or self.provider_type == None)
+        return not (self.name == None or self.provider_type == None)
 
     def __str__(self):
         return "Name: {}, provider: {}, zone: {}"\
