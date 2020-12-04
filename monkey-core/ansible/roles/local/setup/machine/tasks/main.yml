@@ -2,4 +2,105 @@
     
 - name: Printout fs name
   debug:
-    msg: "Setting up host"
+    msg: "Setting up host "
+
+- name: Get fs name
+  set_fact:
+    monkeyfs_path: "{{ monkeyfs_path }}"
+    monkeyfs_public_port: "{{ monkeyfs_public_port | default('22') }}"
+    monkey_scratch: "{{ monkey_scratch }}"
+
+- name: Create Mountpoint
+  ignore_errors: true
+  file:
+    path: "{{monkeyfs_path}}"
+    state: directory
+  register: create_mountpoint
+
+- name: Create Scratch Point
+  ignore_errors: true
+  file:
+    path: "{{monkey_scratch}}"
+    state: directory
+  register: create_scratch
+- name: Debug scratch
+  debug:
+    msg: "Stat location: {{monkey_scratch}}"
+
+- name: Debug 
+  shell: "hostname && pwd"
+  register: shell_debug
+- name: Debug print
+  debug:
+    msg: "Shell Debug: {{ shell_debug }}"
+- name: Check for monkeyfs key
+  ignore_errors: true
+  file:
+    path: "{{monkey_scratch}}/monkeyfs_key"
+    state: file
+  register: monkeyfs_key_check
+
+- name: Block debug
+  debug:
+    msg: "Copying monkeyfs_key to remote machine"
+- name: Copying Monkeyfs Local Key
+  copy:
+    src: "{{ monkeyfs_private_key_file }}"
+    dest: "{{monkey_scratch}}/monkeyfs_key"
+    mode: 0400
+- name: Get keyscan host key
+  command: "ssh-keyscan -trsa -p {{ monkeyfs_public_port}} {{ monkeyfs_public_ip }}"
+  retries: 3
+  delay: 2
+  register: host_key_task
+  until: host_key_task.rc == 0
+- name: Set host key fact
+  set_fact:
+    host_key: "{{ host_key_task.stdout }}"
+- name: Debug host key
+  debug:
+    msg: "Host key {{host_key}}"
+- name: Remove old known hosts
+  lineinfile:
+    dest: ~/.ssh/known_hosts
+    create: yes
+    state: absent
+    regexp: "{{ monkeyfs_public_ip }}.*"
+- name: Add to known hosts
+  lineinfile:
+    dest: ~/.ssh/known_hosts
+    create: yes
+    state: present
+    line: "{{ host_key }}"
+
+- name: Debug create mountpoint
+  debug:
+    msg: "Mountpoint {{create_mountpoint.failed}}"
+
+- name: Check for mount
+  shell: "df {{monkeyfs_path}} | grep monkeyfs"
+  args:
+    executable: /bin/bash
+  register: mount_found
+  ignore_errors: True
+- name: Debug mount command
+  debug:
+    msg: "sshfs  {{monkeyfs_user}}@{{monkeyfs_public_ip}}:{{local_monkeyfs_path}} {{monkeyfs_path}} -o IdentityFile={{monkey_scratch}}/monkeyfs_key -o port={{monkeyfs_public_port}}"
+
+- name: Mount fs to Mountpoint
+  when: mount_found is failed
+  ignore_errors: yes
+  command:    
+    cmd: "fusermount -u {{monkeyfs_path}}"
+
+- name: Mount fs to Mountpoint
+  when: mount_found is failed
+  timeout: 10
+  shell:    
+    cmd: "sshfs  {{monkeyfs_user}}@{{monkeyfs_public_ip}}:{{local_monkeyfs_path}} {{monkeyfs_path}} -o IdentityFile={{monkey_scratch}}/monkeyfs_key -o port={{monkeyfs_public_port}} -o reconnect"
+  register: mount_command
+- name: Debug mount command
+  debug:
+    msg: "Mount cmd: {{ mount_command }}"
+    
+

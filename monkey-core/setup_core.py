@@ -9,7 +9,8 @@ from termcolor import colored, cprint
 
 from setup_scripts.aws_setup import check_aws_provider, create_aws_provider
 from setup_scripts.gcp_setup import check_gcp_provider, create_gcp_provider
-from setup_scripts.local_setup import check_local_provider, create_local_provider
+from setup_scripts.local_setup import (check_local_provider,
+                                       create_local_provider)
 from setup_scripts.mongo_utils import get_monkey_db
 from setup_scripts.utils import Completer, get_monkey_fs
 
@@ -129,7 +130,7 @@ def main():
     create = args.create
     if args.noinput == False:
         create = input("Create a new provider? (Y/n): ")
-        create = create.lower()  not in ["n", "no"]
+        create = create.lower() not in ["n", "no"]
     if create:
         print("Creating New Provider...")
 

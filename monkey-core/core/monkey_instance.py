@@ -42,6 +42,7 @@ class MonkeyInstance():
     ip_address = None
     state = None
     lock = threading.Lock()
+    additional_extravars = dict()
 
     offline_count = 0
     offline_retries = 3
@@ -108,6 +109,7 @@ class MonkeyInstance():
         return check
 
     def run_ansible_role(self, rolename, uuid, extravars=None, envvars=None):
+        extravars.update(self.additional_extravars)
         runner = ansible_runner.run(
             host_pattern=self.name,
             private_data_dir="ansible",
@@ -125,7 +127,6 @@ class MonkeyInstance():
             args_string = ""
             for key, val in args.items():
                 args_string += f"{key}={val} "
-
         runner = ansible_runner.run(
             host_pattern=self.name,
             private_data_dir="ansible",
@@ -136,6 +137,7 @@ class MonkeyInstance():
         return runner
 
     def run_ansible_playbook(self, playbook, extravars, uuid):
+        extravars.update(self.additional_extravars)
         runner = ansible_runner.run(
             host_pattern=self.name,
             playbook=playbook,
@@ -146,7 +148,6 @@ class MonkeyInstance():
         return runner
 
     def run_ansible_shell(self, command, uuid):
-
         runner = ansible_runner.run(
             host_pattern=self.name,
             private_data_dir="ansible",

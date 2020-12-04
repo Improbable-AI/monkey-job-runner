@@ -8,13 +8,15 @@ from threading import Thread
 
 import ansible_runner
 import monkey_global
+import yaml
 from ansible.inventory.manager import InventoryManager
 from ansible.parsing.dataloader import DataLoader
 from ansible.vars.manager import VariableManager
-from core.monkey_instance_local import MonkeyInstanceLocal
-from core.monkey_provider import MonkeyProvider
 from setup_scripts.utils import (aws_cred_file_environment,
                                  printout_ansible_events)
+
+from core.monkey_instance_local import MonkeyInstanceLocal
+from core.monkey_provider import MonkeyProvider
 
 logger = logging.getLogger(__name__)
 logging.getLogger("botocore").setLevel(logging.WARNING)
@@ -46,11 +48,16 @@ class MonkeyProviderLocal(MonkeyProvider):
 
         self.check_filesystem_existence()
 
+    def get_local_vars(self):
+        with open("ansible/local_vars.yml", 'r') as local_vars_file:
+            local_vars = yaml.full_load(local_vars_file)
+            return local_vars
 
     def check_filesystem_existence(self):
         # Check for mounts
         print("Checking for mounted filesystem")
-        local_monkeyfs_path = self.provider_info.get("local_monkeyfs_path", f"ansible/monkeyfs")
+        local_monkeyfs_path = self.provider_info.get("local_monkeyfs_path",
+                                                     f"ansible/monkeyfs")
         print(f"running: stat {local_monkeyfs_path}")
 
         fs_output = subprocess.run(f"stat {local_monkeyfs_path}",
@@ -65,12 +72,18 @@ class MonkeyProviderLocal(MonkeyProvider):
     def check_provider(self):
         return True
 
-    def create_local_instance(self, name,  hostname = None):
-        print(f"Creating instance with name: {name }, hostname: {hostname if hostname is not None else name}")
+    def create_local_instance(self, name, hostname=None):
+        print(
+            f"Creating instance with name: {name }, hostname: {hostname if hostname is not None else name}"
+        )
         if hostname is None:
-            instance = MonkeyInstanceLocal(provider=self, name=name, hostname=name)
+            instance = MonkeyInstanceLocal(provider=self,
+                                           name=name,
+                                           hostname=name)
         else:
-            instance = MonkeyInstanceLocal(provider=self,name=name, hostname=hostname)
+            instance = MonkeyInstanceLocal(provider=self,
+                                           name=name,
+                                           hostname=hostname)
         return instance
 
     def is_valid(self):

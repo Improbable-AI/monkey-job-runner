@@ -9,9 +9,10 @@ import ansible_runner
 import monkey_global
 import requests
 import yaml
-from core.monkey_instance import MonkeyInstance
 from setup_scripts.utils import (aws_cred_file_environment, get_aws_vars,
                                  printout_ansible_events)
+
+from core.monkey_instance import MonkeyInstance
 
 logger = logging.getLogger(__name__)
 
@@ -34,47 +35,60 @@ name: {}, ip: {}, state: {}
     # Passes compute_api in order to restart instances
     def __init__(self, provider, name, hostname):
         print("Creating local instance")
-        super().__init__(name=name,
-                         ip_address=hostname
-                         )
+        super().__init__(name=name, ip_address=hostname)
         self.provider = provider
         self.state = "unknown"
-        print("Creating local instance")
+
+        try:
+            with open("local.yml", 'r') as local_yaml_file:
+                local_yaml = yaml.full_load(local_yaml_file)
+                hosts = local_yaml.get("hosts", [])
+                extra_vars = None
+                for h in hosts:
+                    if h[0] == self.name:
+                        extra_vars = h[1]
+                if extra_vars is not None:
+                    print("Additional local vars detected: ", extra_vars)
+                    self.additional_extravars.update(extra_vars)
+        except Exception as e:
+            print(e)
+
         passes_setup = self.check_setup()
         if passes_setup:
             print(f"Instance {self.name} successfully created and configured")
         else:
             raise Exception("Failed to create instance")
 
+        self.offline_count = 0
 
     def update_instance_details(self, other):
         super().update_instance_details(other)
         self.ansible_info = other.ansible_info
         self.state = other.state
+
     def check_setup(self):
         print("Checking setup of instance")
 
         uuid = self.update_uuid()
         runner = self.run_ansible_module(modulename="ping",
                                          args=dict(),
-                                       uuid=uuid)
+                                         uuid=uuid)
         print(runner.status)
         if runner.status == "failed" or self.get_uuid() != uuid:
             print("Failed to ping machine")
             return False
 
         uuid = self.update_uuid()
-        runner = self.run_ansible_playbook(playbook="local_setup_machine.yml",
-                                           extravars=dict(),
-                                       uuid=uuid)
+        runner = self.run_ansible_role(
+            rolename="local/setup/machine",
+            extravars=self.provider.get_local_vars(),
+            uuid=uuid)
         print(runner.status)
         if runner.status == "failed" or self.get_uuid() != uuid:
             print("Failed to setup machine")
             return False
 
-
         return True
-
 
     def check_online(self):
 
