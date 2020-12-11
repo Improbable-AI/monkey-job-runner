@@ -1,7 +1,7 @@
 ---
 - name: Ensure sync directory exists
   file:
-    path: "~/sync"
+    path: "{{ sync_folder_path }}"
     state: directory
 - name: template sync command
   template:
@@ -13,8 +13,9 @@
     src: templates/persist_all.sh
     dest: "{{ persist_script_path }}"
     mode: u=rwx,g=r,o=r
+    
 - name: Cancel previous persist all requests
-  shell: "killall persist_all_loop.sh"
+  shell: "killall {{ unique_persist_all_script_name }}"
   ignore_errors: true
 
 - name: Persist folder by running async rsync

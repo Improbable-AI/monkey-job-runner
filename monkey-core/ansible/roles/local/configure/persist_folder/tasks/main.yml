@@ -1,7 +1,7 @@
 ---
 - name: Ensure sync directory exists
   file:
-    path: "~/sync"
+    path: "{{ sync_folder_path }}"
     state: directory
 - name: template sync command
   template:

@@ -65,7 +65,7 @@ class MonkeyProviderLocal(MonkeyProvider):
         print("Check filesystem mounted printout: ", fs_output)
         if fs_output is not None and fs_output != "":
             return True
-        os.mkdir(local_monkeyfs_path, exist_ok=True)
+        os.makedirs(local_monkeyfs_path, exist_ok=True)
         return True
 
     def load_monkey_instances(self):
