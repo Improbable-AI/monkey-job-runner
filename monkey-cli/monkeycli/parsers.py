@@ -64,6 +64,13 @@ def get_run_parser(subparser):
         help=
         "Optionial specification of provider (Defaults to first listed provider)"
     )
+
+    run_parser.add_argument("-i",
+                            "--instance",
+                            required=False,
+                            dest="instance",
+                            help="Instance Specification for Local Providers")
+
     run_parser.add_argument("--job_file",
                             "-jf",
                             required=False,

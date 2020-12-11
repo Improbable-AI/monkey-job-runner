@@ -91,7 +91,8 @@ def get_new_job_uid():
             last_date = new_date
             instance_number = 1
         else:
-            logger.info(f"Would be instance {last_date + str(instance_number + 1)}")
+            logger.info(
+                f"Would be instance {last_date + str(instance_number + 1)}")
             pass
             instance_number += 1
         if UNIQUE_UIDS == True:
@@ -173,6 +174,12 @@ def get_list_providers():
     providers_list = monkey.get_list_providers()
     logger.info(providers_list)
     return jsonify({"response": providers_list})
+
+
+@application.route('/list/local/instances')
+def get_list_local_instances():
+    instances_list = monkey.get_list_local_instances()
+    return jsonify({"response": instances_list})
 
 
 @application.route('/list/instances')
@@ -406,11 +413,10 @@ def upload_codebase():
     if not already_uploaded:
         local_path = os.path.join(local_codebase_folder_path,
                                   "code" + codebase_extension)
-        logger.info(
-            f"Local Path: {local_path}")
+        logger.info(f"Local Path: {local_path}")
         destination_path = os.path.join(local_codebase_folder_path,
-                         "code" + codebase_extension)
-        FileStorage(request.stream).save(destination_path )
+                                        "code" + codebase_extension)
+        FileStorage(request.stream).save(destination_path)
 
         logger.info(f"Saved file to: {destination_path}")
         with open(os.path.join(local_codebase_folder_path, "code.yaml"),
@@ -456,7 +462,7 @@ def upload_persist():
 @application.route('/submit/job')
 def submit_job():
     job_args = copy.deepcopy(request.get_json())
-    logger.info("Received job to submit: {}".format( job_args["job_uid"] ))
+    logger.info("Received job to submit: {}".format(job_args["job_uid"]))
     job_uid = job_args["job_uid"]
 
     foreground = job_args["foreground"]

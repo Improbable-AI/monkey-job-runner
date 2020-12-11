@@ -134,6 +134,18 @@ def list_instances(args, printout=False):
     return r.json()
 
 
+def list_local_instances(printout=False):
+    try:
+        r = requests.get(build_url("list/local/instances"))
+    except:
+        if printout:
+            print("Unable to connect to Monkey Core: {}".format(
+                build_url("list/providers")))
+            return []
+    response = r.json()["response"]
+    return response
+
+
 def get_full_uid(job_uid, printout=False):
     try:
         r = requests.get(build_url("get/job_uid"), params={"job_uid": job_uid})

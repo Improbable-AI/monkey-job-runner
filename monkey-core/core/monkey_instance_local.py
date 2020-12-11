@@ -97,25 +97,26 @@ name: {}, ip: {}, state: {}
         return True
 
     def install_dependency(self, dependency):
-        print("Instance installing: ", dependency)
-
-        uuid = self.update_uuid()
-        runner = self.run_ansible_role(rolename=f"install/{dependency}",
-                                       uuid=uuid)
-        print(runner.status)
-        if runner.status == "failed" or self.get_uuid() != uuid:
-            print("Installing Dependency: ", dependency, " failed!")
-            return False
-
-        print("Installing Dependency: ", dependency, " succeeded!")
+        print("Instance Dependency Installation SKIPPED (local): ", dependency)
         return True
 
-    def setup_data_item(self, data_item, monkeyfs_path, home_dir_path):
+    def get_scratch_dir(self):
+        local_vars = self.provider.get_local_vars()
+        monkey_scratch = local_vars.get("monkey_scratch")
+        return monkey_scratch
 
+    def get_monkeyfs_dir(self):
+        local_vars = self.provider.get_local_vars()
+        monkeyfs_path = local_vars.get("monkeyfs_path")
+        return monkeyfs_path
+
+    def setup_data_item(self, data_item, job_uid):
         data_name = data_item["name"]
         data_checksum = data_item["dataset_checksum"]
         dataset_filename = data_item["dataset_filename"]
-        installation_location = os.path.join(home_dir_path, data_item["path"])
+
+        installation_location = os.path.join(get_scratch_dir(), job_uid,
+                                             data_item["path"])
         dataset_full_path = os.path.join(monkeyfs_path, "data", data_name,
                                          data_checksum, dataset_filename)
         print("Copying dataset from", dataset_full_path, " to ",
@@ -267,38 +268,14 @@ name: {}, ip: {}, state: {}
     def setup_job(self, job, provider_info=dict()):
         print("Setting up job: ", job)
         job_uid = job["job_uid"]
-        credential_file = provider_info.get("aws_cred_file", None)
-        aws_storage_name = provider_info["storage_name"]
-        monkeyfs_path = provider_info.get("monkeyfs_path", "/monkeyfs")
-        if credential_file is None:
-            return False, "Service account credential file is not provided"
-
-        print("Mounting filesystem...")
-        cred_environment = aws_cred_file_environment(credential_file)
 
         uuid = self.update_uuid()
-        setup_job_args = {
-            "aws_storage_name": aws_storage_name,
-            "monkeyfs_path": monkeyfs_path,
-            "access_key_id": cred_environment["AWS_ACCESS_KEY_ID"],
-            "access_key_secret": cred_environment["AWS_SECRET_ACCESS_KEY"]
-        }
-        runner = self.run_ansible_role(rolename="aws/mount_fs",
-                                       extravars=setup_job_args,
-                                       uuid=uuid)
-
-        if runner.status == "failed" or self.get_uuid() != uuid:
-            print("Failed to mount filesystem")
-            return False, "Failed to mount filesystem"
-
-        # TODO(alamp): Different home dirs if using non ubuntu distributions
-        home_dir_path = "/home/ubuntu"
+        setup_job_args = {}
 
         for data_item in job.get("data", []):
             print("Setting up data item", data_item)
             success, msg = self.setup_data_item(data_item=data_item,
-                                                monkeyfs_path=monkeyfs_path,
-                                                home_dir_path=home_dir_path)
+                                                job_uid=job_uid)
             if not success:
                 return success, msg
 

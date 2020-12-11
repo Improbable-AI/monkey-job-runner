@@ -77,7 +77,6 @@ def create_local_provider(provider_name, yaml, args):
     details["monkeyfs_public_ip"] = input(
         f"SSHable IP from remote computers ({ip_found}): ") or ip_found
     details["monkeyfs_public_port"] = input(f"SSH port (22): ") or "22"
-    details["monkeyfs_public_user"] = ""
     details.yaml_add_eol_comment("Defaults to ~/monkey-scratch",
                                  "monkey_scratch")
     local_instance_details_file = input(

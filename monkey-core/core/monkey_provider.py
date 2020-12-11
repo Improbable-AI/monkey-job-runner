@@ -46,6 +46,7 @@ class MonkeyProvider():
     project = None
     name = None
     provider_type = None
+    provider_type = None
     instances = []
 
     def merge_params(self, base, additional):
@@ -91,7 +92,7 @@ class MonkeyProvider():
     def list_images(self):
         raise NotImplementedError("This is not implemented yet")
 
-    def create_instance(self, machine_params):
+    def create_instance(self, machine_params, job_yml):
         raise NotImplementedError("This is not implemented yet")
 
     def wait_for_operation(self, operation_name):

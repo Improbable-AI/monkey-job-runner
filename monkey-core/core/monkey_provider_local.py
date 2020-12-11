@@ -1,17 +1,12 @@
 import logging
 import os
 import subprocess
-import time
+import threading
 from concurrent.futures import Future
 from datetime import datetime, timedelta
-from threading import Thread
 
-import ansible_runner
 import monkey_global
 import yaml
-from ansible.inventory.manager import InventoryManager
-from ansible.parsing.dataloader import DataLoader
-from ansible.vars.manager import VariableManager
 from setup_scripts.utils import (aws_cred_file_environment,
                                  printout_ansible_events)
 
@@ -47,7 +42,9 @@ class MonkeyProviderLocal(MonkeyProvider):
         logger.info("Local Handler Instantiating {}".format(self.name))
 
         self.check_filesystem_existence()
+        # TODO(alamp): Dispatch in backgorund thread to allow no stall monkey_core start
         self.load_monkey_instances()
+        # threading.Thread(target=self.load_monkey_instances).start()
 
     def get_local_vars(self):
         with open("ansible/local_vars.yml", 'r') as local_vars_file:
@@ -114,39 +111,13 @@ class MonkeyProviderLocal(MonkeyProvider):
     def get_local_filesystem_path(self):
         return self.raw_provider_info["local_monkeyfs_path"]
 
+    def get_local_instances_list(self):
+        return sorted(list(self.instances.keys()))
+
     def check_connection(self):
         pass
 
     def list_instances(self):
-        # if (datetime.now() - self.last_instance_fetch
-        #     ).total_seconds() < self.instance_list_refresh_period:
-        #     return sorted(list(self.instances.values()))
-        # # MARK(alamp): AnsibleInternalAPI
-        # loader = DataLoader()
-        # inventory = InventoryManager(loader=loader,
-        #                              sources="ansible/inventory")
-        # host_list = inventory.get_groups_dict().get("monkey_aws", [])
-        # detected_instances = []
-        # for host in host_list:
-        #     h = inventory.get_host(host)
-        #     host_vars = h.get_vars()
-        #     inst = MonkeyInstanceAWS(ansible_info=host_vars)
-        #     detected_instances.append(inst)
-
-        # detected_names = set([x.name for x in detected_instances])
-        # for detected_instance in detected_instances:
-        #     if detected_instance.name in self.instances:
-        #         self.instances[detected_instance.name].update_instance_details(
-        #             detected_instance)
-        #     else:
-        #         self.instances[detected_instance.name] = detected_instance
-
-        # offline_instances = set(
-        #     self.instances.keys()).difference(detected_names)
-        # for offline_instance in offline_instances:
-        #     self.instances[offline_instance].state = "offline"
-
-        # self.last_instance_fetch = datetime.now()
         return sorted(list(self.instances.values()))
 
     def get_instance(self, instance_name):
@@ -200,43 +171,14 @@ class MonkeyProviderLocal(MonkeyProvider):
 
         return images
 
-    def create_instance(self, machine_params=dict()):
-        # print("MACHINE PARAMS: ", machine_params)
+    def create_instance(self, machine_params=dict(), job_yml=dict()):
+        print("Looking for existing local instance to dispatch")
+        instance = job_yml.get("instance", None)
+        if instance is None:
+            return None, False
+        print(self.instances)
+        for hostname, inst in self.instances.items():
+            if hostname == instance:
+                return inst, True
 
-        # runner = ansible_runner.run(playbook='aws_create_job.yml',
-        #                             private_data_dir='ansible',
-        #                             extravars=machine_params,
-        #                             quiet=monkey_global.QUIET_ANSIBLE)
-        # print(runner.stats)
-
-        # if runner.status == "failed":
-        #     print("Failed to create the instance")
-        #     return None, False
-        # retries = 1
-        # while retries > 0:
-        #     loader = DataLoader()
-        #     inventory = InventoryManager(loader=loader,
-        #                                  sources="ansible/inventory")
-        #     try:
-        #         print("Checking inventory for host machine")
-        #         h = inventory.get_host(machine_params["monkey_job_uid"])
-        #         host_vars = h.get_vars()
-        #         inst = MonkeyInstanceAWS(ansible_info=host_vars)
-        #         print(inst)
-        #         # TODO ensure machine is on
-        #         if inst is not None and inst.check_online():
-        #             print("Instance found online")
-        #             if inst.name in self.instances:
-        #                 self.instances[inst.name].update_instance_details(inst)
-        #             else:
-        #                 print("Adding to provider instances")
-        #                 self.instances[inst.name] = inst
-
-        #             return inst, True
-        #     except Exception as e:
-        #         print("Failed to get host", e)
-        #         return None, False
-        #     retries -= 1
-        #     print("Retry inventory creation for machine")
-        #     time.sleep(2)
         return None, False
