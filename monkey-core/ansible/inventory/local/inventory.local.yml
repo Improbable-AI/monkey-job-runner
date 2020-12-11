@@ -8,7 +8,7 @@ all:
                 racoon:
         pulkit:
             hosts:
-                #visiongpu06:
+                visiongpu06:
     monkey:
       children:
         monkey_local:

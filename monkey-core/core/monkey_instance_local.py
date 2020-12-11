@@ -136,12 +136,12 @@ name: {}, ip: {}, state: {}
                                              "src": dataset_full_path,
                                              "remote_src": "True",
                                              "dest": installation_location,
-                                             "creates": "yes",
                                          },
                                          uuid=uuid)
 
         print(runner.stats)
-        if runner.status == "failed" or self.get_uuid() != uuid:
+        # Does not check for correctness, because double-extracting is a failure
+        if self.get_uuid() != uuid:
             print("Failed to setup data item")
             return False, "Failed to extract archive"
 
