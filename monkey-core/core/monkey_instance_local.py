@@ -254,17 +254,20 @@ name: {}, ip: {}, state: {}
         print("Persisting logs: ")
         logs_path = os.path.join(job_dir_path, "logs", "")
         monkeyfs_output_folder = \
-            os.path.join("/monkeyfs", "jobs", job_uid, "logs", "")
-
+            os.path.join(monkeyfs_path, "jobs", job_uid, "logs", "")
+        sync_logs_path = os.path.join(job_dir_path, "logs", "sync.log")
         script_path = os.path.join(job_dir_path, ".logs_sync.sh")
+        sync_folder_path = os.path.join(job_dir_path, "sync")
         uuid = self.update_uuid()
         persist_folder_args = {
             "persist_folder_path": logs_path,
+            "sync_logs_path": sync_logs_path,
+            "sync_folder_path":sync_folder_path,
             "persist_script_path": script_path,
             "bucket_path": monkeyfs_output_folder,
             "persist_time": 3,
         }
-        runner = self.run_ansible_role(rolename="aws/configure/persist_folder",
+        runner = self.run_ansible_role(rolename="local/configure/persist_folder",
                                        extravars=persist_folder_args,
                                        uuid=uuid)
 
@@ -369,13 +372,20 @@ name: {}, ip: {}, state: {}
 
         return True, "Successfully created dependency manager and stored initialization in .monkey_activate"
 
-    def execute_command(self, cmd, run_yml):
+    def execute_command(self, job_uid, cmd, run_yml):
         print("Executing cmd: ", cmd)
         print("Environment Variables:", run_yml.get("env", dict()))
 
+        job_dir_path = os.path.join(self.get_scratch_dir(), job_uid)
+        activate_file = os.path.join(job_dir_path, ".monkey_activate")
+
         uuid = self.update_uuid()
-        runner = self.run_ansible_role(rolename="run/cmd",
-                                       extravars={"run_command": cmd},
+        runner = self.run_ansible_role(rolename="run/local/cmd",
+                                       extravars={
+                                            "run_command": cmd, 
+                                            "job_dir_path": job_dir_path,
+                                            "activate_file": activate_file,
+                                       },
                                        envvars=run_yml.get("env", dict()),
                                        uuid=uuid)
 
@@ -387,18 +397,16 @@ name: {}, ip: {}, state: {}
     def run_job(self, job, provider_info=dict()):
         print("Running job: ", job)
         job_uid = job["job_uid"]
-        credential_file = provider_info.get("aws_cred_file", None)
-        if credential_file is None:
-            return False, "AWS Account Credential file is not provided"
-
-        success, msg = self.execute_command(cmd=job["cmd"], run_yml=job["run"])
+        job_dir_path = os.path.join(self.get_scratch_dir(), job_uid)
+        success, msg = self.execute_command(job_uid=job_uid, cmd=job["cmd"], run_yml=job["run"])
         if not success:
             return success, msg
 
         print("\n\nRan job:", job_uid, " SUCCESSFULLY!\n\n")
 
-        print("\n\nForce Syncing outputs:", job_uid, " SUCCESSFULLY!\n\n")
-        script_path = os.path.join("/home/ubuntu", "sync", "persist_all.sh")
+        unique_persist_all_script_name = job_uid + "_" + "persist_all_loop.sh"
+        sync_folder_path = os.path.join(job_dir_path, "sync")
+        script_path = os.path.join(job_dir_path, "sync", "persist_all.sh")
         print(script_path)
         uuid = self.update_uuid()
         runner = self.run_ansible_shell(command=f"bash {script_path}",
@@ -406,35 +414,13 @@ name: {}, ip: {}, state: {}
         if runner.status == "failed" or self.get_uuid() != uuid:
             return False, "Failed to run sync command properly: "
         print("Ended syncing")
+        
 
         return True, "Job completed"
 
     def cleanup_job(self, job, provider_info={}):
         job_uid = job["job_uid"]
         print("\n\nTerminating Machine:", job_uid, "\n\n")
-        # Cleanup skipped for now
-        print(provider_info)
-
-        delete_instance_params = {
-            "monkey_job_uid": job_uid,
-            "aws_zone": provider_info["zone"],
-            "aws_region": provider_info["zone"],
-        }
-
-        for key, val in get_aws_vars().items():
-            delete_instance_params[key] = val
-
-        runner = ansible_runner.run(
-            host_pattern="localhost",
-            private_data_dir="ansible",
-            module="include_role",
-            module_args="name=aws/delete",
-            extravars=delete_instance_params,
-            quiet=monkey_global.QUIET_ANSIBLE,
-            cancel_callback=self.ansible_runner_uuid_cancel(
-                self.update_uuid()))
-
-        if runner.status == "failed":
-            print("Failed Deletion of machine")
-            return False, "Failed to cleanup job after completion"
+        unique_persist_all_script_name = job_uid + "_" + "persist_all_loop.sh"
+        runner = self.run_ansible_shell(command=f"killall {unique_persist_all_script_name}")
         return True, "Succesfully cleaned up job"

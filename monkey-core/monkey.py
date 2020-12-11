@@ -170,6 +170,7 @@ class Monkey():
         dbMonkeyJob.set_state(state=mongo_state.MONKEY_STATE_RUNNING)
         success, msg = created_host.run_job(job_yml,
                                             provider_info=provider.get_dict())
+        print("Returning from run job")
         if success is False:
             print("Failed to run job:", msg)
             dbMonkeyJob.set_state(state=mongo_state.MONKEY_STATE_QUEUED)

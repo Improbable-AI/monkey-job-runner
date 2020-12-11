@@ -1,12 +1,11 @@
 ---
 - name: Ensure activate file exists
   file:
-    path: "{{ sync_folder_path }}"
-    state: directory
+    path: "{{ activate_file }}"
+    state: touch
+
 - name: Conda init bash/zsh
-  shell: ". {{activate_file}}; conda init bash; conda init zsh"
-  args:
-    executable: /bin/bash
+  shell: bash -ic ". ~/.bashrc;  conda init bash; conda init zsh"
 
 - name: Read conda environment file
   slurp:
@@ -18,7 +17,7 @@
     environment_name: "{{ ((env_file_contents['content'] | b64decode) | from_yaml).name }}"
 
 - name: Create conda environment
-  shell: ". {{activate_file}}; conda env create -f {{ environment_file }}"
+  shell: bash -ic ". {{activate_file}}; conda env create -f {{ environment_file }}"
   ignore_errors: true
   args:
     executable: /bin/bash
@@ -31,6 +30,4 @@
     line: "conda activate {{ environment_name }}"
 
 - name: conda env
-  shell: ". {{activate_file}}; conda list"
-  args:
-    executable: /bin/bash
+  shell: bash -ic ". {{activate_file}}; conda list"
