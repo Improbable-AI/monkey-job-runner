@@ -26,9 +26,6 @@ from setup_scripts.utils import get_monkey_fs, sync_directories
 application = Flask(__name__)
 logging.getLogger("werkzeug").setLevel(logging.WARNING)
 
-date_format = "monkey-%y-%m-%d-"
-instance_number = 0
-last_date = datetime.now().strftime(date_format)
 log_format = '%(asctime)s[%(name)s]:[%(levelname)s]: %(message)s'
 date_format = "%m-%d %H:%M:%S"
 logger = logging.getLogger('core')
@@ -55,6 +52,10 @@ formatter = logging.Formatter(log_format, date_format)
 hdlr.setFormatter(formatter)
 logger.addHandler(hdlr)
 logger.setLevel(logging.DEBUG)
+
+date_format = "monkey-%y-%m-%d-"
+instance_number = 0
+last_date = datetime.now().strftime(date_format)
 
 lock = threading.Lock()
 monkey = Monkey()
