@@ -14,6 +14,14 @@ def get_job_uid(self, uid):
     return None
 
 
+def get_job_config(self, uid):
+    jobs = MonkeyJob.objects(job_uid=uid).order_by("-creation_date")
+    if len(jobs) == 0:
+        return None
+    job = jobs[0]
+    return job.experiment_hyperparameters
+
+
 def get_job_info(self, uid):
     print(f"Getting job info for uid {uid}")
     jobs = MonkeyJob.objects(job_uid=uid).order_by("-creation_date")

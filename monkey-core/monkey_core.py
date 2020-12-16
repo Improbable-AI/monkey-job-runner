@@ -129,6 +129,20 @@ def get_job_info():
         })
 
 
+@application.route('/get/job_config')
+def get_job_config():
+    job_uid = request.args.get("job_uid", None)
+    if job_uid is None:
+        return jsonify({"success": False, "msg": "No job_uid provided"})
+    else:
+        job_config = monkey.get_job_config(job_uid)
+        return jsonify({
+            "success": True,
+            "msg": "Found experiment config",
+            "job_config": job_config
+        })
+
+
 @application.route('/get/job/output')
 def get_job_output():
     job_uid = request.args.get("job_uid", None)

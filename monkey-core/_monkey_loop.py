@@ -155,6 +155,40 @@ def check_for_dead_jobs(self, log_file=None):
         job.save()
 
 
+def check_for_job_hyperparameters(self, log_file=None):
+    jobs_without_hyperparameters = MonkeyJob.objects(experiment_hyperparameters=dict())
+    jobs_without_hyperparameters_num = len(jobs_without_hyperparameters)
+
+    printout = f"Found: {jobs_without_hyperparameters_num} jobs without parameters\n"
+    if not monkey_global.QUIET_PERIODIC_PRINTOUT:
+        print(printout)
+    if log_file:
+        log_file.write(printout)
+
+    for job in jobs_without_hyperparameters:
+        if job.state not in (state.MONKEY_STATE_RUNNING,
+                             state.MONKEY_STATE_CLEANUP,
+                             state.MONKEY_STATE_FINISHED):
+            continue
+        found_provider = None
+        for p in self.providers:
+            if p.name == job.provider_name:
+                found_provider = p
+        if found_provider is None:
+            logger.error(
+                "Provider should have been defined for the job to be submitted: {}"
+                .format(job))
+            continue
+        instance = found_provider.get_instance(job.job_uid)
+        hyperparameters = instance.get_experiment_hyperparameters()
+        if hyperparameters is not None:
+            job.experiment_hyperparameters = hyperparameters
+            job.save()
+            print("Found hyperparameters for job {}: {}".format(job.job_uid, hyperparameters))
+        else:
+            print("No hyperparameters for job {}".format(job.job_uid))
+
+
 def daemon_loop(self):  #
     threading.Timer(monkey_global.DAEMON_THREAD_TIME, self.daemon_loop).start()
     with self.lock:
@@ -168,3 +202,4 @@ def daemon_loop(self):  #
             f.write(printout)
             self.check_for_queued_jobs(f)
             self.check_for_dead_jobs(f)
+            self.check_for_job_hyperparameters(f)
