@@ -37,6 +37,7 @@
       git:
         repo: https://github.com/Averylamp/monkey-client.git
         dest: "/home/{{ ansible_user }}/.monkey-client"
+        version: feature/j-mao/log-param-config
 
     - name: Install monkey-client modules into virtualenv
       pip:

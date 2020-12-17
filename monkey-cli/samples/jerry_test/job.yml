@@ -1,6 +1,6 @@
 ---
-name: tests
-project_name: monkey-client
+name: jerry_test
+project_name: jerry-test
 run:
 # Supported env_type options: conda, pip, docker
     env_type: pip

@@ -36,6 +36,9 @@ class MonkeyJob(DynamicDocument):
     run_elapsed_time = IntField(required=True, default=0)
     total_wall_time = IntField(required=True, default=0)
 
+    # Experiment config, hyperparameters
+    experiment_hyperparameters = DictField(required=False, default=dict)
+
     meta = {
         'indexes': [
             'job_uid',  # text index for uid

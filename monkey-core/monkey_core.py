@@ -26,9 +26,6 @@ from setup_scripts.utils import get_monkey_fs, sync_directories
 application = Flask(__name__)
 logging.getLogger("werkzeug").setLevel(logging.WARNING)
 
-date_format = "monkey-%y-%m-%d-"
-instance_number = 0
-last_date = datetime.now().strftime(date_format)
 log_format = '%(asctime)s[%(name)s]:[%(levelname)s]: %(message)s'
 date_format = "%m-%d %H:%M:%S"
 logger = logging.getLogger('core')
@@ -55,6 +52,10 @@ formatter = logging.Formatter(log_format, date_format)
 hdlr.setFormatter(formatter)
 logger.addHandler(hdlr)
 logger.setLevel(logging.DEBUG)
+
+date_format = "monkey-%y-%m-%d-"
+instance_number = 0
+last_date = datetime.now().strftime(date_format)
 
 lock = threading.Lock()
 monkey = Monkey()
@@ -126,6 +127,20 @@ def get_job_info():
             "success": True,
             "msg": "Found matching job",
             "job_info": monkey.get_job_info(job_uid)
+        })
+
+
+@application.route('/get/job_config')
+def get_job_config():
+    job_uid = request.args.get("job_uid", None)
+    if job_uid is None:
+        return jsonify({"success": False, "msg": "No job_uid provided"})
+    else:
+        job_config = monkey.get_job_config(job_uid)
+        return jsonify({
+            "success": True,
+            "msg": "Found experiment config",
+            "job_config": job_config
         })
 
 

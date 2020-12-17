@@ -110,6 +110,21 @@ class MonkeyInstance():
                 check = True
         return check
 
+    def get_experiment_hyperparameters(self):
+        if self.ip_address is None:
+            return None
+        try:
+            r = requests.get("http://{}:9991/config".format(self.ip_address),
+                             timeout=4)
+            r.raise_for_status()
+            result = r.json()
+            if result['ok']:
+                return result['data']
+            else:
+                return None
+        except:
+            return None
+
     def run_ansible_role(self, rolename, uuid, extravars=None, envvars=None):
         runner = ansible_runner.run(
             host_pattern=self.name,
