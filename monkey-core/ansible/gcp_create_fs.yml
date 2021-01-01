@@ -11,4 +11,4 @@
         gcp_project: "{{ (lookup('file', gcp_cred_file) | from_json).project_id }}"
 
   roles:
-    - gcp/setup_fs/create_fs
+    - gcp/setup/create_fs

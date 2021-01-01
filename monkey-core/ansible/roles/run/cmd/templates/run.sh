@@ -1,9 +1,5 @@
 #!/bin/bash
-. ~/.profile  | tee logs/run.log
-echo Activated environment correctly
-conda list
-if command -v tree > /dev/null; then
-  tree
-fi
-echo {{ run_command }}
-{{ run_command }}  2>&1 | tee logs/run.log
+. ~/.monkey_activate  | tee -a logs/run.log
+echo Activated environment correctly 2>&1 | tee -a logs/run.log
+echo {{ run_command }} 2>&1 | tee -a logs/run.log
+{{ run_command }}  2>&1 | tee -a logs/run.log

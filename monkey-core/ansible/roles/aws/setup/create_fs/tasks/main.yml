@@ -1,0 +1,18 @@
+---
+    
+- name: Printout fs name
+  debug:
+    msg: "FS Name: {{ storage_name }}"
+- name: Create filesystem
+  amazon.aws.aws_s3:
+    aws_access_key: "{{access_key_id}}"
+    aws_secret_key: "{{access_key_secret}}"
+    bucket: "{{ storage_name}}"
+    mode: create
+    region: "{{ aws_region }}"
+    permission: "private"
+  register: aws_create_s3
+
+- name: Debug fs creation
+  debug:
+    msg: "logs: {{aws_create_s3}}"

@@ -8,4 +8,4 @@
         file: aws_vars.yml
 
   roles:
-    - aws/setup_fs/create_fs
+    - aws/setup/create_fs

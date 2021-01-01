@@ -1,42 +1,11 @@
---- 
+---
 
-- name: Download CUDA pin
-  become: true
-  get_url:
-    url: https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/cuda-ubuntu1804.pin
-    dest: /etc/apt/preferences.d/cuda-repository-pin-600
-
-- name: Download CUDA .deb
-  become: true
-  get_url:
-    url: http://developer.download.nvidia.com/compute/cuda/10.2/Prod/local_installers/cuda-repo-ubuntu1804-10-2-local-10.2.89-440.33.01_1.0-1_amd64.deb
-    dest: /tmp/cuda10.2.deb
-
-- name: Install CUDA deb
-  become: true
-  apt:
-    deb: /tmp/cuda10.2.deb
-
-- name: add cuda apt key
-  become: true
-  apt_key:
-    file: /var/cuda-repo-10-2-local-10.2.89-440.33.01/7fa2af80.pub
-    state: present
-
-- name: Install CUDA package
-  become: true
-  apt:
-    name: cuda
-    update_cache: yes
-
-- name: Download cuDNN tarball
-  become: true
-  get_url:
-    url: https://developer.nvidia.com/compute/machine-learning/cudnn/secure/7.6.5.32/Production/10.2_20191118/Ubuntu18_04-x64/libcudnn7_7.6.5.32-1%2Bcuda10.2_amd64.deb
-    dest: /tmp/cudnn.deb
+- name: Gather Facts
+  setup:
+- name: 20.04 Cuda 10.2 Download
+  when: ansible_distribution == "Ubuntu" and ansible_distribution_version == "20.04"
+  import_tasks: ubuntu20.04.yml
   
-
-- name: Install cuDNN deb
-  become: true
-  apt:
-    deb: /tmp/cudnn.deb
+- name: 18.04 Cuda 10.2 Download
+  when: ansible_distribution == "Ubuntu" and ansible_distribution_version == "18.04"
+  import_tasks: ubuntu18.04.yml

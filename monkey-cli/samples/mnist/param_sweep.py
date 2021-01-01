@@ -1,9 +1,14 @@
-from monkeycli.monkeycli import MonkeyCLI
+#!/usr/bin/env python
+from monkeycli import MonkeyCLI
 
-
-learning_rates = ["0.01", "0.02", "0.03", "0.05", "0.10"]
+learning_rates = ["0.01", "0.02", "0.03", "0.05", "0.1", "0.12"]
+epochs = [ "15"]
 
 for rate in learning_rates:
-    print("\n\n----------------------------------------------\n")
-    monkey = MonkeyCLI()
-    monkey.run("python -u mnist.py --learning-rate {}".format(rate))
+    for epoch in epochs:
+        print("\n\n----------------------------------------------\n")
+        monkey = MonkeyCLI()
+        monkey.run(
+            "python -u mnist.py --learning-rate {} --n-epochs {}".format(
+                rate, epoch))
+        exit(0)

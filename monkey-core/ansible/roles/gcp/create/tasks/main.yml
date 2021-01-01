@@ -1,29 +1,5 @@
 ---
   # tasks:
-- name: Include GCP variables
-  include_vars:
-    file: "{{ gcp_cred_file }}"
-- name: create a firewall rule
-  gcp_compute_firewall:
-    description: "An ansible generated firewall rule to allow ssh and monkey ports"
-    project: "{{ gcp_project }}"
-    auth_kind: "{{ gcp_cred_kind }}"
-    service_account_file: "{{ gcp_cred_file }}"
-    name: "{{ firewall_rule }}"
-    allowed:
-      - ip_protocol: 'tcp'
-        ports:
-          - "22"
-          - "80"
-          - "9991"
-      - ip_protocol: 'udp'
-        ports:
-          - "22"
-          - "80"
-          - "9991"
-    target_tags:
-      - "{{ firewall_rule }}"
-    state: present
 
 # This is duplicated below to fix the ssh port issue not being visible unexpliciably issue #22
 - name: create a instance

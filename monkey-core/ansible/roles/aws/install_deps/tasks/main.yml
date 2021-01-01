@@ -45,6 +45,14 @@
       command: "swapon /swapfile"
 
  
+- name: Configure dpkg if stopped mid-installation
+  become: true
+  shell: "dpkg --configure -a"
+
+- name: apt update 
+  become: true
+  apt:
+    update_cache: yes
 
 - name: apt update install s3fs python3 nginx
   become: true
@@ -56,8 +64,10 @@
       - python3-pip
       - python3-venv
       - python3-dev
+      - unzip
       - nginx
       - tree
+      - moreutils
     state: present
   retries: 2
 

@@ -1,76 +1,61 @@
 ---
-#  Unique name to separate the project
 name: mnist
-
+project_name: monkey
 run:
-  # env_type can be conda or pip
-  # TODO(@alamp): Implement pip environment restoration
-  env_type: conda
-  # env_file should be the conda environment or pip environment
-  # for conda to generate: conda env export
-  # for pip to generate:   pip freeze
-  env_file: environment.yml
-  # Any additional environment variables specified
-  env:
-    - TEST_ENV: "HELLO"
-  # Terminate the instance after finishing
-  terminate: true
-  # Install Script (Optional)
-  install_script:
-
+# Supported env_type options: conda, pip, docker
+    env_type: conda
+# Please set it to the requirements.txt file or environment.yml file
+    env_file: environment.yml
 install:
-# Installs each of the system dependencies.  
-# Current available options: conda, 
-# Future options: docker, cuda10.2, nvidia-docker
+# Installs each of the system dependencies.
+# Current available options include: docker, cuda10.2,
   - conda
-
 code:
-  # Path of the codebase.  Use . for cwd, use relative dir for directory
-  path: "."
-  # Patterns to ignore from the code (Make sure to include unncessary folders that will be created such as virtualenv folders or data folders)
-  ignore:
-    - "data**"
-    - "output**"
-    - "venv**"
-
-# Define folders to persist throughout runs.  Should include your output or checkpoint directory
+# Defines the codebase path
+    path: .
+# When packing up the codebase, monkey will ignore the following paths
+    ignore:
+      - venv
+      - data
+      - output
+persist:
+# 
+# Define folders or files to persist throughout runs.
+# Should include your output or checkpoint directory
 # Any defined persist folder will be kept in persistent storage and applied over the codebase at start
 # Persisted folders will be unpacked in the order they are listed
-persist:
-  - name: output
-    # Must be a relative dir
-    path: output
+#     
+  - output
 
-    # TODO(@alamp): Implement ignoring files in persisted store
-    # ignore:
-    # - "output/testfile"
-
+# Dataset folders will be checksummed before re-uploading
+#     
 data:
-  - name: mnist-data
-    # Options are copy or mount,  mount will mount the bucket, copy will copy the data to the machine locally (more performant)
-    # only copy is supported for now
-    type: copy
-    # Path should be a relative directory that will only be reuploaded if a checksum does not match
-    path: data
-    # optional compression type. (Must have compression packages available on machine)  Options: tar (default), gztar
-    compression: gztar
+  - name: monkey-data-0
 
+# Dataset type options are fore copy or mount.  Mount will directly mount the dataset bucket while copy will copy the dataset to local memory (highly recommended and only supported)
+#             
+    type: copy
+
+# Path should be a relative directory that will only be reuploaded if a checksum does not match
+#             
+    path: data
+
+# optional compression type. (Must have compression packages available on machine)  Options: tar, gztar (default)
+#             
+    compression: gztar
 providers:
-  # Specifications of GCP machines to run on
-  - name: gcp
-    
-    # TODO(@alamp): implement machine options passthrough
-    machine_type: n1-standard-2
-    disk_size_gb: 10
-    disk_type: pd-standard
-    source_image: "projects/ubuntu-os-cloud/global/images/family/ubuntu-1804-lts"
-    preemptible: true
-  
+# 
+# AWS Provider: aws
   - name: aws
-    
-    # TODO(@alamp): implement machine options passthrough
-    machine_type: t2-nano
-    disk_size_gb: 10
-    # disk_type: pd-standard
-    # source_image: "projects/ubuntu-os-cloud/global/images/family/ubuntu-1804-lts"
-    # preemptible: true
+# Pick an AWS instance type (https://aws.amazon.com/ec2/instance-types/)
+    machine_type: t3.micro
+# Disk Size (GB)
+    disk_size: 10
+# Available disk types (gp2, st1) (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-volume-types.html)
+    disk_type: gp2
+# Currently only Ubuntu 18.04/20.04 is supported. 
+# Ubuntu 20.04 x86 ( ami-0dba2cb6798deb6d8 )
+    base_image: ami-0dba2cb6798deb6d8
+    spot: true
+# This is the maximum bid price you are willing to give for the machine. 
+    spot_price: 0.0104

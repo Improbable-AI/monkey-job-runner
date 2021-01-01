@@ -3,19 +3,15 @@
 - name: Printout Command
   debug: 
     msg: "{{ run_command }}"
-# - name: Execute the command
-#   shell: |
-#     . ~/.profile  | tee logs/run.log
-#     "{{ run_command }}"  2>&1 | tee logs/run.log
-#   args:
-#     executable: /bin/bash
 - name: template sync command
   template:
     src: templates/run.sh
     dest: ~/.run.sh
     mode: u=rwx,g=r,o=r
 - name: Persist folder by running async rsync
-  shell: . ~/.profile; ~/.run.sh
+  shell: . ~/.monkey_activate; ~/.run.sh
+  async: 864000
+  poll: 15
   args:
     executable: /bin/bash
   

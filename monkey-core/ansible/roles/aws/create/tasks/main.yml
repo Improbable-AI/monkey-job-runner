@@ -4,143 +4,59 @@
 #   include_vars:
 #     file: "{{ gcp_cred_file }}"
 
-- name: Create VPC
-  ec2_vpc_net:
-    name: Monkey_VPC
-    cidr_block: 10.0.0.0/24
-    region: "{{aws_region}}"
-    
-    tenancy: default
-    tags:
-      Name: Monkey_VPC
-      Monkey: "Monkey_AWS"
-  register: monkey_vpc
-
-- name: Printout Monkey_VCP
-  debug:
-    msg: "{{monkey_vpc}}"
-
-- name: Set vpc facts
+- name: Set default instance params
   set_fact:
-    monkey_vpc_id: "{{monkey_vpc.vpc.id}}"
+    disk_size_gb: "{{disk_size | default('10')}}"
+    disk_type: "{{disk_type | default('gp2')}}"
+    machine_type: "{{machine_type | default('t2.micro')}}"
+    base_image: "{{base_image | default('ami-0bcc094591f354be2')}}"
+    existing_found: False
+    spot: "{{ spot | default( False ) }}"
 
-- name: Create subnet for  servers
-  ec2_vpc_subnet:
-    state: present
-    vpc_id: "{{monkey_vpc_id}}"
-    map_public: true
-    cidr: 10.0.0.0/24
-    region: "{{ aws_region }}"
-    az: "{{ aws_zone }}"
-    tags:
-      Name: Monkey_Subnet
-      Monkey: "Monkey_AWS"
-  register: monkey_subnet
-
-- name: Set vpc subnet facts
-  set_fact:
-    monkey_subnet_id: "{{monkey_subnet.subnet.id}}"
-- name: Printout Monkey_VCP
-  debug:
-    msg: "{{monkey_subnet}}"
-
-- name: Create vpc Internet Gateway
-  ec2_vpc_igw:
-    state: present
-    vpc_id: "{{monkey_vpc_id}}"
-    region: "{{aws_region}}"
-    tags:
-      Name: "Monkey_IGW"
-      Monkey: "Monkey_AWS"
-  register: monkey_igw
-- name: Set vpc Internet Gateway facts
-  set_fact:
-    monkey_igw_id: "{{monkey_igw.gateway_id}}"
-
-- name: Fetch route tables
-  ec2_vpc_route_table_info:
-    region: "{{aws_region}}"
+- name: Check to start existing ec2 Instance
+  community.aws.ec2_instance_info:
     filters:
-      vpc-id: "{{monkey_vpc_id}}"
-  register: route_table_info
-- name: Debug table info
-  debug:
-    msg: "{{route_table_info}}"
-- name: Set route table id fact
-  set_fact:
-    monkey_route_table_id: "{{route_table_info.route_tables.0.id}}"
-
-- name: Create Route Table for VPC
-  ec2_vpc_route_table:
-    state: present
-    vpc_id: "{{monkey_vpc_id}}"
-    route_table_id: "{{monkey_route_table_id}}"
-    lookup: id
-    region: "{{aws_region}}"
-    tags:
-      Name: Monkey_Route_Table
-      Monkey: "Monkey_AWS"
-    subnets:
-      - "{{monkey_subnet_id}}"
-    routes:
-      - dest: "10.0.0.0/24"
-        gateway_id: local
-      - dest: "0.0.0.0/0"
-        gateway_id: "{{monkey_igw_id}}"
-
-- name: Create Monkey Security group
-  ec2_group:
-    name: Monkey_Security_Group
-    description: The security group for monkey job runners
-    vpc_id: "{{monkey_vpc_id}}"
-    region: "{{aws_region}}"
-    rules:
-      - proto: tcp
-        ports:
-          - 22
-          - 80
-          - 443
-          - 9991
-        cidr_ip: "0.0.0.0/0"
-      - proto: udp
-        ports:
-          - 22
-          - 80
-          - 443
-          - 9991
-        cidr_ip: "0.0.0.0/0"
-  register: monkey_security_group
-
-- name: Create ec2 Instance
-  ec2:
-    exact_count: 1
-    count_tag: 
-      Name: "{{ monkey_job_uid }}"
-    instance_type: t2.micro
-    instance_tags:
-      Name: "{{ monkey_job_uid }}"
-      Monkey: "Monkey_AWS"
-    image: ami-0bcc094591f354be2
-    key_name: "{{ aws_key_name }}"
-    wait: yes
-    group: Monkey_Security_Group
-    vpc_subnet_id: "{{monkey_subnet_id}}"
-    assign_public_ip: yes
+      "tag:Name": "{{ monkey_job_uid }}"
     region: "{{ aws_region }}"
-    zone: "{{ aws_zone }}"
-  register: instance
+
+  register: existing_instance
+  ignore_errors: true
+
+- name: Set facts for existing
+  when: existing_instance.instances|length > 0
+  set_fact:
+    existing_found: True
+
+- name: Check Terminated
+  when:
+    - existing_found is true
+    - existing_instance.instances.0.state.name == "terminated"
+  debug:
+    msg: "Existing already terminated"
+
+- name: Existing is already terminated, create new
+  when:
+    - existing_found is true
+    - existing_instance.instances.0.state.name == "terminated"
+  set_fact:
+    existing_found: False
+
+- name: Run Spot Creation
+  when: spot is true
+  include_tasks: create_spot.yml
+
+
+- name: Run Normal Creation
+  when: spot is false
+  include_tasks: create_normal.yml
+
 - name:  Debug instance
   debug:
     msg: "{{ instance }}"
 
-- name: Assert public ip address
+- name: Set public ip address
   set_fact:
-    public_ip: "{{ instance.tagged_instances.0.public_ip}}"
-  register: found_public_ip
-  until: found_public_ip is not failed
-  delay: 5
-  retries: 10
-  ignore_errors: true
+    public_ip: "{{ instance.public_ip}}"
 
 - name: Wait for SSH to come up
   wait_for: 

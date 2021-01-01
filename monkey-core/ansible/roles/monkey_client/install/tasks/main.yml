@@ -37,6 +37,7 @@
       git:
         repo: https://github.com/Averylamp/monkey-client.git
         dest: "/home/{{ ansible_user }}/.monkey-client"
+        version: feature/j-mao/log-param-config
 
     - name: Install monkey-client modules into virtualenv
       pip:
@@ -72,6 +73,12 @@
         dest: /etc/nginx/sites-enabled/default
         state: link
         force: yes
+    - name: Add .yaml to text/plain 
+      become: true
+      lineinfile:
+        line: "    text/plain                            txt yml yaml;"
+        regex: "text/plain"
+        path: /etc/nginx/mime.types
     - name: Add .log to text/plain 
       become: true
       lineinfile:
@@ -96,6 +103,3 @@
       when: html_contents.stdout.find('pong!') != -1
       debug:
         msg: "NGINX serving monkey-client"
-
-- name: Setup machine 
-  setup: 

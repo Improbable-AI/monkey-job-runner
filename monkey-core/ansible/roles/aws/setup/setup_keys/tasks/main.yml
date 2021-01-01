@@ -1,0 +1,79 @@
+---
+
+- name: Check for existing key
+  file:
+    state: file
+    path: "keys/{{ aws_key_name }}.pem"
+  ignore_errors: yes
+  register: existing_private
+
+- name: Printout existing private
+  debug:
+    msg: "{{ existing_private }}"
+
+- name: Set private key path
+  set_fact:
+    aws_ssh_private_key_file:  "{{ existing_private.path }}"
+
+- name: Generate private key, register with gcp for service account os-login
+  when: existing_private.failed
+  block:
+
+    - name: remove existing ec2 key pair
+      environment:
+        "AWS_ACCESS_KEY_ID": "{{access_key_id}}"
+        "AWS_SECRET_ACCESS_KEY": "{{access_key_secret}}"
+      ec2_key:
+        name: "{{aws_key_name}}"
+        region: "{{aws_region}}"
+        state: absent
+      ignore_errors: yes
+
+    - name: create a new ec2 key pair, returns generated private key
+      environment:
+        "AWS_ACCESS_KEY_ID": "{{access_key_id}}"
+        "AWS_SECRET_ACCESS_KEY": "{{access_key_secret}}"
+      register: aws_key_creation
+      ec2_key:
+        name: "{{aws_key_name}}"
+        region: "{{aws_region}}"
+        force: yes
+    
+    - name: Write private key to file
+      copy:
+        content: "{{aws_key_creation.key.private_key}}"
+        dest: "{{ aws_ssh_private_key_file }}"
+        mode: 0400
+    - name: Debug private key
+      debug:
+        msg: "Private key {{ aws_key_creation.key}}"
+    - name: Remove old ansible_user if existing
+      lineinfile:
+        dest: "{{ playbook_dir }}/inventory/group_vars/monkey_aws.yml"
+        create: yes
+        state: absent
+        regexp: "ansible_*"
+    - name: Add ansible user to inventory file
+      lineinfile:
+        dest: "{{ playbook_dir }}/inventory/group_vars/monkey_aws.yml"
+        create: yes
+        state: present
+        line: "ansible_user: ubuntu"
+    - name: Add AWS private key to aws_var file
+      lineinfile:
+        dest: "{{ playbook_dir }}/aws_vars.yml"
+        create: yes
+        state: present
+        line: "aws_ssh_private_key_file: {{playbook_dir}}/{{ aws_ssh_private_key_file }}"
+    - name: remove AWS private key if existing
+      lineinfile:
+        dest: "{{ playbook_dir }}/inventory/group_vars/monkey_aws.yml"
+        create: yes
+        state: absent
+        regexp: "aws_ssh_private_key_file*"
+    - name: Add AWS private key location to aws_var file
+      lineinfile:
+        dest: "{{ playbook_dir }}/inventory/group_vars/monkey_aws.yml"
+        create: yes
+        state: present
+        line: "aws_ssh_private_key_file: \"{{playbook_dir}}/{{ aws_ssh_private_key_file }}\""

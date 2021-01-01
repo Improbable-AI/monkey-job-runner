@@ -1,10 +1,2 @@
 ---
-gcp_cred_kind: serviceaccount
-gcp_cred_file: /Users/avery/Developer/projects/monkey-project/monkey-core/personal-monkey-gcp-key.json
-gcp_region: us-east1
-gcp_zone: us-east1-b
-firewall_rule: monkey-ansible-firewall
-gcp_ssh_private_key_path: None
-storage_name: monkeyfs-foudns
-monkeyfs_path: /monkeyfs
-local_monkeyfs_path: /Users/avery/Developer/projects/monkey-project/monkey-core/ansible/monkeyfs-gcp
+# This file will automatically be populated by setup_core.py with the necessary information
