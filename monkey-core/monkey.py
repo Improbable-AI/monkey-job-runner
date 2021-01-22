@@ -28,9 +28,9 @@ class Monkey():
     providers = []
 
     from _monkey_list import (get_job_info, get_job_uid, get_list_instances,
-                              get_list_jobs, get_list_local_instances,
+                              get_list_jobs, get_list_local_instances,get_job_config,
                               get_list_providers)
-    from _monkey_loop import (check_for_dead_jobs, check_for_queued_jobs,
+    from _monkey_loop import (check_for_dead_jobs, check_for_queued_jobs,check_for_job_hyperparameters,
                               daemon_loop, print_jobs_string)
 
     def __init__(self, providers_path="providers.yml", start_loop=True):

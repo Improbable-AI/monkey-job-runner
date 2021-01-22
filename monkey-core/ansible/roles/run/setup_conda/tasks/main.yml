@@ -18,6 +18,12 @@
   ignore_errors: true
   args:
     executable: /bin/bash
+
+- name: Install monkey logging package
+  shell: . ~/.monkey_activate; pip install .
+  args:
+    chdir: ~/.monkey-client/monkey-log
+    executable: /bin/bash
   
 - name: Add conda activate
   lineinfile:

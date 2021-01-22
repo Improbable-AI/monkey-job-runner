@@ -13,16 +13,19 @@
 
 The Monkey Job runner system is designed to augment a researchers ability to run experiments on other machines without designing any infrastructure to handle job dispatching and coordination throughout a hybrid cloud environment.  After a simple setup procedure, Monkey will handle coordination between different environments, ensuring experiments run until completion and tracking results.  Monkey is designed for researchers to use on their local machine and dispatch to other machines whenever parallelism is desired.  Monkey allows researchers to interact with the system through a couple of ways after setup is completed.
 
+## Installation
+To install please see [Installation Instructions Here](INSTALLATION.md)
+
 ### Ad-hoc Dispatch
 
 ```bash
-monkey run -provider {aws|gcp|local} python3 mnist.py --learning-rate 0.14
+monkey run python3 mnist.py --learning-rate 0.14
 ```
 
 ### Scripting Dispatch
 
 ```python
-from monkeycli.monkeycli import MonkeyCLI
+from monkeycli import MonkeyCLI
 
 learning_rates = ["0.01", "0.02", "0.03", "0.05", "0.10"]
 
@@ -34,15 +37,18 @@ for rate in learning_rates:
 ### Hyper-parameter Sweep Dispatch
 
 ```python
-from monkeycli.monkeycli import MonkeyCLI, PowerTwoParameter
+from monkeycli import MonkeyCLI
 
-args = {
-	'learning-rate': PowerTwoParameter(0.01, 5), # 0.01, 0.02, 0.04, 0.08, 0.016
-	'n-epochs' : [1, 3, 5],
-	'
-}
-monkey = MonkeyCLI()
-monkey.sweep(args)
+
+learning_rates = ["0.01", "0.02", "0.03", "0.05", "0.1", "0.12"]
+epochs = [ "15"]
+
+for rate in learning_rates:
+    for epoch in epochs:
+        monkey = MonkeyCLI()
+        monkey.run(
+            "python -u mnist.py --learning-rate {} --n-epochs {}".format(
+                rate, epoch))
 ```
 
 ## Requirements
@@ -63,8 +69,6 @@ Monkey aims to be extremely minimal in terms of requirements.  Requirements diff
     - EC2 or GCE permissions: creation/deletion/edit of instances
     - S3 or GCS permissions: shared filesystem
 - **main node:** Must have **s3fs** or **gcsfuse** installed to mount the provider's filesystem
-
-
 
 
 ## Implementation
