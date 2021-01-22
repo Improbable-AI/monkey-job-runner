@@ -1,0 +1,48 @@
+---
+
+- name: Check for existing key
+  file:
+    state: file
+    path: "keys/local_fs"
+  ignore_errors: yes
+  register: existing_private
+
+- name: Printout existing private
+  debug:
+    msg: "{{ existing_private }}"
+
+- name: Set private full path
+  set_fact:
+    private_key_path: "{{ existing_private.path }}"
+
+- name: Generate private key, register with gcp for service account os-login
+  when: existing_private.failed
+  block:
+    - name: Create openssh key
+      openssh_keypair:
+        path: "{{ private_key_path }}"
+        type: rsa
+        size: 4096
+        state: present
+    - name: Add to authorized keys
+      ansible.posix.authorized_key:
+        key: "{{ item }}"
+        user: "{{ ansible_user }}"
+        state: present
+        comment: "monkeyfs_local_key"
+      with_file:
+        - "{{ private_key_path}}.pub"
+
+- name: Add ansible private key to inventory file
+  lineinfile:
+    dest: "{{ playbook_dir }}/inventory/group_vars/monkey_local.yml"
+    create: yes
+    state: present
+    line: "monkeyfs_private_key_file: {{playbook_dir}}/{{ private_key_path }}"
+
+- name: Add ansible private key to local_var file
+  lineinfile:
+    dest: "{{ playbook_dir }}/local_vars.yml"
+    create: yes
+    state: present
+    line: "monkeyfs_private_key_file: {{playbook_dir}}/{{ private_key_path }}"

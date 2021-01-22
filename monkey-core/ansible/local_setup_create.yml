@@ -1,0 +1,10 @@
+---
+- hosts: localhost
+  name: Set up a local provider
+  pre_tasks:
+    - name: Import default vars
+      include_vars:
+        file: local_vars.yml
+
+  roles:
+    - local/setup/setup_keys

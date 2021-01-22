@@ -1,0 +1,55 @@
+---
+
+- name: Printout Command
+  debug: 
+    msg: "{{ run_command }}"
+- name: template sync command
+  template:
+    src: templates/run.sh
+    dest: "{{job_dir_path}}/.run.sh"
+    mode: u=rwx,g=r,o=r
+
+- name: Get interactive environment
+  shell: bash -ic ". {{activate_file}}; env | grep PATH="
+  register: interactive_output
+
+- name: Output interactive
+  debug:
+    msg: "Interactive: {{interactive_output.stdout}}"
+
+- name: Remove conda path to file
+  lineinfile:
+    dest: "{{activate_file}}"
+    state: absent
+    line: "export {{interactive_output.stdout}}"
+    
+- name: Add conda init to file
+  lineinfile:
+    dest: "{{activate_file}}"
+    state: absent
+    line: 'eval "$(conda shell.bash hook)"'
+    
+
+- name: Add conda path to file
+  lineinfile:
+    dest: "{{activate_file}}"
+    create: yes
+    state: present
+    insertbefore: "conda*"
+    line: "export {{interactive_output.stdout}}"
+- name: Add conda init to file
+  lineinfile:
+    dest: "{{activate_file}}"
+    create: yes
+    state: present
+    insertbefore: "conda*"
+    line: 'eval "$(conda shell.bash hook)"'
+    
+
+- name: Persist folder by running async rsync
+  shell: ". {{activate_file}}; ./.run.sh" 
+  async: 864000
+  poll: 15
+  args:
+    chdir: "{{job_dir_path}}"
+  

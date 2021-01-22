@@ -265,6 +265,16 @@ def get_persisted_folders(dir_ignore):
     return persisted_folders
 
 
+def get_provider_local(name):
+    details = round_trip_load(str({
+        "name": name,
+    }))
+    details.fa.set_block_style()
+    details.yaml_set_start_comment("\nLocal Provider: {}".format(name))
+
+    return details
+
+
 def get_provider_gcp(name):
     details = round_trip_load(str({
         "name": name,
@@ -536,30 +546,37 @@ def get_provider_setup():
             continue
 
         provider_name, provider_type = provider_response
+        attempt_removal = False
         if provider_type == "aws":
             new_provider_info = get_provider_aws(provider_name)
             if new_provider_info is not None:
                 print("Successfully added", provider_name)
                 providers.append(new_provider_info)
-                try:
-                    removal = None
-                    for text, pr in core_provider_text:
-                        if pr == provider_response:
-                            removal = (text, pr)
-                    if removal is not None:
-                        core_provider_text.remove(removal)
-                except:
-                    pass
+                attempt_removal = True
         elif provider_type == "gcp":
             new_provider_info = get_provider_gcp(provider_name)
             if new_provider_info is not None:
                 print("Successfully added", provider_name)
                 providers.append(new_provider_info)
-                try:
-                    core_provider_text.remove(provider_response)
-                except:
-                    pass
+                attempt_removal = True
+        elif provider_type == "local":
+            print("Setting up local provider")
+            new_provider_info = get_provider_local(provider_name)
+            if new_provider_info is not None:
+                print("Successfully added", provider_name)
+                providers.append(new_provider_info)
+                attempt_removal = True
 
+        if attempt_removal:
+            try:
+                removal = None
+                for text, pr in core_provider_text:
+                    if pr == provider_response:
+                        removal = (text, pr)
+                if removal is not None:
+                    core_provider_text.remove(removal)
+            except:
+                pass
     return providers
 
 

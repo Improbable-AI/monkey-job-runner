@@ -37,21 +37,20 @@ def threaded(fn):
 class MonkeyInstance():
 
     name = None
-    machine_zone = None
     creation_time = None
     destruction_time = None
     ip_address = None
     state = None
     lock = threading.Lock()
+    additional_extravars = dict()
 
     offline_count = 0
     offline_retries = 3
     last_uuid = None
 
-    def __init__(self, name, machine_zone, ip_address):
+    def __init__(self, name, ip_address):
         super().__init__()
         self.name = name
-        self.machine_zone = machine_zone
         self.ip_address = ip_address
         self.creation_time = datetime.now()
         # threading.Thread(target=self.heartbeat_loop, daemon=True)
@@ -80,7 +79,6 @@ class MonkeyInstance():
 
     def update_instance_details(self, other):
         self.name = other.name
-        self.machine_zone = other.machine_zone
         self.ip_address = other.ip_address
 
     def get_uuid(self):
@@ -126,6 +124,7 @@ class MonkeyInstance():
             return None
 
     def run_ansible_role(self, rolename, uuid, extravars=None, envvars=None):
+        extravars.update(self.additional_extravars)
         runner = ansible_runner.run(
             host_pattern=self.name,
             private_data_dir="ansible",
@@ -143,7 +142,6 @@ class MonkeyInstance():
             args_string = ""
             for key, val in args.items():
                 args_string += f"{key}={val} "
-
         runner = ansible_runner.run(
             host_pattern=self.name,
             private_data_dir="ansible",
@@ -153,8 +151,18 @@ class MonkeyInstance():
             cancel_callback=self.ansible_runner_uuid_cancel(uuid))
         return runner
 
-    def run_ansible_shell(self, command, uuid):
+    def run_ansible_playbook(self, playbook, extravars, uuid):
+        extravars.update(self.additional_extravars)
+        runner = ansible_runner.run(
+            host_pattern=self.name,
+            playbook=playbook,
+            private_data_dir="ansible",
+            extravars=extravars,
+            quiet=monkey_global.QUIET_ANSIBLE,
+            cancel_callback=self.ansible_runner_uuid_cancel(uuid))
+        return runner
 
+    def run_ansible_shell(self, command, uuid):
         runner = ansible_runner.run(
             host_pattern=self.name,
             private_data_dir="ansible",

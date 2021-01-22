@@ -37,7 +37,7 @@ name: {}, ip: {}, state: {}
     def __init__(self, ansible_info):
         print(ansible_info)
         name = ansible_info["name"]
-        machine_zone = ansible_info["zone"]
+        self.machine_zone = ansible_info["zone"]
         self.machine_project = ansible_info["project"]
 
         # Look for public IP
@@ -47,7 +47,6 @@ name: {}, ip: {}, state: {}
         self.ip_address = next(iter(access_configs), dict()).get("natIP", None)
 
         super().__init__(name=name,
-                         machine_zone=machine_zone,
                          ip_address=self.ip_address)
         self.ansible_info = ansible_info
         self.state = ansible_info["status"]

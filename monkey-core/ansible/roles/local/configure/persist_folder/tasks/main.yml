@@ -1,0 +1,10 @@
+---
+- name: Ensure sync directory exists
+  file:
+    path: "{{ sync_folder_path }}"
+    state: directory
+- name: template sync command
+  template:
+    src: templates/sync.sh
+    dest: "{{ persist_script_path }}"
+    mode: u=rwx,g=r,o=r

@@ -3,66 +3,12 @@ all:
   children:
     monkey_local:
       children:
-        antonio:
+        avery:
             hosts:
-                visiongpu03: 
-                visiongpu06: 
-                visiongpu07: 
-                visiongpu08: 
-                visiongpu09: 
-                visiongpu10: 
-                visiongpu11: 
-                visiongpu17: 
-                visiongpu22: 
-                visiongpu24: 
-                visiongpu26: 
-                visiongpu34: 
-                visiongpu35: 
-                visiongpu36: 
-                visiongpu37: 
-                visiongpu38: 
-                visiongpu39: 
-        bill:
-            hosts:
-                visiongpu04:
-                visiongpu05:
-                visiongpu12:
-                visiongpu13:
-                visiongpu14:
-                visiongpu16:
-                visiongpu18:
-                visiongpu20:
-                visiongpu21:
-                visiongpu31:
-                visiongpu32:
-                visiongpu33:
-                visiongpu40:
-                visiongpu41:
-                visiongpu42:
-                visiongpu43:
-                visiongpu54:
-                visiongpu55:
-        aude:
-            hosts:
-                visiongpu23:
-                visiongpu25:
-                visiongpu27:
-                visiongpu28:
-                visiongpu29:
-                visiongpu30:
-                visiongpu48:
-                visiongpu51:
-                visiongpu52:
-        phillip:
-            hosts:
-                visiongpu44:
-                visiongpu45:
-                visiongpu46:
-                visiongpu47:
-                visiongpu53:
+                racoon:
         pulkit:
             hosts:
-                visiongpu50:
+                visiongpu06:
     monkey:
       children:
         monkey_local:

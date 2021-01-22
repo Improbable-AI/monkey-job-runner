@@ -107,8 +107,12 @@ def check_for_dead_jobs(self, log_file=None):
             print("Found Timed out job with state {}.  Requeueing job".format(
                 job.state))
             job.set_state(state.MONKEY_STATE_QUEUED)
+        if job.provider_type == "local":
+            print("looking for local instance: ",job.job_yml["instance"])
+            instance = found_provider.get_instance(job.job_yml["instance"])
+        else:
+            instance = found_provider.get_instance(job.job_uid)
 
-        instance = found_provider.get_instance(job.job_uid)
 
         if (job.state not in [
                 state.MONKEY_STATE_QUEUED, state.MONKEY_STATE_FINISHED,
@@ -118,6 +122,7 @@ def check_for_dead_jobs(self, log_file=None):
             # Instance can't be found and should have been created already
             if (instance is None
                     and job.state != state.MONKEY_STATE_DISPATCHING_MACHINE):
+
                 job.set_state(state.MONKEY_STATE_QUEUED)
             # Instance found and is offline
             elif (instance is not None and not instance.check_online()):

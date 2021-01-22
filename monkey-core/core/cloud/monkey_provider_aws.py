@@ -75,7 +75,7 @@ class MonkeyProviderAWS(MonkeyProvider):
                                    shell=True,
                                    capture_output=True).stdout.decode("utf-8")
         if fs_output is not None and fs_output != "":
-            return ("s3fs" in fs_output.split()[0] 
+            return ("s3fs" in fs_output.split()[0]
                     or fs_output.split()[0] == self.provider_info.get(
                         "storage_name", "monkeyfs"))
         return False
@@ -170,11 +170,12 @@ class MonkeyProviderAWS(MonkeyProvider):
                         labels = item['labels'] if 'labels' in item else []
                         monkey_identifier_target = self.machine_defaults[
                             'monkey-identifier']
-                        if 'monkey-identifier' in labels and labels[
-                                'monkey-identifier'] == monkey_identifier_target:
+                        identifier_target = labels.get("monkey-identifier",
+                                                       None)
+                        if identifier_target == monkey_identifier_target:
                             jobs.append(item['name'])
-            except:
-                pass
+            except Exception as e:
+                print(f"Exception in listing Jobs: {e}")
         return jobs
 
     def list_images(self):
@@ -192,7 +193,7 @@ class MonkeyProviderAWS(MonkeyProvider):
 
         return images
 
-    def create_instance(self, machine_params=dict()):
+    def create_instance(self, machine_params=dict(), job_yml=dict()):
         print("MACHINE PARAMS: ", machine_params)
 
         runner = ansible_runner.run(playbook='aws_create_job.yml',

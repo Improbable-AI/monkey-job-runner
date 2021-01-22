@@ -44,9 +44,6 @@ class MonkeyCLI(Cmd):
     #     return self.monkey.create_instance(provider=provider,
     #                                        machine_params=machine_overrides)
 
-    def list_providers(self, printout=False):
-        return
-
     def list_command(self, list_parser, args, printout=False):
         if args.list_option == "jobs":
             return monkeycli.core_info.list_jobs(vars(args), printout)
@@ -54,9 +51,8 @@ class MonkeyCLI(Cmd):
             return monkeycli.core_info.list_instances(vars(args), printout)
         if args.list_option == "providers":
             return monkeycli.core_info.list_providers(printout)
-        else:
-            list_parser.print_help()
-            return False
+        list_parser.print_help()
+        return False
 
     def info_command(self, info_parser, args, printout=False):
         print(args)
@@ -67,9 +63,8 @@ class MonkeyCLI(Cmd):
         if args.info_option == "providers":
             return monkeycli.core_info.info_provider(provider=args.provider,
                                                      printout=printout)
-        else:
-            info_parser.print_help()
-            return False
+        info_parser.print_help()
+        return False
 
     def output_command(self, output_parser, args, printout=False):
         print(args)
@@ -100,12 +95,10 @@ class MonkeyCLI(Cmd):
     def get_new_job_uid(self):
         return monkeycli.core_info.get_new_job_uid()
 
-    def run_job(self,
-                cmd,
-                job_yaml_file="job.yml",
-                foreground=False,
-                provider=None,
-                printout=False):
+    def run_job(self, cmd, args, printout=False):
+        job_yaml_file = args.job_yaml_file
+        foreground = args.foreground
+        provider = args.provider
         if printout:
             print("\nMonkey running:\n{}".format(colored(cmd, "green")))
 
@@ -124,11 +117,36 @@ class MonkeyCLI(Cmd):
             if provider in [x["name"] for x in job_yaml["providers"]]:
                 job_yaml["provider"] = provider
             else:
-                raise ValueError("The specified provider ")
+                raise ValueError("The specified provider was not found")
         else:
             job_yaml["provider"] = job_yaml["providers"][0]["name"]
         provider = job_yaml["provider"]
         print("Running on provider: {}".format(provider))
+        all_providers = monkeycli.core_info.list_providers()
+        print(all_providers)
+        found_remote_provider = None
+        for remote_provider in all_providers:
+            if remote_provider.get("name", "") == provider:
+                found_remote_provider = remote_provider
+
+        if found_remote_provider is None:
+            raise ValueError(
+                "Unable to find the specified provider on Monkey Core")
+        if found_remote_provider.get("type", "") == "local":
+            # Check for defined instance
+            instance = args.instance
+            print(f"Running on instance: {instance}")
+            available_instances = ", ".join(
+                monkeycli.core_info.list_local_instances())
+            print("Available instances", available_instances)
+            if instance is None:
+                raise ValueError(
+                    "Please define an instance to run on the local provider. "
+                    +
+                    f"\nAvailable instance include: \n{available_instances}" +
+                    "\nTo run with instance set use monkey run -i <instance_name>"
+                )
+            job_yaml["instance"] = args.instance
 
         job_uid = self.get_new_job_uid()
         job_yaml["job_uid"] = job_uid
@@ -227,9 +245,7 @@ class MonkeyCLI(Cmd):
 
         if args.command == "run":
             return self.run_job(cmd=" ".join(remaining_args),
-                                job_yaml_file=args.job_yaml_file,
-                                foreground=args.foreground,
-                                provider=args.provider,
+                                args=args,
                                 printout=printout)
         elif args.command == "create":
             if args.create_option == "instance":
