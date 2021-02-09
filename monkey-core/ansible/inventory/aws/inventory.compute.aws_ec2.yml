@@ -1,4 +1,9 @@
 ---
-# This file will automatically be populated by setup_core.py with the necessary information
-
-hosts:
+aws_access_key: AKIA4NSSERCKWWK3Y5NX
+aws_secret_key: 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
+plugin: aws_ec2
+regions: [us-east-1]
+groups: {monkey: "'monkey' in tags.Name", monkey_aws: "'monkey' in tags.Name"}
+hostnames: [tag:Name]
+filters: {tag:Monkey: Monkey_AWS}
+compose: {ansible_host: public_ip_address}

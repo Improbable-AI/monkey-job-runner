@@ -49,38 +49,38 @@ jobs:
 
     - name: Remove providers file
       env:
-        gcp_key: ${{ secrets.improbable_ai_avery_gcp_service_key }}
+        aws_key: ${{ secrets.improbable_ai_avery_aws_service_key }}
       run: |
-        rm providers.yml || true
-        echo "$gcp_key" | base64 --decode > gcp_cred.json
-        python setup_core.py -n --create --type gcp -i gcp_cred.json
+        yes | ./flush_all_provider_data.sh
+        echo "$aws_key" | base64 --decode > aws_key.json
+        python setup_core.py -n --create --type aws -i aws_key.json
         df -h 
         
-    # - name: Install monkey-cli packages
-    #   run: |
-    #     pip install .
-    #     pip install -r requirements.txt
-    #   working-directory: monkey-cli
+    - name: Install monkey-cli packages
+      run: |
+        pip install .
+        pip install -r requirements.txt
+      working-directory: monkey-cli
 
-    # - name: Setup folders
-    #   run: |
-    #     mkdir -p data output
-    #   working-directory: monkey-cli/samples/mnist
+    - name: Setup folders
+      run: |
+        mkdir -p data output
+      working-directory: monkey-cli/samples/mnist
 
-    # - name: Cache mnist data
-    #   uses: actions/cache@v1
-    #   id: cache-mnist-data
-    #   with:
-    #     path: monkey-cli/samples/mnist/data
-    #     key: ${{ hashFiles('monkey-cli/samples/mnist/download_data.py') }}
+    - name: Cache mnist data
+      uses: actions/cache@v1
+      id: cache-mnist-data
+      with:
+        path: monkey-cli/samples/mnist/data
+        key: ${{ hashFiles('monkey-cli/samples/mnist/download_data.py') }}
     
-    # - name: Cache miss on mnist data
-    #   if: steps.cache-mnist-data.outputs.cache-hit != 'true'
-    #   run: |
-    #     pip install torchvision
-    #     mkdir -p data output
-    #     python download_data.py
-    #   working-directory: monkey-cli/samples/mnist
+    - name: Cache miss on mnist data
+      if: steps.cache-mnist-data.outputs.cache-hit != 'true'
+      run: |
+        pip install torchvision
+        mkdir -p data output
+        python download_data.py
+      working-directory: monkey-cli/samples/mnist
       
     # - name: Run mnist sample
     #   run: |
