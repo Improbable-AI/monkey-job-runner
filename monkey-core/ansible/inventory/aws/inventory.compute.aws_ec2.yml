@@ -1,6 +1,6 @@
 ---
-aws_access_key: AKIA4NSSERCKWWK3Y5NX
-aws_secret_key: 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
+aws_access_key: AKIA4NSSERCK5P4BY2ZS
+aws_secret_key: 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
 plugin: aws_ec2
 regions: [us-east-1]
 groups: {monkey: "'monkey' in tags.Name", monkey_aws: "'monkey' in tags.Name"}

@@ -88,6 +88,7 @@ jobs:
         python monkey_core.py &
         sleep 5
         cd ../monkey-cli/samples/mnist
+        mv ci/aws_conda_job.yml job.yml
         monkey run --foreground python -u mnist.py --learning-rate 0.019 --epochs 1
 
     - name: Cleanup and mount

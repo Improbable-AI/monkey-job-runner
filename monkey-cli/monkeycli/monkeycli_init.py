@@ -437,6 +437,7 @@ def get_provider_aws(name):
             "\n" + base_image_str if base_image_str is not None else ""))
 
     spot = None
+    spot_price = None
     while spot is None:
         spot = query_yes_no(
             "Would you like your instance to be a Spot instance?", "yes")
