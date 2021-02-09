@@ -1,0 +1,41 @@
+---
+- hosts: localhost
+  name: Deletes the aws monkeyfs buckets after emptying them
+  gather_facts: no
+
+  tasks:
+    - name:
+      debug:
+        msg: "{{ secret }}:{{key}}"
+    - name: List buckets
+      community.aws.aws_s3_bucket_info:
+        aws_secret_key: "{{ secret }}"
+        aws_access_key: "{{key}}"
+      register: result
+
+    - name: Printout listed buckets
+      debug:
+        msg: "{{result}}"
+
+    - name: Printout listed buckets
+      set_fact:
+        buckets: "{{ buckets | default()}} {{item.name}}"
+      when: "'monkeyfs' in item.name"
+      with_items: "{{result.buckets}}"
+
+    - name: Splitj listed buckets
+      set_fact:
+        buckets: "{{ buckets.split() }}"
+    - name: Printout listed buckets
+      debug:
+        msg: "Removing: {{buckets}}"
+
+    - name: Remove buckets
+      amazon.aws.s3_bucket:
+        aws_secret_key: "{{ secret }}"
+        aws_access_key: "{{key}}"
+        name: "{{ item }}"
+        state: absent
+        force: true
+      with_items: "{{buckets}}"
+
