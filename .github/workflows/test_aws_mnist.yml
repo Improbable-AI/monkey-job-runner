@@ -54,6 +54,7 @@ jobs:
         ./flush_all_provider_data.sh
         echo "$aws_key" | base64 --decode > aws_key.json
         python setup_core.py -n --create --type aws -i aws_key.json
+        cat ansible/aws_vars.yml | grep storage_name | awk '{ print $2 }'
         df -h 
         
     - name: Install monkey-cli packages
@@ -82,16 +83,18 @@ jobs:
         python download_data.py
       working-directory: monkey-cli/samples/mnist
       
-    # - name: Run mnist sample
-    #   run: |
-    #     python monkey_core.py &
-    #     sleep 5
-    #     cd ../monkey-cli/samples/mnist
-    #     monkey run --foreground python -u mnist.py --learning-rate 0.019
+    - name: Run mnist sample
+      run: |
+        python monkey_core.py &
+        sleep 5
+        cd ../monkey-cli/samples/mnist
+        monkey run --foreground python -u mnist.py --learning-rate 0.019 --epochs 1
 
-    # - name: Cleanup and mount
-    #   run: | 
-    #     rm gcp_cred.json
-    #     export TEMP=$(df ansible/monkeyfs | grep monkeyfs | awk '{print $NF}') || true
-    #     fusermount -u $TEMP || true
+    - name: Cleanup and mount
+      run: | 
+        rm aws_key.json
+        umount ansible/monkeyfs-aws
+        BUCKET_NAME=$(cat ansible/aws_vars.yml | grep storage_name | awk '{ print $2 }')
+        echo Bucket Name: $BUCKET_NAME
+        ./flush_monkeyfs_aws.sh aws_key.csv $BUCKET_NAME
 

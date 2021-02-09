@@ -7,35 +7,52 @@
     - name:
       debug:
         msg: "{{ secret }}:{{key}}"
-    - name: List buckets
-      community.aws.aws_s3_bucket_info:
-        aws_secret_key: "{{ secret }}"
-        aws_access_key: "{{key}}"
-      register: result
 
-    - name: Printout listed buckets
-      debug:
-        msg: "{{result}}"
+    - name: Delete one bucket if defined
+      block:
+        tasks:
+          - name: Remove bucket
+            amazon.aws.s3_bucket:
+              aws_secret_key: "{{ secret }}"
+              aws_access_key: "{{key}}"
+              name: "{{ bucket }}"
+              state: absent
+              force: true
+      when: bucket is defined
 
-    - name: Printout listed buckets
-      set_fact:
-        buckets: "{{ buckets | default()}} {{item.name}}"
-      when: "'monkeyfs' in item.name"
-      with_items: "{{result.buckets}}"
+    - name: Delete all monkeyfs buckets
+      when: bucket is not defined
+      block:
+        tasks:
+          - name: List buckets
+            community.aws.aws_s3_bucket_info:
+              aws_secret_key: "{{ secret }}"
+              aws_access_key: "{{key}}"
+            register: result
 
-    - name: Splitj listed buckets
-      set_fact:
-        buckets: "{{ buckets.split() }}"
-    - name: Printout listed buckets
-      debug:
-        msg: "Removing: {{buckets}}"
+          - name: Printout listed buckets
+            debug:
+              msg: "{{result}}"
 
-    - name: Remove buckets
-      amazon.aws.s3_bucket:
-        aws_secret_key: "{{ secret }}"
-        aws_access_key: "{{key}}"
-        name: "{{ item }}"
-        state: absent
-        force: true
-      with_items: "{{buckets}}"
+          - name: Printout listed buckets
+            set_fact:
+              buckets: "{{ buckets | default()}} {{item.name}}"
+            when: "'monkeyfs' in item.name"
+            with_items: "{{result.buckets}}"
+
+          - name: Split listed buckets
+            set_fact:
+              buckets: "{{ buckets.split() }}"
+          - name: Printout listed buckets
+            debug:
+              msg: "Removing: {{buckets}}"
+
+          - name: Remove buckets
+            amazon.aws.s3_bucket:
+              aws_secret_key: "{{ secret }}"
+              aws_access_key: "{{key}}"
+              name: "{{ item }}"
+              state: absent
+              force: true
+            with_items: "{{buckets}}"
 

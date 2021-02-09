@@ -10,5 +10,11 @@ echo "Running from creds: $1"
 SECRET=$(./setup_scripts/aws_creds_parser.py $1 -s)
 KEY=$(./setup_scripts/aws_creds_parser.py $1 -k)
 cd ansible
-ansible-playbook aws_cleanup_monkeyfs.yml --extra-vars "secret=$SECRET key=$KEY" -v
+if [ -z "$2" ]
+then
+    ansible-playbook aws_cleanup_monkeyfs.yml --extra-vars "secret=$SECRET key=$KEY" -v
+else
+
+    ansible-playbook aws_cleanup_monkeyfs.yml --extra-vars "secret=$SECRET key=$KEY bucket=$2" -v
+fi
 
