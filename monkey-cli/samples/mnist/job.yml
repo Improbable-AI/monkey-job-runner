@@ -1,15 +1,15 @@
 ---
-name: mnist-ci-aws-conda
+name: mnist-ci-aws-pip
 project_name: monkey
 run:
 # Supported env_type options: conda, pip, docker
-    env_type: conda
+    env_type: pip
 # Please set it to the requirements.txt file or environment.yml file
-    env_file: environment.yml
+    env_file: requirements.txt
 install:
 # Installs each of the system dependencies.
 # Current available options include: docker, cuda10.2,
-  - conda
+  - pip
 code:
 # Defines the codebase path
     path: .
@@ -58,4 +58,4 @@ providers:
     base_image: ami-0dba2cb6798deb6d8
     spot: false
 # This is the maximum bid price you are willing to give for the machine. 
-    spot_price: 0.0208
+    spot_price:

@@ -20,13 +20,13 @@ def check_for_queued_jobs(self, log_file=None):
     printout = f"Found {len(queued_jobs)}  queued jobs\n"
 
     for job in queued_jobs:
-        printout +=  f"Dispatching Job: {job.job_uid}\n"
+        printout += f"Dispatching Job: {job.job_uid}\n"
         found_provider = None
         for p in self.providers:
             if p.name == job.provider_name:
                 found_provider = p
         if found_provider is None:
-            printout +=  "Provider should have been defined for the job to be submitted\n"
+            printout += "Provider should have been defined for the job to be submitted\n"
             continue
         job.set_state(state=state.MONKEY_STATE_DISPATCHING)
         threading.Thread(target=self.run_job,
@@ -73,16 +73,16 @@ def check_for_dead_jobs(self, log_file=None):
         x for x in pending_jobs if x.state == state.MONKEY_STATE_FINISHED
     ]
 
-    printout= f"Found: {pending_job_num} jobs in pending state\n"
+    printout = f"Found: {pending_job_num} jobs in pending state\n"
     printout += f"Checking: {potential_missed_cleanup_num} jobs for late cleanup\n"
-    printout += self.print_jobs_string([x for x in pending_jobs if x.state != state.MONKEY_STATE_FINISHED])
+    printout += self.print_jobs_string(
+        [x for x in pending_jobs if x.state != state.MONKEY_STATE_FINISHED])
 
     if not monkey_global.QUIET_PERIODIC_PRINTOUT:
         print(printout)
 
     if log_file:
         log_file.write(printout)
-
 
     # TODO (averylamp): retry counts
     for job in pending_jobs:
@@ -108,11 +108,10 @@ def check_for_dead_jobs(self, log_file=None):
                 job.state))
             job.set_state(state.MONKEY_STATE_QUEUED)
         if job.provider_type == "local":
-            print("looking for local instance: ",job.job_yml["instance"])
+            print("looking for local instance: ", job.job_yml["instance"])
             instance = found_provider.get_instance(job.job_yml["instance"])
         else:
             instance = found_provider.get_instance(job.job_uid)
-
 
         if (job.state not in [
                 state.MONKEY_STATE_QUEUED, state.MONKEY_STATE_FINISHED,
@@ -161,7 +160,8 @@ def check_for_dead_jobs(self, log_file=None):
 
 
 def check_for_job_hyperparameters(self, log_file=None):
-    jobs_without_hyperparameters = MonkeyJob.objects(experiment_hyperparameters=dict())
+    jobs_without_hyperparameters = MonkeyJob.objects(
+        experiment_hyperparameters=dict())
     jobs_without_hyperparameters_num = len(jobs_without_hyperparameters)
 
     printout = f"Found: {jobs_without_hyperparameters_num} jobs without parameters\n"
@@ -185,11 +185,13 @@ def check_for_job_hyperparameters(self, log_file=None):
                 .format(job))
             continue
         instance = found_provider.get_instance(job.job_uid)
-        hyperparameters = instance.get_experiment_hyperparameters()
+        if instance is not None:
+            hyperparameters = instance.get_experiment_hyperparameters()
         if hyperparameters is not None:
             job.experiment_hyperparameters = hyperparameters
             job.save()
-            print("Found hyperparameters for job {}: {}".format(job.job_uid, hyperparameters))
+            print("Found hyperparameters for job {}: {}".format(
+                job.job_uid, hyperparameters))
         else:
             print("No hyperparameters for job {}".format(job.job_uid))
 
@@ -201,7 +203,7 @@ def daemon_loop(self):  #
             printout = colored(
                 "\n======================================================================\n",
                 "blue")
-            printout +=  f"{datetime.now()}: Running Periodic Check \n"
+            printout += f"{datetime.now()}: Running Periodic Check \n"
             if not monkey_global.QUIET_PERIODIC_PRINTOUT:
                 print(printout)
             f.write(printout)
