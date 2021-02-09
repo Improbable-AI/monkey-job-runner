@@ -292,7 +292,7 @@ def upload_dataset():
         "dataset_path": dataset_path,
         "dataset_extension": dataset_extension,
     }
-    logger.info(dataset_name, dataset_checksum, dataset_path)
+    logger.info(dataset_yaml)
     if dataset_name is None or dataset_checksum is None or dataset_path is None \
             or dataset_extension is None or provider is None:
         return jsonify({

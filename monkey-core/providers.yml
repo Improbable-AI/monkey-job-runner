@@ -12,6 +12,6 @@ providers:
 # ###########
 # # Optional
 # ###########
-  storage_name: monkeyfs-rkdxlr # Defaults to monkeyfs-XXXXXX
+  storage_name: monkeyfs-usnxer # Defaults to monkeyfs-XXXXXX
   local_monkeyfs_path: /home/avery/Developer/projects/monkey/monkey-core/ansible/monkeyfs-aws
   monkeyfs_path: /monkeyfs  # Defaults to /monkeyfs

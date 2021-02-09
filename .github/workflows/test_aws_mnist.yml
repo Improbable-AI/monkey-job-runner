@@ -53,7 +53,7 @@ jobs:
       run: |
         ./flush_all_provider_data.sh
         echo "$aws_key" | base64 --decode > aws_key.json
-        python setup_core.py -n --create --type aws -i aws_key.json
+        python setup_core.py -n --create --type aws -i aws_key.json --ssh-key-name monkey-aws-ci-conda-key
         cat ansible/aws_vars.yml | grep storage_name | awk '{ print $2 }'
         df -h 
         
@@ -89,9 +89,11 @@ jobs:
         sleep 5
         cd ../monkey-cli/samples/mnist
         mv ci/aws_conda_job.yml job.yml
+        sleep 2
         monkey run --foreground python -u mnist.py --learning-rate 0.019 --epochs 1
 
-    - name: Cleanup and mount
+    - name: Cleanup and unmount
+      if: ${{ always() }}
       run: | 
         rm aws_key.json
         umount ansible/monkeyfs-aws

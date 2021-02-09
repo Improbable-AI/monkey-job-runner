@@ -36,8 +36,7 @@ name: {}, ip: {}, state: {}
     def __init__(self, ansible_info):
 
         name = ansible_info["tags"]["Name"]
-        machine_zone = ansible_info["placement"]["availability_zone"]
-        # Look for public IP
+        self.machine_zone = ansible_info["placement"]["availability_zone"]
 
         try:
             self.ip_address = ansible_info["network_interfaces"][0][
@@ -45,8 +44,7 @@ name: {}, ip: {}, state: {}
         except:
             self.ip_address = None
 
-        super().__init__(name=name,
-                         ip_address=self.ip_address)
+        super().__init__(name=name, ip_address=self.ip_address)
         self.ansible_info = ansible_info
         self.state = ansible_info["state"]["name"]
 
