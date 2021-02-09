@@ -51,7 +51,7 @@ jobs:
       env:
         aws_key: ${{ secrets.improbable_ai_avery_aws_service_key }}
       run: |
-        yes | ./flush_all_provider_data.sh
+        ./flush_all_provider_data.sh
         echo "$aws_key" | base64 --decode > aws_key.json
         python setup_core.py -n --create --type aws -i aws_key.json
         df -h 
