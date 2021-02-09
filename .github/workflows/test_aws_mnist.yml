@@ -49,7 +49,7 @@ jobs:
 
     - name: Remove providers file
       env:
-        aws_key: ${{ secrets.improbable_ai_avery_aws_service_key }}
+        aws_key: ${{ secrets.personal_avery_aws_service_key }}
       run: |
         ./flush_all_provider_data.sh
         echo "$aws_key" | base64 --decode > aws_key.json
