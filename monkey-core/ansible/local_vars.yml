@@ -1,9 +1,13 @@
 ---
-monkeyfs_path: ~/monkeyfs
-monkey_scratch: ~/monkey-scratch
+# 
+# Local Provider: local
+name: local
+type: local
+monkeyfs_path: ~/monkeyfs  # Defaults to ~/monkeyfs
+monkey_scratch: ~/monkey-scratch # Defaults to ~/monkey-scratch
 local_monkeyfs_path: /home/avery/Developer/projects/monkey/monkey-core/ansible/monkeyfs
-local_instance_details: local.yml
-monkeyfs_public_ip: 172.19.0.1
+local_instance_details: local.yml  # Defaults to local.yml
+monkeyfs_public_ip: localhost
 monkeyfs_public_port: '22'
 monkeyfs_user: avery
 monkeyfs_private_key_file: /home/avery/Developer/projects/monkey/monkey-core/ansible/keys/local_fs

@@ -1,9 +1,0 @@
----
-aws_access_key: AKIA4NSSERCK5P4BY2ZS
-aws_secret_key: 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
-plugin: aws_ec2
-regions: [us-east-1]
-groups: {monkey: "'monkey' in tags.Name", monkey_aws: "'monkey' in tags.Name"}
-hostnames: [tag:Name]
-filters: {tag:Monkey: Monkey_AWS}
-compose: {ansible_host: public_ip_address}

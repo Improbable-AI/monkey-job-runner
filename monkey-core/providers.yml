@@ -1,17 +1,13 @@
 ---
 providers:
 # 
-# AWS Provider: aws
-- name: aws
-  type: aws
-  aws_region: us-east-1
-  aws_zone: us-east-1a
-  aws_cred_file: /home/avery/Developer/projects/monkey/monkey-core/aws_personal_key.csv  # Used for mounting filesystems
-
-
-# ###########
-# # Optional
-# ###########
-  storage_name: monkeyfs-usnxer # Defaults to monkeyfs-XXXXXX
-  local_monkeyfs_path: /home/avery/Developer/projects/monkey/monkey-core/ansible/monkeyfs-aws
-  monkeyfs_path: /monkeyfs  # Defaults to /monkeyfs
+# Local Provider: local
+- name: local
+  type: local
+  monkeyfs_path: ~/monkeyfs  # Defaults to ~/monkeyfs
+  monkey_scratch: ~/monkey-scratch # Defaults to ~/monkey-scratch
+  local_monkeyfs_path: /home/avery/Developer/projects/monkey/monkey-core/ansible/monkeyfs
+  local_instance_details: local.yml  # Defaults to local.yml
+  monkeyfs_public_ip: localhost
+  monkeyfs_public_port: '22'
+  monkeyfs_user: avery

@@ -1,0 +1,225 @@
+name: MNIST Test
+
+on:
+  push:
+    branches: [ master, develop, actions ]
+  pull_request:
+    branches: [ master, develop ]
+
+jobs:
+  # run_mnist_gcp:
+  #   # runs-on: seacow
+  #   runs-on: ubuntu-latest
+  #   timeout-minutes: 15
+  #   defaults:
+  #     run:
+  #       shell: bash
+  #       working-directory: monkey-core
+
+  #   steps:
+  #   - name: Check for existing monkeyfs
+  #     run: | 
+  #       pwd
+  #       if command -v tree > /dev/null; then
+  #         tree
+  #       fi
+  #       export TEMP_1=$(df monkey-core/ansible/monkeyfs)
+  #       echo $TEMP_1
+  #       df monkey-core/ansible/monkeyfs || true
+  #       export TEMP_1=${TEMP_1:=" "}
+  #       export TEMP=$(echo $TEMP_1 | grep monkeyfs | awk '{print $NF}') || true
+  #       fusermount -u $TEMP || true
+  #     working-directory: "."
+  #   - uses: actions/checkout@v2
+  #   - name: Set up Python 3.6
+  #     uses: actions/setup-python@v2
+  #     with:
+  #       python-version: 3.6
+  #   - name: Cache pip
+  #     uses: actions/cache@v1
+  #     with:
+  #       path: ~/.cache/pip
+
+  #       key: ${{ runner.os }}-pip3-${{ hashFiles('**/requirements.txt') }}
+  #       restore-keys: |
+  #         ${{ runner.os }}-pip3-
+  #         ${{ runner.os }}-
+      
+  #   - name: Install dependencies
+  #     run: |
+  #       python -m pip install --upgrade pip
+  #       pip install -r requirements.txt
+  #   - name: Installs gcsfuse
+  #     run: |
+  #       if ! command -v gcsfuse > /dev/null; then
+  #         echo gcsfuse not installed on machine, installing
+  #         export GCSFUSE_REPO=gcsfuse-`lsb_release -c -s`
+  #         echo "deb http://packages.cloud.google.com/apt $GCSFUSE_REPO main" | sudo tee /etc/apt/sources.list.d/gcsfuse.list
+  #         curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+  #         sudo apt-get update
+  #         sudo apt-get install -y gcsfuse
+  #       fi
+        
+  #   - name: Docker Compose Mongo setup
+  #     run: |
+  #       docker-compose up -d
+
+  #   - name: Remove providers file
+  #     env:
+  #       gcp_key: ${{ secrets.improbable_ai_avery_gcp_service_key }}
+  #     run: |
+  #       rm providers.yml || true
+  #       echo "$gcp_key" | base64 --decode > gcp_cred.json
+  #       python setup_core.py -n --create --type gcp -i gcp_cred.json
+  #       df -h 
+  #       #export MONKEYFS_PATH=$(realpath gcp_cred.json)
+        
+  #   - name: Install monkey-cli packages
+  #     run: |
+  #       pip install .
+  #       pip install -r requirements.txt
+  #     working-directory: monkey-cli
+
+  #   - name: Setup folders
+  #     run: |
+  #       mkdir -p data output
+  #     working-directory: monkey-cli/samples/mnist
+
+  #   - name: Cache mnist data
+  #     uses: actions/cache@v1
+  #     id: cache-mnist-data
+  #     with:
+  #       path: monkey-cli/samples/mnist/data
+  #       key: ${{ hashFiles('monkey-cli/samples/mnist/download_data.py') }}
+    
+  #   - name: Cache miss on mnist data
+  #     if: steps.cache-mnist-data.outputs.cache-hit != 'true'
+  #     run: |
+  #       pip install torchvision
+  #       mkdir -p data output
+  #       python download_data.py
+  #     working-directory: monkey-cli/samples/mnist
+      
+  #   - name: Run mnist sample
+  #     run: |
+  #       python monkey_core.py &
+  #       sleep 5
+  #       cd ../monkey-cli/samples/mnist
+  #       monkey run --foreground python -u mnist.py --learning-rate 0.019
+
+  #   - name: Cleanup and mount
+  #     run: | 
+  #       rm gcp_cred.json
+  #       export TEMP=$(df ansible/monkeyfs | grep monkeyfs | awk '{print $NF}') || true
+  #       fusermount -u $TEMP || true
+=======
+  run_mnist_gcp:
+    # runs-on: seacow
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: bash
+        working-directory: monkey-core
+    steps:
+    - name: Nothing
+      run: |
+        echo "This is a placeholder action"
+      working-directory: "."
+    # steps:
+    # - name: Check for existing monkeyfs
+#       run: | 
+#         pwd
+#         if command -v tree > /dev/null; then
+#           tree
+#         fi
+#         export TEMP_1=$(df monkey-core/ansible/monkeyfs)
+#         echo $TEMP_1
+#         df monkey-core/ansible/monkeyfs || true
+#         export TEMP_1=${TEMP_1:=" "}
+#         export TEMP=$(echo $TEMP_1 | grep monkeyfs | awk '{print $NF}') || true
+#         fusermount -u $TEMP || true
+#       working-directory: "."
+#     - uses: actions/checkout@v2
+#     - name: Set up Python 3.6
+#       uses: actions/setup-python@v2
+#       with:
+#         python-version: 3.6
+#     - name: Cache pip
+#       uses: actions/cache@v1
+#       with:
+#         path: ~/.cache/pip
+
+#         key: ${{ runner.os }}-pip3-${{ hashFiles('**/requirements.txt') }}
+#         restore-keys: |
+#           ${{ runner.os }}-pip3-
+#           ${{ runner.os }}-
+      
+#     - name: Install dependencies
+#       run: |
+#         python -m pip install --upgrade pip
+#         pip install -r requirements.txt
+#     - name: Installs gcsfuse
+#       run: |
+#         if ! command -v gcsfuse > /dev/null; then
+#           echo gcsfuse not installed on machine, installing
+#           export GCSFUSE_REPO=gcsfuse-`lsb_release -c -s`
+#           echo "deb http://packages.cloud.google.com/apt $GCSFUSE_REPO main" | sudo tee /etc/apt/sources.list.d/gcsfuse.list
+#           curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+#           sudo apt-get update
+#           sudo apt-get install -y gcsfuse
+#         fi
+        
+#     - name: Docker Compose Mongo setup
+#       run: |
+#         docker-compose up -d
+
+#     - name: Remove providers file
+#       env:
+#         gcp_key: ${{ secrets.improbable_ai_avery_gcp_service_key }}
+#       run: |
+#         rm providers.yml || true
+#         echo "$gcp_key" | base64 --decode > gcp_cred.json
+#         python setup_core.py -n --create --type gcp -i gcp_cred.json
+#         df -h 
+#         #export MONKEYFS_PATH=$(realpath gcp_cred.json)
+        
+#     - name: Install monkey-cli packages
+#       run: |
+#         pip install .
+#         pip install -r requirements.txt
+#       working-directory: monkey-cli
+
+#     - name: Setup folders
+#       run: |
+#         mkdir -p data output
+#       working-directory: monkey-cli/samples/mnist
+
+#     - name: Cache mnist data
+#       uses: actions/cache@v1
+#       id: cache-mnist-data
+#       with:
+#         path: monkey-cli/samples/mnist/data
+#         key: ${{ hashFiles('monkey-cli/samples/mnist/download_data.py') }}
+    
+#     - name: Cache miss on mnist data
+#       if: steps.cache-mnist-data.outputs.cache-hit != 'true'
+#       run: |
+#         pip install torchvision
+#         mkdir -p data output
+#         python download_data.py
+#       working-directory: monkey-cli/samples/mnist
+      
+#     - name: Run mnist sample
+#       run: |
+#         python monkey_core.py &
+#         sleep 5
+#         cd ../monkey-cli/samples/mnist
+#         monkey run --foreground python -u mnist.py --learning-rate 0.019
+
+#     - name: Cleanup and mount
+#       run: | 
+#         rm gcp_cred.json
+#         export TEMP=$(df ansible/monkeyfs | grep monkeyfs | awk '{print $NF}') || true
+#         fusermount -u $TEMP || true
+
