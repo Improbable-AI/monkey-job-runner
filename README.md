@@ -3,10 +3,12 @@
 ### For controlling creation and deletion of cloud instances as a job runner service
 
 #### Status
+Develop Branch:
 ![Provider Local](https://github.com/Improbable-AI/monkey-job-runner/workflows/Provider%20Local/badge.svg?branch=actions)
 ![Provider AWS](https://github.com/Improbable-AI/monkey-job-runner/workflows/Provider%20AWS/badge.svg?branch=develop)
 ![Provider GCP](https://github.com/Improbable-AI/monkey-job-runner/workflows/Provider%20GCP/badge.svg?branch=develop)
 
+Master Branch:
 ![Provider Local](https://github.com/Improbable-AI/monkey-job-runner/workflows/Provider%20Local/badge.svg?branch=master)
 ![Provider AWS](https://github.com/Improbable-AI/monkey-job-runner/workflows/Provider%20AWS/badge.svg?branch=master)
 ![Provider GCP](https://github.com/Improbable-AI/monkey-job-runner/workflows/Provider%20GCP/badge.svg?branch=master)
