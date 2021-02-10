@@ -1,4 +1,4 @@
-name: GCP Provider
+name: Provider GCP
 
 on:
   push:

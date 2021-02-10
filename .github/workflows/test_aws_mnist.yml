@@ -1,4 +1,4 @@
-name: AWS Provider
+name: Provider AWS
 
 on:
   push:
