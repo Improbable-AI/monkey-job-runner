@@ -3,11 +3,13 @@
 ### For controlling creation and deletion of cloud instances as a job runner service
 
 #### Status
-![Master AWS](https://github.com/Improbable-AI/monkey-job-runner/workflows/MNIST%20Test/badge.svg?branch=master)
-![Master Local](https://github.com/Improbable-AI/monkey-job-runner/workflows/MNIST%20Test/badge.svg?branch=master)
-![Develop AWS](https://github.com/Improbable-AI/monkey-job-runner/workflows/MNIST%20Test/badge.svg?branch=develop)
-![Develop Local](https://github.com/Improbable-AI/monkey-job-runner/workflows/MNIST%20Test/badge.svg?branch=develop)
+![Provider Local](https://github.com/Improbable-AI/monkey-job-runner/workflows/Provider%20Local/badge.svg?branch=actions)
+![Provider AWS](https://github.com/Improbable-AI/monkey-job-runner/workflows/Provider%20AWS/badge.svg?branch=develop)
+![Provider GCP](https://github.com/Improbable-AI/monkey-job-runner/workflows/Provider%20GCP/badge.svg?branch=develop)
 
+![Provider Local](https://github.com/Improbable-AI/monkey-job-runner/workflows/Provider%20Local/badge.svg?branch=master)
+![Provider AWS](https://github.com/Improbable-AI/monkey-job-runner/workflows/Provider%20AWS/badge.svg?branch=master)
+![Provider GCP](https://github.com/Improbable-AI/monkey-job-runner/workflows/Provider%20GCP/badge.svg?branch=master)
 ## Goals
 
 1. Allow people to easily schedule, track, and manage jobs.
