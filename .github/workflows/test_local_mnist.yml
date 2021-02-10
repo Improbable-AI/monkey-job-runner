@@ -1,4 +1,4 @@
-name: GCP Provider
+name: Local Provider
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     branches: [ master, develop ]
 
 jobs:
-  # mnist_gcp_test:
+  # mnist_local_test:
   #   runs-on: ubuntu-latest
   #   timeout-minutes: 15
   #   defaults:

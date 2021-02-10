@@ -1,4 +1,4 @@
-name: MNIST Test
+name: AWS Provider
 
 on:
   push:
