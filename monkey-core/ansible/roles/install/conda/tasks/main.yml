@@ -18,7 +18,7 @@
       get_url:
         url: https://repo.anaconda.com/miniconda/Miniconda3-py37_4.8.3-Linux-x86_64.sh
         dest: /tmp/install-miniconda.sh
-        sha256sum: bb2e3cedd2e78a8bb6872ab3ab5b1266a90f8c7004a22d8dc2ea5effeb6a439a
+        checksum: sha256:bb2e3cedd2e78a8bb6872ab3ab5b1266a90f8c7004a22d8dc2ea5effeb6a439a
         mode: 0550
       when: ansible_architecture == "x86_64"
 
@@ -26,7 +26,7 @@
       get_url:
         url: https://github.com/conda-forge/miniforge/releases/download/4.8.5-1/Miniforge-pypy3-4.8.5-1-Linux-aarch64.sh
         dest: /tmp/install-miniconda.sh
-        sha256sum: 16b7fdd4da078db8ea86fa15262f32111fcbb7ee7692c8b21da4840e32a7aebf
+        checksum: sha256:16b7fdd4da078db8ea86fa15262f32111fcbb7ee7692c8b21da4840e32a7aebf
         mode: 0550
       when: ansible_architecture == "aarch64"
     - name: Create conda folder

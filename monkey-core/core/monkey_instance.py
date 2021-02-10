@@ -123,7 +123,11 @@ class MonkeyInstance():
         except:
             return None
 
-    def run_ansible_role(self, rolename, uuid, extravars=None, envvars=None):
+    def run_ansible_role(self,
+                         rolename,
+                         uuid,
+                         extravars=dict(),
+                         envvars=dict()):
         extravars.update(self.additional_extravars)
         runner = ansible_runner.run(
             host_pattern=self.name,

@@ -1,19 +1,15 @@
 import getpass
 import os
-import random
 import readline
-import string
 import subprocess
 from collections import OrderedDict
 
 import ansible_runner
-import yaml
 from core.monkey_provider_local import MonkeyProviderLocal
 from ruamel.yaml import YAML, round_trip_load
 from ruamel.yaml.comments import CommentedMap
 
-from setup_scripts.utils import (Completer, check_for_existing_local_command,
-                                 printout_ansible_events)
+from setup_scripts.utils import Completer, printout_ansible_events
 
 comp = Completer()
 # we want to treat '/' as part of a word, so override the delimiters
@@ -41,29 +37,7 @@ def check_local_provider(yaml):
     return True
 
 
-def create_local_provider(provider_name, yaml, args):
-    details = round_trip_load(str({
-        "name": provider_name,
-        "type": "local",
-    }))
-    details.fa.set_block_style()
-    details.yaml_set_start_comment(
-        "\nLocal Provider: {}".format(provider_name))
-
-    monkeyfs_path = os.path.join(os.getcwd(), f"ansible/monkeyfs")
-
-    # Create filesystem bucket and pick a new id if failed
-    details["local_monkeyfs_path"] = monkeyfs_path
-
-    details["monkeyfs_path"] = input(
-        "Set remote filesystem mount path (~/monkeyfs): ") or "~/monkeyfs"
-    details.yaml_add_eol_comment("Defaults to ~/monkeyfs", "monkeyfs_path")
-
-    details["monkey_scratch"] = input(
-        "Set remote scratch (~/monkey-scratch): ") or "~/monkey-scratch"
-    details.yaml_add_eol_comment("Defaults to ~/monkey-scratch",
-                                 "monkey_scratch")
-
+def scan_for_local_ip():
     cmd = 'ifconfig | grep -B 8 -e "packets [^0]" | grep "inet .* broadcast"'
     p = subprocess.run(cmd, shell=True, check=True, capture_output=True)
     output = [x.strip() for x in p.stdout.decode("utf-8").split("\n")]
@@ -72,60 +46,118 @@ def create_local_provider(provider_name, yaml, args):
         output = [x for x in output[0].split(" ")]
         if len(output) >= 2 and output[0] == 'inet':
             ip_found = output[1]
-    else:
-        output = ""
-    details["monkeyfs_public_ip"] = input(
-        f"SSHable IP from remote computers ({ip_found}): ") or ip_found
-    details["monkeyfs_public_port"] = input(f"SSH port (22): ") or "22"
-    details.yaml_add_eol_comment("Defaults to ~/monkey-scratch",
-                                 "monkey_scratch")
-    local_instance_details_file = input(
-        f"Set a file for local instance details (local.yml): ") or f"local.yml"
-    details["local_instance_details"] = local_instance_details_file
-    details.yaml_add_eol_comment(f"Defaults to local.yml",
-                                 "local_instance_details")
+            return ip_found
 
-    providers = yaml.get("providers", [])
+
+def write_vars_to_provider(yaml_input, local_vars):
+    providers = yaml_input.get("providers", [])
     if providers is None:
         providers = []
-    providers.append(details)
-    yaml["providers"] = providers
+    providers.append(local_vars)
+    yaml_input["providers"] = providers
 
     print("\nWriting to providers.yml...")
     with open('providers.yml', 'w') as file:
         y = YAML()
-        yaml.fa.set_block_style()
+        yaml_input.fa.set_block_style()
         y.explicit_start = True
         y.default_flow_style = False
-        y.dump(yaml, file)
+        y.dump(yaml_input, file)
+
+
+def walk_inventory(prev_key, inv):
+    results = OrderedDict()
+    for key, val in inv.items():
+        if type(val) is dict:
+            if key != "hosts":
+                results.update(walk_inventory(key, val))
+            else:
+                host_keys = list(val.keys())
+                for new_host in host_keys:
+                    new_host_dict = {
+                        new_host: {
+                            "status": "init",
+                            "main_group": prev_key,
+                            "monkeyfs_public_ip": monkeyfs_public_ip,
+                            "monkeyfs_public_port": monkeyfs_public_port,
+                        }
+                    }
+                    results.update(new_host_dict)
+    return results
+
+
+def write_instance_details(local_instances_file, instance_details, hosts):
+    instance_details["hosts"] = hosts
+    with open(local_instances_file, "w") as f:
+        y = YAML()
+        instance_details.fa.set_block_style()
+        y.explicit_start = True
+        y.default_flow_style = False
+        y.dump(instance_details, f)
+        print("Writing local instance details to: ", local_instances_file)
+
+
+def create_local_provider(provider_name, yaml_input, args):
+    monkeyfs_path = os.path.join(os.getcwd(), f"ansible/monkeyfs")
+    local_monkeyfs_path = monkeyfs_path
+    monkeyfs_path = "~/monkeyfs"
+    monkey_scratch = "~/monkey-scratch"
+    monkeyfs_public_ip = "localhost"
+    monkeyfs_public_port = "22"
+    local_instances_file = "local.yml"
+    if not args.noinput:
+        monkeyfs_path = input(
+            "Set remote filesystem mount path (~/monkeyfs): ") or monkeyfs_path
+        monkey_scratch = input(
+            "Set remote scratch (~/monkey-scratch): ") or monkey_scratch
+        ip_found = scan_for_local_ip() or monkeyfs_public_ip
+        monkeyfs_public_ip = input(
+            f"SSHable IP from remote computers ({ip_found}): ") or ip_found
+        monkeyfs_public_port = input(
+            f"SSH port (22): ") or monkeyfs_public_port
+        local_instances_file = input(
+            f"Set a file for local instance details ({local_instances_file}): "
+        ) or local_instances_file
 
     print("\nWriting local vars file...")
     local_vars = round_trip_load(
         str({
-            "monkeyfs_path": details["monkeyfs_path"],
-            "monkey_scratch": details["monkey_scratch"],
-            "local_monkeyfs_path": monkeyfs_path,
-            "local_instance_details": details["local_instance_details"],
-            "monkeyfs_public_ip": details["monkeyfs_public_ip"],
-            "monkeyfs_public_port": details["monkeyfs_public_port"],
+            "name": provider_name,
+            "type": "local",
+            "monkeyfs_path": monkeyfs_path,
+            "monkey_scratch": monkey_scratch,
+            "local_monkeyfs_path": local_monkeyfs_path,
+            "local_instance_details": local_instances_file,
+            "monkeyfs_public_ip": monkeyfs_public_ip,
+            "monkeyfs_public_port": monkeyfs_public_port,
             "monkeyfs_user": getpass.getuser(),
         }))
+    local_vars.fa.set_block_style()
+    local_vars.yaml_set_start_comment(
+        "\nLocal Provider: {}".format(provider_name))
+    local_vars.yaml_add_eol_comment("Defaults to ~/monkeyfs", "monkeyfs_path")
+    local_vars.yaml_add_eol_comment("Defaults to ~/monkey-scratch",
+                                    "monkey_scratch")
+    local_vars.yaml_add_eol_comment(f"Defaults to local.yml",
+                                    "local_instance_details")
+    write_vars_to_provider(yaml_input, local_vars)
     write_vars_file(local_vars)
     create_local_monkeyfs()
 
     instance_details_yaml = YAML()
     existing_hosts = OrderedDict()
     try:
-        with open(local_instance_details_file) as f:
+        with open(local_instances_file) as f:
             instance_details_yaml = YAML().load(f)
             existing_hosts = instance_details_yaml.get("hosts", OrderedDict())
-    except:
-        print("No providers.yml file found")
+    except Exception as e:
+        print(e)
+        print(f"No Local Instances File found: {local_instances_file} ")
         instance_details_yaml = CommentedMap()
 
     print(f"{len(existing_hosts)} existing hosts found")
 
-    local_provider = MonkeyProviderLocal(details)
+    local_provider = MonkeyProviderLocal(local_vars)
     for host in existing_hosts:
         print(f"Checking integrity for host: {host}")
         instance = local_provider.create_local_instance(name=host,
@@ -134,49 +166,18 @@ def create_local_provider(provider_name, yaml, args):
             print(f"FAILED: to create instance {host}")
 
     # Check inventory file for non existing hosts
+    local_inventory_file = "ansible/inventory/local/inventory.local.yml"
+    print(f"Checking Local Inventory File:\n{local_inventory_file}")
     try:
-        with open("ansible/inventory/local/inventory.local.yml") as f:
+        with open(local_inventory_file) as f:
             inv_yaml = YAML(typ='safe', pure=True)
             inventory_yaml = inv_yaml.load(f)
-    except:
+    except Exception as e:
+        print(e)
+        print("No Local Inventory File Found")
         inventory_yaml = round_trip_load("---")
 
-    def walk_inventory(prev_key, inv):
-        results = OrderedDict()
-        for key, val in inv.items():
-            if type(val) is dict:
-                if key != "hosts":
-                    results.update(walk_inventory(key, val))
-                else:
-                    host_keys = list(val.keys())
-                    for new_host in host_keys:
-                        new_host_dict = {
-                            new_host: {
-                                "status":
-                                "init",
-                                "main_group":
-                                prev_key,
-                                "monkeyfs_public_ip":
-                                details["monkeyfs_public_ip"],
-                                "monkeyfs_public_port":
-                                details["monkeyfs_public_port"],
-                            }
-                        }
-                        results.update(new_host_dict)
-        return results
-
     inv_hosts = walk_inventory("all", inventory_yaml)
-
-    def write_instance_details(instance_details, hosts):
-        instance_details["hosts"] = hosts
-        with open(local_instance_details_file, "w") as f:
-            y = YAML()
-            instance_details.fa.set_block_style()
-            y.explicit_start = True
-            y.default_flow_style = False
-            y.dump(instance_details, f)
-            print("Writing local instance details to: ",
-                  local_instance_details_file)
 
     for key, val in inv_hosts.items():
         done = 0
@@ -195,7 +196,8 @@ def create_local_provider(provider_name, yaml, args):
             if inpt == "y":
                 print(f"Adding {key}...\n")
                 existing_hosts[key] = val
-                write_instance_details(instance_details_yaml, existing_hosts)
+                write_instance_details(local_instances_file,
+                                       instance_details_yaml, existing_hosts)
                 print(f"Creating instance {key}...\n")
 
                 def failed_instance_creation(existing_hosts, key):

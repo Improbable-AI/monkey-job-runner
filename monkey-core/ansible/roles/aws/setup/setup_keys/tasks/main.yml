@@ -44,9 +44,6 @@
         content: "{{aws_key_creation.key.private_key}}"
         dest: "{{ aws_ssh_private_key_file }}"
         mode: 0400
-    - name: Debug private key
-      debug:
-        msg: "Private key {{ aws_key_creation.key}}"
     - name: Remove old ansible_user if existing
       lineinfile:
         dest: "{{ playbook_dir }}/inventory/group_vars/monkey_aws.yml"
