@@ -5,7 +5,8 @@ monkeyfs*
 # Pegs all generated files with a gitignore
 aws_vars.yml
 gcp_vars.yml
-inventory/aws/compute.aws_ec2.yml
-inventory/gcp/compute.gcp.yml
+local_vars.yml
+inventory/aws/inventory.compute.aws_ec2.yml
+inventory/gcp/inventory.compute.gcp.yml
 inventory/group_vars/monkey_aws.yml
 inventory/group_vars/monkey_gcp.yml
