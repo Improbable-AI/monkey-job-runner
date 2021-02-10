@@ -7,15 +7,18 @@ on:
     branches: [ master, develop ]
 
 jobs:
-  # mnist_gcp_test:
-  #   runs-on: ubuntu-latest
-  #   timeout-minutes: 15
-  #   defaults:
-  #     run:
-  #       shell: bash
-  #       working-directory: monkey-core
+  mnist_gcp_test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: bash
+        working-directory: monkey-core
 
-  #   steps:
+    steps:
+      - name: Do nothing for now
+        run: |
+          echo TBD
   #   - uses: actions/checkout@v2
   #   - name: Set up Python 3.6
   #     uses: actions/setup-python@v2
