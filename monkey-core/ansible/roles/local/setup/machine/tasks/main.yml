@@ -83,7 +83,9 @@
     msg: "sshfs  {{monkeyfs_user}}@{{monkeyfs_public_ip}}:{{local_monkeyfs_path}} {{monkeyfs_path}} -o IdentityFile={{monkeyfs_scratch}}/monkeyfs_key -o port={{monkeyfs_public_port}}"
 
 - name: Mount fs to Mountpoint
-  when: mount_found is failed
+  when:
+    - mount_found is failed
+    - localhost_only is false
   ignore_errors: yes
   command:    
     cmd: "fusermount -u {{monkeyfs_path}}"
@@ -101,7 +103,7 @@
     - mount_found is failed
     - localhost_only is true
   shell:    
-    cmd: "ls -s {{local_monkeyfs_path}} {{monkeyfs_path}}"
+    cmd: "ln -s {{local_monkeyfs_path}} {{monkeyfs_path}}"
   register: mount_command
     
 
