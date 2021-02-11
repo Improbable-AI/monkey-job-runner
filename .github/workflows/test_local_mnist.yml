@@ -53,7 +53,9 @@ jobs:
       run: |
         ./flush_all_provider_data.sh
         python setup_core.py --create --noinput --type local --name local --local-host localhost --localhost-only
-        df -h 
+        df -h
+        tree ~
+      
         
     - name: Install monkey-cli packages
       run: |

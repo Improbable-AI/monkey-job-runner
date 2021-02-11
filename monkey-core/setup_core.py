@@ -189,7 +189,6 @@ def main():
 
         if not args.noinput and args.provider_type is None:
             provider_type = input("Provider type? (gcp, local, aws) : ")
-            provider_type = "local"
 
         if provider_type not in ["gcp", "aws", "local"]:
             print("Unsupported provider type: '{}'".format(provider_type))
