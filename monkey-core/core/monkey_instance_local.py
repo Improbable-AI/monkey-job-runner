@@ -428,6 +428,7 @@ name: {}, ip: {}, state: {}
         job_uid = job["job_uid"]
         print("\n\nTerminating Machine:", job_uid, "\n\n")
         unique_persist_all_script_name = job_uid + "_" + "persist_all_loop.sh"
+        uuid = self.update_uuid()
         runner = self.run_ansible_shell(
-            command=f"killall {unique_persist_all_script_name}")
+            command=f"killall {unique_persist_all_script_name}", uuid=uuid)
         return True, "Succesfully cleaned up job"
