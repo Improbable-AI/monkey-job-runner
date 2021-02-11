@@ -159,6 +159,8 @@ def create_local_provider(provider_name, yaml_input, args):
             "monkeyfs_public_port": monkeyfs_public_port,
             "monkeyfs_user": getpass.getuser(),
         }))
+    if args.localhost_only:
+        local_vars["localhost_only"] = True
     local_vars.fa.set_block_style()
     local_vars.yaml_set_start_comment(
         "\nLocal Provider: {}".format(provider_name))

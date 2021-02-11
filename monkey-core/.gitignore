@@ -3,3 +3,4 @@ env
 providers.yml
 monkey.log
 monkey.status
+local.yml

@@ -101,6 +101,14 @@ def add_provider_local_args(parser):
         default=None,
         help='The file to store static local instance information')
 
+    parser.add_argument(
+        '--localhost-only',
+        dest='localhost_only',
+        required=False,
+        action="store_true",
+        default=False,
+        help='Used only if the core and worker noder are localhost (CI)')
+
 
 def add_provider_cloud_args(parser):
     parser.add_argument(

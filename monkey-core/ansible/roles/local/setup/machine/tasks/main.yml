@@ -10,6 +10,7 @@
     monkeyfs_path: "{{ monkeyfs_path }}"
     monkeyfs_public_port: "{{ monkeyfs_public_port | default('22') }}"
     monkeyfs_scratch: "{{ monkeyfs_scratch }}"
+    localhost_only: "{{ localhost_only | default(false) }}"
 
 - name: Create Mountpoint
   ignore_errors: true
@@ -88,10 +89,19 @@
     cmd: "fusermount -u {{monkeyfs_path}}"
 
 - name: Mount fs to Mountpoint
-  when: mount_found is failed
+  when:
+    - mount_found is failed
+    - localhost_only is false
   timeout: 10
   shell:    
     cmd: "sshfs  {{monkeyfs_user}}@{{monkeyfs_public_ip}}:{{local_monkeyfs_path}} {{monkeyfs_path}} -o IdentityFile={{monkeyfs_scratch}}/monkeyfs_key -o port={{monkeyfs_public_port}} -o reconnect"
+  register: mount_command
+- name: Link fs to Mountpoint
+  when:
+    - mount_found is failed
+    - localhost_only is true
+  shell:    
+    cmd: "ls -s {{monkeyfs_path}} {{local_monkeyfs_path}}"
   register: mount_command
     
 
