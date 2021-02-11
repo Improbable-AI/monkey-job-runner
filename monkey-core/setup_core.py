@@ -21,10 +21,8 @@ readline.parse_and_bind("tab: complete")
 readline.set_completer(comp.complete)
 
 
-def parse_args():
-    parser = argparse.ArgumentParser(description='Check for flags.')
+def add_provider_general_args(parser):
     parser.add_argument(
-        '-n',
         '--noinput',
         action='store_true',
         required=False,
@@ -62,21 +60,61 @@ def parse_args():
                         default=None,
                         help='Allows you to name your generated ssh-key')
 
+
+def add_provider_local_args(parser):
+    parser.add_argument('--local-host',
+                        dest='local_hosts',
+                        action="append",
+                        required=False,
+                        default=[],
+                        nargs="+",
+                        help='Allows you to add local hosts with no input')
+
+    parser.add_argument(
+        '--monkeyfs-path',
+        dest='monkeyfs_path',
+        required=False,
+        default=None,
+        help='The path to use to mount the shared filesystem on hosts')
+    parser.add_argument(
+        '--monkeyfs-scratch',
+        dest='monkeyfs_scratch',
+        required=False,
+        default=None,
+        help='The path to use as scratch space on worker nodes')
+    parser.add_argument(
+        '--monkeyfs-public-ip',
+        dest='monkeyfs_public_ip',
+        required=False,
+        default=None,
+        help='The public ip of the master node (workers use this ip)')
+    parser.add_argument(
+        '--monkeyfs-public-port',
+        dest='monkeyfs_public_port',
+        required=False,
+        default=None,
+        help='The  ssh port of the master node (workers use this ssh port)')
+    parser.add_argument(
+        '--local-instances-file',
+        dest='local_instances_file',
+        required=False,
+        default=None,
+        help='The file to store static local instance information')
+
+
+def add_provider_cloud_args(parser):
     parser.add_argument(
         '--region',
         dest='region',
         required=False,
         default=None,
-        help=
-        'Allows you to pass provider region (gcp: Required, default: us-east-1)'
-    )
+        help='Allows you to pass provider region (default: us-east-1)')
     parser.add_argument(
         '--zone',
         dest='zone',
         required=False,
         default=None,
-        help=
-        'Allows you to pass provider zone (gcp: Required, default: us-east-1)')
+        help='Allows you to pass provider zone (default: us-east-1)')
     parser.add_argument(
         '--storage-name',
         dest='storage_name',
@@ -90,6 +128,13 @@ def parse_args():
         action='store_true',
         required=False,
         help='Run setup and only configures the local shared filesystem')
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description='Check for flags.')
+    add_provider_general_args(parser)
+    add_provider_local_args(parser)
+    add_provider_cloud_args(parser)
     args = parser.parse_args()
     return args
 
@@ -128,25 +173,17 @@ def main():
     provider_type = args.provider_type
 
     create = args.create
-    if args.noinput == False:
+    if not args.noinput and not args.create:
         create = input("Create a new provider? (Y/n): ")
         create = create.lower() not in ["n", "no"]
     if create:
         print("Creating New Provider...")
 
-        provider_type = args.provider_type
-        if args.noinput == False:
+        if not args.noinput and args.provider_type is None:
             provider_type = input("Provider type? (gcp, local, aws) : ")
             provider_type = "local"
 
-        provider_name = args.provider_name
-        if "gcp" == provider_type:
-            provider_name = "gcp"
-        elif "aws" == provider_type:
-            provider_name = "aws"
-        elif "local" == provider_type:
-            provider_name = "local"
-        else:
+        if provider_type not in ["gcp", "aws", "local"]:
             print("Unsupported provider type: '{}'".format(provider_type))
             exit(1)
 
@@ -155,6 +192,8 @@ def main():
                 print("Currently only one provider of each type is supported")
                 exit(1)
 
+        if provider_name is None:
+            provider_name = provider_type
         c = ""
         while provider_name + c in [
                 x.get("name", "unknown") for x in providers
@@ -169,7 +208,7 @@ def main():
                 x.get("name", "unknown") for x in providers
         ]:
             provider_name = args.provider_name
-        if args.noinput == False:
+        if not args.noinput and not args.provider_name:
             provider_name = input("Provider name? ({}) : ".format(
                 provider_name)) or provider_name
 

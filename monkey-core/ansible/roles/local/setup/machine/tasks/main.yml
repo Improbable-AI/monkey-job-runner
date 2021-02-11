@@ -9,7 +9,7 @@
   set_fact:
     monkeyfs_path: "{{ monkeyfs_path }}"
     monkeyfs_public_port: "{{ monkeyfs_public_port | default('22') }}"
-    monkey_scratch: "{{ monkey_scratch }}"
+    monkeyfs_scratch: "{{ monkeyfs_scratch }}"
 
 - name: Create Mountpoint
   ignore_errors: true
@@ -20,7 +20,7 @@
 
 - name: Check for scratch and monkey key
   stat:
-    path:  "{{monkey_scratch}}/monkeyfs_key" 
+    path:  "{{monkeyfs_scratch}}/monkeyfs_key" 
   register: monkey_key_scratch_found
   ignore_errors: True
 - name: Scratch and Key not found
@@ -29,21 +29,21 @@
     - name: Create Scratch Point
       ignore_errors: true
       file:
-        path: "{{monkey_scratch}}"
+        path: "{{monkeyfs_scratch}}"
         state: directory
       register: create_scratch
 
     - name: Check for monkeyfs key
       ignore_errors: true
       file:
-        path: "{{monkey_scratch}}/monkeyfs_key"
+        path: "{{monkeyfs_scratch}}/monkeyfs_key"
         state: file
       register: monkeyfs_key_check
 
     - name: Copying Monkeyfs Local Key
       copy:
         src: "{{ monkeyfs_private_key_file }}"
-        dest: "{{monkey_scratch}}/monkeyfs_key"
+        dest: "{{monkeyfs_scratch}}/monkeyfs_key"
         mode: 0400
     - name: Get keyscan host key
       command: "ssh-keyscan -trsa -p {{ monkeyfs_public_port}} {{ monkeyfs_public_ip }}"
@@ -79,7 +79,7 @@
 
 - name: Debug mount command
   debug:
-    msg: "sshfs  {{monkeyfs_user}}@{{monkeyfs_public_ip}}:{{local_monkeyfs_path}} {{monkeyfs_path}} -o IdentityFile={{monkey_scratch}}/monkeyfs_key -o port={{monkeyfs_public_port}}"
+    msg: "sshfs  {{monkeyfs_user}}@{{monkeyfs_public_ip}}:{{local_monkeyfs_path}} {{monkeyfs_path}} -o IdentityFile={{monkeyfs_scratch}}/monkeyfs_key -o port={{monkeyfs_public_port}}"
 
 - name: Mount fs to Mountpoint
   when: mount_found is failed
@@ -91,7 +91,7 @@
   when: mount_found is failed
   timeout: 10
   shell:    
-    cmd: "sshfs  {{monkeyfs_user}}@{{monkeyfs_public_ip}}:{{local_monkeyfs_path}} {{monkeyfs_path}} -o IdentityFile={{monkey_scratch}}/monkeyfs_key -o port={{monkeyfs_public_port}} -o reconnect"
+    cmd: "sshfs  {{monkeyfs_user}}@{{monkeyfs_public_ip}}:{{local_monkeyfs_path}} {{monkeyfs_path}} -o IdentityFile={{monkeyfs_scratch}}/monkeyfs_key -o port={{monkeyfs_public_port}} -o reconnect"
   register: mount_command
     
 
