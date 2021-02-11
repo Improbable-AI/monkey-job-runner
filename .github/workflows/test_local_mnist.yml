@@ -86,6 +86,7 @@ jobs:
         python monkey_core.py &
         sleep 15
         cd ../monkey-cli/samples/mnist
+        ls -al ~
         tree
         cp ci/local_conda_job.yml job.yml
         sleep 2
