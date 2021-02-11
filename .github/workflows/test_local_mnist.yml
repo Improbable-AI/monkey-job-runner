@@ -35,13 +35,6 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-    - name: Installs s3fs
-      run: |
-        if ! command -v s3fs > /dev/null; then
-          echo s3fs not installed on machine, installing
-          sudo apt-get update
-          sudo apt-get install -y s3fs
-        fi
         
     - name: Docker Compose Mongo setup
       run: |
@@ -52,7 +45,7 @@ jobs:
         ./flush_all_provider_data.sh
         python setup_core.py --create --noinput --type local --name local --local-host localhost --localhost-only
         df -h
-        tree ~
+        ls -al ~
       
         
     - name: Install monkey-cli packages

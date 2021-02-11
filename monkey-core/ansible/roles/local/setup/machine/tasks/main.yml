@@ -101,7 +101,7 @@
     - mount_found is failed
     - localhost_only is true
   shell:    
-    cmd: "ls -s {{monkeyfs_path}} {{local_monkeyfs_path}}"
+    cmd: "ls -s {{local_monkeyfs_path}} {{monkeyfs_path}}"
   register: mount_command
     
 
