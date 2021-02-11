@@ -14,10 +14,10 @@
 
 - name: Create Mountpoint
   ignore_errors: true
+  when: localhost_only is false
   file:
     path: "{{monkeyfs_path}}"
     state: directory
-  register: create_mountpoint
 
 - name: Check for scratch and monkey key
   stat:
