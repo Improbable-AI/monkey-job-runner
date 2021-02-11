@@ -45,17 +45,5 @@ data:
     compression: gztar
 providers:
 # 
-# AWS Provider: aws
-  - name: aws
-# Pick an AWS instance type (https://aws.amazon.com/ec2/instance-types/)
-    machine_type: t3.small
-# Disk Size (GB)
-    disk_size: 10
-# Available disk types (gp2, st1) (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-volume-types.html)
-    disk_type: gp2
-# Currently only Ubuntu 18.04/20.04 is supported. 
-# Ubuntu 20.04 x86 ( ami-0dba2cb6798deb6d8 )
-    base_image: ami-0dba2cb6798deb6d8
-    spot: true
-# This is the maximum bid price you are willing to give for the machine. 
-    spot_price: 0.0208
+# Local Provider: local
+  - name: local

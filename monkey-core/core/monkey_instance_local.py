@@ -102,8 +102,8 @@ name: {}, ip: {}, state: {}
 
     def get_scratch_dir(self):
         local_vars = self.provider.get_local_vars()
-        monkey_scratch = local_vars.get("monkey_scratch")
-        return monkey_scratch
+        monkeyfs_scratch = local_vars.get("monkeyfs_scratch")
+        return monkeyfs_scratch
 
     def get_monkeyfs_dir(self):
         local_vars = self.provider.get_local_vars()
@@ -117,8 +117,9 @@ name: {}, ip: {}, state: {}
 
         installation_location = os.path.join(self.get_scratch_dir(), job_uid,
                                              data_item["path"])
-        dataset_full_path = os.path.join(self.get_monkeyfs_dir(), "data", data_name,
-                                         data_checksum, dataset_filename)
+        dataset_full_path = os.path.join(self.get_monkeyfs_dir(), "data",
+                                         data_name, data_checksum,
+                                         dataset_filename)
         print("Copying dataset from", dataset_full_path, " to ",
               installation_location)
 
@@ -190,7 +191,8 @@ name: {}, ip: {}, state: {}
         print("Unpacked code successfully")
         return True, "Unpacked code and persisted directories successfully"
 
-    def setup_persist_folder(self, job_uid, monkeyfs_path, job_dir_path, persist):
+    def setup_persist_folder(self, job_uid, monkeyfs_path, job_dir_path,
+                             persist):
         print("Persisting folder: ", persist)
         persist_path = persist
         persist_name = persist.replace("/", "_") + "_sync.sh"
@@ -212,9 +214,10 @@ name: {}, ip: {}, state: {}
             "persist_script_path": script_path,
             "bucket_path": monkeyfs_output_folder,
         }
-        runner = self.run_ansible_role(rolename="local/configure/persist_folder",
-                                       extravars=persist_folder_args,
-                                       uuid=uuid)
+        runner = self.run_ansible_role(
+            rolename="local/configure/persist_folder",
+            extravars=persist_folder_args,
+            uuid=uuid)
 
         if runner.status == "failed" or self.get_uuid() != uuid:
             print("Failed to setup persist folder: " + persist_path)
@@ -230,18 +233,18 @@ name: {}, ip: {}, state: {}
         script_loop_path = os.path.join(job_dir_path, "sync",
                                         unique_persist_all_script_name)
 
-
         uuid = self.update_uuid()
         start_persist_args = {
             "sync_folder_path": sync_folder_path,
             "sync_logs_path": sync_logs_path,
             "persist_script_path": script_path,
-            "unique_persist_all_script_name":unique_persist_all_script_name,
+            "unique_persist_all_script_name": unique_persist_all_script_name,
             "persist_loop_script_path": script_loop_path,
         }
-        runner = self.run_ansible_role(rolename="local/configure/start_persist",
-                                       extravars=start_persist_args,
-                                       uuid=uuid)
+        runner = self.run_ansible_role(
+            rolename="local/configure/start_persist",
+            extravars=start_persist_args,
+            uuid=uuid)
 
         if runner.status == "failed" or self.get_uuid() != uuid:
             print("Runner status: ", runner.status)
@@ -262,14 +265,15 @@ name: {}, ip: {}, state: {}
         persist_folder_args = {
             "persist_folder_path": logs_path,
             "sync_logs_path": sync_logs_path,
-            "sync_folder_path":sync_folder_path,
+            "sync_folder_path": sync_folder_path,
             "persist_script_path": script_path,
             "bucket_path": monkeyfs_output_folder,
             "persist_time": 3,
         }
-        runner = self.run_ansible_role(rolename="local/configure/persist_folder",
-                                       extravars=persist_folder_args,
-                                       uuid=uuid)
+        runner = self.run_ansible_role(
+            rolename="local/configure/persist_folder",
+            extravars=persist_folder_args,
+            uuid=uuid)
 
         if runner.status == "failed" or self.get_uuid() != uuid:
             print("Failed to create persisted logs folder")
@@ -333,7 +337,8 @@ name: {}, ip: {}, state: {}
             return success, msg
 
         print("Setting up dependency manager...")
-        success, msg = self.setup_dependency_manager(run_yml=job["run"], job_dir_path=job_dir_path)
+        success, msg = self.setup_dependency_manager(run_yml=job["run"],
+                                                     job_dir_path=job_dir_path)
         if not success:
             return success, msg
 
@@ -348,8 +353,8 @@ name: {}, ip: {}, state: {}
         activate_file = os.path.join(job_dir_path, ".monkey_activate")
         uuid = self.update_uuid()
         env_args = {
-            "environment_file": env_file, 
-            "activate_file": activate_file, 
+            "environment_file": env_file,
+            "activate_file": activate_file,
             "job_dir_path": job_dir_path
         }
         if env_type == "conda":
@@ -382,9 +387,9 @@ name: {}, ip: {}, state: {}
         uuid = self.update_uuid()
         runner = self.run_ansible_role(rolename="run/local/cmd",
                                        extravars={
-                                            "run_command": cmd, 
-                                            "job_dir_path": job_dir_path,
-                                            "activate_file": activate_file,
+                                           "run_command": cmd,
+                                           "job_dir_path": job_dir_path,
+                                           "activate_file": activate_file,
                                        },
                                        envvars=run_yml.get("env", dict()),
                                        uuid=uuid)
@@ -398,7 +403,9 @@ name: {}, ip: {}, state: {}
         print("Running job: ", job)
         job_uid = job["job_uid"]
         job_dir_path = os.path.join(self.get_scratch_dir(), job_uid)
-        success, msg = self.execute_command(job_uid=job_uid, cmd=job["cmd"], run_yml=job["run"])
+        success, msg = self.execute_command(job_uid=job_uid,
+                                            cmd=job["cmd"],
+                                            run_yml=job["run"])
         if not success:
             return success, msg
 
@@ -414,7 +421,6 @@ name: {}, ip: {}, state: {}
         if runner.status == "failed" or self.get_uuid() != uuid:
             return False, "Failed to run sync command properly: "
         print("Ended syncing")
-        
 
         return True, "Job completed"
 
@@ -422,5 +428,7 @@ name: {}, ip: {}, state: {}
         job_uid = job["job_uid"]
         print("\n\nTerminating Machine:", job_uid, "\n\n")
         unique_persist_all_script_name = job_uid + "_" + "persist_all_loop.sh"
-        runner = self.run_ansible_shell(command=f"killall {unique_persist_all_script_name}")
+        uuid = self.update_uuid()
+        runner = self.run_ansible_shell(
+            command=f"killall {unique_persist_all_script_name}", uuid=uuid)
         return True, "Succesfully cleaned up job"

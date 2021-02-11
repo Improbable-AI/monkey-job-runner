@@ -187,13 +187,13 @@ def check_for_job_hyperparameters(self, log_file=None):
         instance = found_provider.get_instance(job.job_uid)
         if instance is not None:
             hyperparameters = instance.get_experiment_hyperparameters()
-        if hyperparameters is not None:
-            job.experiment_hyperparameters = hyperparameters
-            job.save()
-            print("Found hyperparameters for job {}: {}".format(
-                job.job_uid, hyperparameters))
-        else:
-            print("No hyperparameters for job {}".format(job.job_uid))
+            if hyperparameters is not None:
+                job.experiment_hyperparameters = hyperparameters
+                job.save()
+                print("Found hyperparameters for job {}: {}".format(
+                    job.job_uid, hyperparameters))
+            else:
+                print("No hyperparameters for job {}".format(job.job_uid))
 
 
 def daemon_loop(self):  #
