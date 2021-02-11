@@ -47,9 +47,7 @@ jobs:
       run: |
         docker-compose up -d
 
-    - name: Remove providers file
-      env:
-        aws_key: ${{ secrets.personal_avery_aws_service_key }}
+    - name: Setup Provider
       run: |
         ./flush_all_provider_data.sh
         python setup_core.py --create --noinput --type local --name local --local-host localhost --localhost-only
@@ -86,7 +84,7 @@ jobs:
     - name: Run mnist sample
       run: |
         python monkey_core.py &
-        sleep 5
+        sleep 15
         cd ../monkey-cli/samples/mnist
         tree
         cp ci/local_conda_job.yml job.yml
