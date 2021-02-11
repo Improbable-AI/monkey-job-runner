@@ -28,10 +28,10 @@ class Monkey():
     providers = []
 
     from _monkey_list import (get_job_info, get_job_uid, get_list_instances,
-                              get_list_jobs, get_list_providers, get_job_config)
-    from _monkey_loop import (check_for_dead_jobs, check_for_queued_jobs,
-                              check_for_job_hyperparameters,
-                              daemon_loop, print_jobs_string )
+                              get_list_jobs, get_list_local_instances,get_job_config,
+                              get_list_providers)
+    from _monkey_loop import (check_for_dead_jobs, check_for_queued_jobs,check_for_job_hyperparameters,
+                              daemon_loop, print_jobs_string)
 
     def __init__(self, providers_path="providers.yml", start_loop=True):
         super().__init__()
@@ -64,8 +64,7 @@ class Monkey():
         for provider in providers:
             try:
                 logger.info("Try initializing: {}".format(provider["name"]))
-                handler = MonkeyProvider.create_cloud_handler(
-                    provider_info=provider)
+                handler = MonkeyProvider.create_handler(provider_info=provider)
                 if handler.is_valid():
                     self.providers.append(handler)
                 else:
@@ -137,13 +136,13 @@ class Monkey():
         dbMonkeyJob.set_state(
             state=mongo_state.MONKEY_STATE_DISPATCHING_MACHINE)
         created_host, creation_success = provider.create_instance(
-            machine_params=machine_params)
-        logger.info("Created Host:".format(created_host))
-        if creation_success == False:
+            machine_params=machine_params, job_yml=job_yml)
+        logger.info(f"Created Host: {created_host}")
+        if creation_success is False:
             print("Failed to create and virtualize instance properly")
             dbMonkeyJob.set_state(state=mongo_state.MONKEY_STATE_QUEUED)
             return False, "Failed to create and virtualize instance properly"
-        logger.info("{}: Successfully dispatched machine".format(job_uid))
+        logger.info(f"{job_uid}: Successfully dispatched machine")
 
         dbMonkeyJob.set_state(
             state=mongo_state.MONKEY_STATE_DISPATCHING_INSTALLS)
@@ -151,28 +150,28 @@ class Monkey():
         for install_item in job_yml.get("install", []):
             print("Installing item: ", install_item)
             success = created_host.install_dependency(install_item)
-            if success == False:
+            if success is False:
                 print("Failed to install dependency " + install_item)
                 dbMonkeyJob.set_state(state=mongo_state.MONKEY_STATE_QUEUED)
                 return False, "Failed to install dependency " + install_item
 
-        logger.info(
-            "{}: Successfully configured machine installs".format(job_uid))
+        logger.info(f"{job_uid}: Successfully configured machine installs")
 
         dbMonkeyJob.set_state(state=mongo_state.MONKEY_STATE_DISPATCHING_SETUP)
         success, msg = created_host.setup_job(
             job_yml, provider_info=provider.get_dict())
-        if success == False:
+        if success is False:
             print("Failed to setup host:", msg)
             dbMonkeyJob.set_state(state=mongo_state.MONKEY_STATE_QUEUED)
             return success, msg
-        logger.info("{}: Successfully configured host environment: {}".format(
-            job_uid, msg))
+        logger.info(
+            f"{job_uid}: Successfully configured host environment: {msg}")
 
         dbMonkeyJob.set_state(state=mongo_state.MONKEY_STATE_RUNNING)
         success, msg = created_host.run_job(job_yml,
                                             provider_info=provider.get_dict())
-        if success == False:
+        print("Returning from run job")
+        if success is False:
             print("Failed to run job:", msg)
             dbMonkeyJob.set_state(state=mongo_state.MONKEY_STATE_QUEUED)
             return success, msg
@@ -181,7 +180,7 @@ class Monkey():
         dbMonkeyJob.set_state(state=mongo_state.MONKEY_STATE_CLEANUP)
         success, msg = created_host.cleanup_job(
             job_yml, provider_info=provider.get_dict())
-        if success == False:
+        if success is False:
             print("Job ran correctly, but cleanup failed:", msg)
             return success, msg
         dbMonkeyJob.set_state(state=mongo_state.MONKEY_STATE_FINISHED)

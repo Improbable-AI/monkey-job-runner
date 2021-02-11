@@ -36,8 +36,7 @@ name: {}, ip: {}, state: {}
     def __init__(self, ansible_info):
 
         name = ansible_info["tags"]["Name"]
-        machine_zone = ansible_info["placement"]["availability_zone"]
-        # Look for public IP
+        self.machine_zone = ansible_info["placement"]["availability_zone"]
 
         try:
             self.ip_address = ansible_info["network_interfaces"][0][
@@ -45,9 +44,7 @@ name: {}, ip: {}, state: {}
         except:
             self.ip_address = None
 
-        super().__init__(name=name,
-                         machine_zone=machine_zone,
-                         ip_address=self.ip_address)
+        super().__init__(name=name, ip_address=self.ip_address)
         self.ansible_info = ansible_info
         self.state = ansible_info["state"]["name"]
 
@@ -55,6 +52,7 @@ name: {}, ip: {}, state: {}
         super().update_instance_details(other)
         self.ansible_info = other.ansible_info
         self.state = other.state
+        self.machine_zone = other.machine_zone
 
     def check_online(self):
         return super().check_online() and self.state == "running"

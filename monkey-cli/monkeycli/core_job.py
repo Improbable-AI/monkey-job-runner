@@ -139,7 +139,9 @@ def check_or_upload_codebase(code,
         fnmatch.fnmatch(n, ignore) for ignore in ignore_filters))
     all_files = sorted(list(filenames))
     if len(all_files) == 0:
-        print("No files detected as staged.  Add your files to staged with git add . to make sure monkey can detect them")
+        print(
+            "No files detected as staged.  Add your files to staged with git add . to make sure monkey can detect them"
+        )
         exit(1)
     compression_suffix = compression_map[compression_type]
     files_checksum = calculate_file_list_checksum(all_files)
@@ -164,7 +166,11 @@ def check_or_upload_codebase(code,
                                          suffix=".tar") as dir_tmp:
             code_tar = tarfile.open(dir_tmp.name, "w")
             for f in all_files:
-                code_tar.add(f)
+                try:
+                    code_tar.add(f)
+                except Exception as e:
+                    print(f"Skipping adding: {f}\nError: {e}")
+
             code_tar.close()
             success = False
             try:

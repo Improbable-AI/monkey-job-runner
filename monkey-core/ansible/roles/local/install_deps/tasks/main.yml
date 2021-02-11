@@ -1,0 +1,78 @@
+---
+
+- name: Check for existing swapfile
+  shell: test -f /swapfile
+  changed_when: false
+  ignore_errors: true
+  register: swapfile_test
+
+- name:
+  debug:
+    msg: "Swapfile test: {{ swapfile_test }}"
+
+- name: Create and mount swapfile
+  when: swapfile_test.failed
+  block:
+    - name: Create swap file
+      become: true
+      command: dd if=/dev/zero of=/swapfile bs=1024 count=512k
+              creates=/swapfile
+
+    - name: Change swap file permissions
+      become: true
+      file: 
+        path: /swapfile
+        owner: root
+        group: root
+        mode: 0600
+
+    - name: Make swap file
+      become: true
+      command: mkswap /swapfile
+
+
+    - name: Write swap entry in fstab
+      become: true
+      mount:
+        src: /swapfile
+        path: /swapfile
+        fstype: swap
+        opts: sw
+        state: present
+
+    - name: Mount swap
+      become: true
+      command: "swapon /swapfile"
+
+ 
+- name: Configure dpkg if stopped mid-installation
+  become: true
+  shell: "dpkg --configure -a"
+
+- name: apt update 
+  become: true
+  apt:
+    update_cache: yes
+
+- name: apt update install s3fs python3 nginx
+  become: true
+  apt:
+    update_cache: yes
+    name: 
+      - s3fs
+      - python3
+      - python3-pip
+      - python3-venv
+      - python3-dev
+      - unzip
+      - nginx
+      - tree
+      - moreutils
+    state: present
+  retries: 2
+
+- name: Install virtualenv via pip
+  become: yes
+  pip:
+    name: virtualenv
+    executable: pip3

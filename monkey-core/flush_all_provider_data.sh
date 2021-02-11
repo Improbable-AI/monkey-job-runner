@@ -1,5 +1,6 @@
 #!/bin/bash
 rm providers.yml
+rm local.yml
 yes | rm ansible/keys/*gcp*
 yes | rm ansible/keys/*aws*
 rm ansible/inventory/gcp/inventory*yml

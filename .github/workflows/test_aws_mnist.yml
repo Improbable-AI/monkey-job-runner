@@ -1,0 +1,105 @@
+name: Provider AWS
+
+on:
+  push:
+    branches: [ master, develop, actions ]
+  pull_request:
+    branches: [ master, develop ]
+
+jobs:
+  mnist_aws_test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: bash
+        working-directory: monkey-core
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python 3.6
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.8
+    - name: Cache pip
+      uses: actions/cache@v1
+      with:
+        path: ~/.cache/pip
+
+        key: ${{ runner.os }}-pip3-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip3-
+          ${{ runner.os }}-
+      
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    - name: Installs s3fs
+      run: |
+        if ! command -v s3fs > /dev/null; then
+          echo s3fs not installed on machine, installing
+          sudo apt-get update
+          sudo apt-get install -y s3fs
+        fi
+        
+    - name: Docker Compose Mongo setup
+      run: |
+        docker-compose up -d
+
+    - name: Remove providers file
+      env:
+        aws_key: ${{ secrets.personal_avery_aws_service_key }}
+      run: |
+        ./flush_all_provider_data.sh
+        echo "$aws_key" | base64 --decode > aws_key.csv
+        python setup_core.py --noinput --create --type aws -i aws_key.csv --ssh-key-name monkey-aws-ci-conda-key
+        cat ansible/aws_vars.yml | grep storage_name | awk '{ print $2 }'
+        df -h 
+        
+    - name: Install monkey-cli packages
+      run: |
+        pip install .
+        pip install -r requirements.txt
+      working-directory: monkey-cli
+
+    - name: Setup folders
+      run: |
+        mkdir -p data output
+      working-directory: monkey-cli/samples/mnist
+
+    - name: Cache mnist data
+      uses: actions/cache@v1
+      id: cache-mnist-data
+      with:
+        path: monkey-cli/samples/mnist/data
+        key: ${{ hashFiles('monkey-cli/samples/mnist/download_data.py') }}
+    
+    - name: Cache miss on mnist data
+      if: steps.cache-mnist-data.outputs.cache-hit != 'true'
+      run: |
+        pip install torchvision
+        mkdir -p data output
+        python download_data.py
+      working-directory: monkey-cli/samples/mnist
+
+    - name: Run mnist sample
+      run: |
+        python monkey_core.py &
+        sleep 5
+        cd ../monkey-cli/samples/mnist
+        tree
+        cp ci/aws_conda_job.yml job.yml
+        sleep 2
+        monkey run --foreground python -u mnist.py --learning-rate 0.019 --n-epochs 1 
+        cp ci/aws_pip_job.yml job.yml
+        sleep 2
+        # monkey run --foreground python -u mnist.py --learning-rate 0.019 --epochs 1 
+
+    - name: Cleanup and unmount
+      run: |
+        BUCKET_NAME=$(cat ansible/aws_vars.yml | grep storage_name | awk '{ print $2 }')
+        echo Bucket Name: $BUCKET_NAME
+        ./flush_monkeyfs_aws.sh aws_key.csv $BUCKET_NAME
+        rm aws_key.csv
+

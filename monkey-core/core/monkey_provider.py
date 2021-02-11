@@ -46,6 +46,7 @@ class MonkeyProvider():
     project = None
     name = None
     provider_type = None
+    provider_type = None
     instances = []
 
     def merge_params(self, base, additional):
@@ -57,7 +58,7 @@ class MonkeyProvider():
         return base
 
     @staticmethod
-    def create_cloud_handler(provider_info):
+    def create_handler(provider_info):
         provider_type = provider_info["type"]
         if provider_type == "gcp":
             from core.cloud.monkey_provider_gcp import MonkeyProviderGCP
@@ -65,6 +66,9 @@ class MonkeyProvider():
         elif provider_type == "aws":
             from core.cloud.monkey_provider_aws import MonkeyProviderAWS
             return MonkeyProviderAWS(provider_info)
+        elif provider_type == "local":
+            from core.monkey_provider_local import MonkeyProviderLocal
+            return MonkeyProviderLocal(provider_info)
         else:
             raise ValueError(
                 "{} type for provider not supported yet".format(provider_type))
@@ -88,7 +92,7 @@ class MonkeyProvider():
     def list_images(self):
         raise NotImplementedError("This is not implemented yet")
 
-    def create_instance(self, machine_params):
+    def create_instance(self, machine_params, job_yml):
         raise NotImplementedError("This is not implemented yet")
 
     def wait_for_operation(self, operation_name):
@@ -98,8 +102,7 @@ class MonkeyProvider():
         raise NotImplementedError("This is not implemented yet")
 
     def is_valid(self):
-        return not (self.zone == None or self.name == None
-                    or self.provider_type == None)
+        return not (self.name == None or self.provider_type == None)
 
     def __str__(self):
         return "Name: {}, provider: {}, zone: {}"\

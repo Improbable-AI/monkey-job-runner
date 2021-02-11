@@ -34,9 +34,16 @@ def get_job_info(self, uid):
     return job.get_dict()
 
 
-# Fully implemented
 def get_list_providers(self):
     return [x.get_dict() for x in self.providers]
+
+
+def get_list_local_instances(self):
+    local_instances = []
+    for provider in self.providers:
+        if provider.provider_type == "local":
+            local_instances += provider.get_local_instances_list()
+    return local_instances
 
 
 def get_list_jobs(self, options=dict()):

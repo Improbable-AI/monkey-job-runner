@@ -27,28 +27,28 @@ application = Flask(__name__)
 logging.getLogger("werkzeug").setLevel(logging.WARNING)
 
 log_format = '%(asctime)s[%(name)s]:[%(levelname)s]: %(message)s'
-date_format = "%m-%d %H:%M:%S"
+log_date_format = "%m-%d %H:%M:%S"
 logger = logging.getLogger('core')
 hdlr = logging.FileHandler(monkey_global.LOG_FILE)
-formatter = logging.Formatter(log_format, date_format)
+formatter = logging.Formatter(log_format, log_date_format)
 hdlr.setFormatter(formatter)
 logger.addHandler(hdlr)
 logger.setLevel(logging.DEBUG)
 logger = logging.getLogger('monkey')
 hdlr = logging.FileHandler(monkey_global.LOG_FILE)
-formatter = logging.Formatter(log_format, date_format)
+formatter = logging.Formatter(log_format, log_date_format)
 hdlr.setFormatter(formatter)
 logger.addHandler(hdlr)
 logger.setLevel(logging.DEBUG)
 logger = logging.getLogger('mongo')
 hdlr = logging.FileHandler(monkey_global.LOG_FILE)
-formatter = logging.Formatter(log_format, date_format)
+formatter = logging.Formatter(log_format, log_date_format)
 hdlr.setFormatter(formatter)
 logger.addHandler(hdlr)
 logger.setLevel(logging.DEBUG)
 logger = logging.getLogger(__name__)
 hdlr = logging.FileHandler(monkey_global.LOG_FILE)
-formatter = logging.Formatter(log_format, date_format)
+formatter = logging.Formatter(log_format, log_date_format)
 hdlr.setFormatter(formatter)
 logger.addHandler(hdlr)
 logger.setLevel(logging.DEBUG)
@@ -92,7 +92,8 @@ def get_new_job_uid():
             last_date = new_date
             instance_number = 1
         else:
-            logger.info(f"Would be instance {last_date + str(instance_number + 1)}")
+            logger.info(
+                f"Would be instance {last_date + str(instance_number + 1)}")
             pass
             instance_number += 1
         if UNIQUE_UIDS == True:
@@ -190,6 +191,12 @@ def get_list_providers():
     return jsonify({"response": providers_list})
 
 
+@application.route('/list/local/instances')
+def get_list_local_instances():
+    instances_list = monkey.get_list_local_instances()
+    return jsonify({"response": instances_list})
+
+
 @application.route('/list/instances')
 def get_list_instances():
     args = vars(request.args)
@@ -285,7 +292,7 @@ def upload_dataset():
         "dataset_path": dataset_path,
         "dataset_extension": dataset_extension,
     }
-    logger.info(dataset_name, dataset_checksum, dataset_path)
+    logger.info(dataset_yaml)
     if dataset_name is None or dataset_checksum is None or dataset_path is None \
             or dataset_extension is None or provider is None:
         return jsonify({
@@ -421,11 +428,10 @@ def upload_codebase():
     if not already_uploaded:
         local_path = os.path.join(local_codebase_folder_path,
                                   "code" + codebase_extension)
-        logger.info(
-            f"Local Path: {local_path}")
+        logger.info(f"Local Path: {local_path}")
         destination_path = os.path.join(local_codebase_folder_path,
-                         "code" + codebase_extension)
-        FileStorage(request.stream).save(destination_path )
+                                        "code" + codebase_extension)
+        FileStorage(request.stream).save(destination_path)
 
         logger.info(f"Saved file to: {destination_path}")
         with open(os.path.join(local_codebase_folder_path, "code.yaml"),
@@ -471,7 +477,7 @@ def upload_persist():
 @application.route('/submit/job')
 def submit_job():
     job_args = copy.deepcopy(request.get_json())
-    logger.info("Received job to submit: {}".format( job_args["job_uid"] ))
+    logger.info("Received job to submit: {}".format(job_args["job_uid"]))
     job_uid = job_args["job_uid"]
 
     foreground = job_args["foreground"]

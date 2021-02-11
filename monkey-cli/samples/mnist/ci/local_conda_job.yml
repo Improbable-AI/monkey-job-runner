@@ -1,0 +1,49 @@
+---
+name: mnist
+project_name: monkey
+run:
+# Supported env_type options: conda, pip, docker
+    env_type: conda
+# Please set it to the requirements.txt file or environment.yml file
+    env_file: environment.yml
+install:
+# Installs each of the system dependencies.
+# Current available options include: docker, cuda10.2,
+  - conda
+code:
+# Defines the codebase path
+    path: .
+# When packing up the codebase, monkey will ignore the following paths
+    ignore:
+      - venv
+      - data
+      - output
+persist:
+# 
+# Define folders or files to persist throughout runs.
+# Should include your output or checkpoint directory
+# Any defined persist folder will be kept in persistent storage and applied over the codebase at start
+# Persisted folders will be unpacked in the order they are listed
+#     
+  - output
+
+# Dataset folders will be checksummed before re-uploading
+#     
+data:
+  - name: monkey-data-0
+
+# Dataset type options are fore copy or mount.  Mount will directly mount the dataset bucket while copy will copy the dataset to local memory (highly recommended and only supported)
+#             
+    type: copy
+
+# Path should be a relative directory that will only be reuploaded if a checksum does not match
+#             
+    path: data
+
+# optional compression type. (Must have compression packages available on machine)  Options: tar, gztar (default)
+#             
+    compression: gztar
+providers:
+# 
+# Local Provider: local
+  - name: local

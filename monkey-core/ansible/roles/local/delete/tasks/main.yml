@@ -1,0 +1,23 @@
+---
+# TODO: ensure copying of data over with shutdown script
+- name: Check to start existing ec2 Instance
+  community.aws.ec2_instance_info:
+    filters:
+      "tag:Name": "{{ monkey_job_uid }}"
+    region: "{{ aws_region }}"
+
+  register: existing_instance
+  ignore_errors: true
+
+
+- name: Remove existing instances
+  loop: "{{existing_instance.instances}}"
+  ec2:
+    instance_id: "{{item.instance_id}}"
+    vpc_subnet_id: "{{monkey_subnet_id}}"
+    region: "{{ aws_region }}"
+    zone: "{{ aws_zone }}"
+    state: absent
+
+
+

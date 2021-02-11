@@ -1,0 +1,38 @@
+---
+  # tasks:
+- name: Get fs name
+  set_fact:
+    aws_storage_name: "{{ aws_storage_name }}"
+    monkeyfs_path: "{{monkeyfs_path}}"
+- name: Printout fs name
+  debug:
+    msg: "Mounting FS: {{ aws_storage_name }}"
+
+- name: Create Mountpoint
+  ignore_errors: true
+  become: true
+  file:
+    path: "{{monkeyfs_path}}"
+    state: directory
+    owner: "{{ ansible_user }}"
+  register: create_mountpoint
+
+- name: Debug create mountpoint
+  debug: 
+    msg: "Mountpoint {{create_mountpoint.failed}}"
+- name: Check for mount
+  shell: "df | grep monkeyfs"
+  register: mount_found
+  ignore_errors: True
+- name: S3FS Mounting the Bucket
+  when: mount_found is failed
+  debug:
+    msg: "Mounting with: s3fs {{aws_storage_name}} {{monkeyfs_path}}"
+- name: Mount fs to Mountpoint
+  when: mount_found is failed
+  environment:
+      "AWSACCESSKEYID": "{{access_key_id}}"
+      "AWSSECRETACCESSKEY": "{{access_key_secret}}"
+  command:    
+    cmd: "s3fs {{aws_storage_name}} {{monkeyfs_path}}"
+

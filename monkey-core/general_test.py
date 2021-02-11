@@ -1,4 +1,3 @@
-from setup_scripts.utils import sync_directories
+from setup_scripts.local_setup import scan_for_local_ip
 
-sync_directories("/home/avery/Downloads/gpu-burn",
-                 "/home/avery/Downloads/gpu-burn2")
+print(scan_for_local_ip())
