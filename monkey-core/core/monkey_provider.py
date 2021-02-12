@@ -30,10 +30,10 @@ def call_with_future(fn, future, args, kwargs):
 
 
 def threaded(fn):
+
     def wrapper(*args, **kwargs):
         future = Future()
-        Thread(target=call_with_future,
-               args=(fn, future, args, kwargs)).start()
+        Thread(target=call_with_future, args=(fn, future, args, kwargs)).start()
         return future
 
     return wrapper

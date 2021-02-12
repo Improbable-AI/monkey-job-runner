@@ -32,29 +32,26 @@ def run(run_number):
             print("\n\nFAILED: {}\n\n".format(run_number))
             return
 
-    success, msg = instance.setup_job(job_yml,
-                                      provider_info=aws_provider.get_dict())
+    success, msg = instance.setup_job(job_yml, provider_info=aws_provider.get_dict())
     if success == False:
         print("Failed to setup host:", msg)
         print("\n\nFAILED: {}\n\n".format(run_number))
         return success, msg
 
-    success, msg = instance.run_job(job_yml,
-                                    provider_info=aws_provider.get_dict())
+    success, msg = instance.run_job(job_yml, provider_info=aws_provider.get_dict())
     if success == False:
         print("Failed to run job:", msg)
         print("\n\nFAILED: {}\n\n".format(run_number))
         return success, msg
 
-    success, msg = instance.cleanup_job(job_yml,
-                                        provider_info=aws_provider.get_dict())
+    success, msg = instance.cleanup_job(job_yml, provider_info=aws_provider.get_dict())
     if success == False:
         print("Job ran correctly, but cleanup failed:", msg)
         print("\n\nFAILED: {}\n\n".format(run_number))
         return success, msg
 
 
-tr = threading.Thread(target=run, args=(1, ))
+tr = threading.Thread(target=run, args=(1,))
 
 tr.start()
 
@@ -62,7 +59,7 @@ time.sleep(10)
 
 print("\n\n\n\n\nStarting second run\n\n\n\n")
 
-tr2 = threading.Thread(target=run, args=(2, ))
+tr2 = threading.Thread(target=run, args=(2,))
 
 tr2.start()
 

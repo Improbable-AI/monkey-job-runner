@@ -7,8 +7,7 @@ from datetime import datetime, timedelta
 
 import monkey_global
 import yaml
-from setup_scripts.utils import (aws_cred_file_environment,
-                                 printout_ansible_events)
+from setup_scripts.utils import (aws_cred_file_environment, printout_ansible_events)
 
 from core.monkey_instance_local import MonkeyInstanceLocal
 from core.monkey_provider import MonkeyProvider
@@ -76,8 +75,7 @@ class MonkeyProviderLocal(MonkeyProvider):
                 local_hosts = local_yaml.get("hosts", [])
                 hostnames = [x[0] for x in local_hosts]
                 for hostname in hostnames:
-                    inst = self.create_local_instance(name=hostname,
-                                                      hostname=hostname)
+                    inst = self.create_local_instance(name=hostname, hostname=hostname)
                     self.instances[inst.name] = inst
 
                 print(local_yaml)
@@ -96,13 +94,9 @@ class MonkeyProviderLocal(MonkeyProvider):
             f"Creating instance with name: {name }, hostname: {hostname if hostname is not None else name}"
         )
         if hostname is None:
-            instance = MonkeyInstanceLocal(provider=self,
-                                           name=name,
-                                           hostname=name)
+            instance = MonkeyInstanceLocal(provider=self, name=name, hostname=name)
         else:
-            instance = MonkeyInstanceLocal(provider=self,
-                                           name=name,
-                                           hostname=hostname)
+            instance = MonkeyInstanceLocal(provider=self, name=name, hostname=hostname)
         return instance
 
     def is_valid(self):
@@ -159,12 +153,10 @@ class MonkeyProviderLocal(MonkeyProvider):
     def list_images(self):
         images = []
         try:
-            result = self.compute_api.images().list(
-                project=self.project).execute()
+            result = self.compute_api.images().list(project=self.project).execute()
             result = result['items'] if 'items' in result else None
             if result:
-                images += [(inst["name"],
-                            inst["family"] if "family" in inst else None)
+                images += [(inst["name"], inst["family"] if "family" in inst else None)
                            for inst in result]
         except:
             pass

@@ -75,8 +75,7 @@ class MonkeyJob(DynamicDocument):
             self.run_cleanup_start_date = datetime.now()
         elif state == monkey_state.MONKEY_STATE_FINISHED:
             self.completion_date = datetime.now()
-            self.total_wall_time = (datetime.now() -
-                                    self.creation_date).total_seconds()
+            self.total_wall_time = (datetime.now() - self.creation_date).total_seconds()
         self.last_state_change = datetime.now()
         self.save()
 

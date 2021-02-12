@@ -17,8 +17,7 @@ readline.set_completer(comp.complete)
 
 def check_gcp_provider(yaml):
     provider_name = yaml.get("name")
-    print("Checking integrity of", provider_name, "with type:",
-          yaml.get("type"))
+    print("Checking integrity of", provider_name, "with type:", yaml.get("type"))
     storage_name = yaml.get("storage_name")
 
     runner = ansible_runner.run(playbook='gcp_setup_checks.yml',
@@ -66,14 +65,11 @@ def create_gcp_provider(provider_name, yaml, args):
         if service_account_file is None:
             if args.noinput == True:
                 raise ValueError(
-                    "Please input the identity-file (gcp service account file)"
-                )
+                    "Please input the identity-file (gcp service account file)")
             service_account_file = input("GCP Service Account File: ")
             service_account_file = os.path.abspath(service_account_file)
         elif service_account_file is None:
-            print(
-                "Please pass in an service account with -i/--identification-file"
-            )
+            print("Please pass in an service account with -i/--identification-file")
             exit(1)
         try:
             with open(service_account_file) as file:
@@ -117,8 +113,7 @@ def create_gcp_provider(provider_name, yaml, args):
         details["storage_name"] = monkeyfs_input
         details.yaml_set_comment_before_after_key(
             "storage_name", before="\n\n###########\n# Optional\n###########")
-        details.yaml_add_eol_comment("Defaults to monkeyfs-XXXXXX",
-                                     "storage_name")
+        details.yaml_add_eol_comment("Defaults to monkeyfs-XXXXXX", "storage_name")
         details["local_monkeyfs_path"] = monkeyfs_path
         details["monkeyfs_path"] = "/monkeyfs"  # "  # Defaults to /monkeyfs"
         details.yaml_add_eol_comment("Defaults to /monkeyfs", "monkeyfs_path")
@@ -162,8 +157,7 @@ def create_gcp_provider(provider_name, yaml, args):
     # Creation of FS OK, now mounting FS to local mount point
     if mount_gcp_monkeyfs(details) == False:
         print(
-            "Terminating, please ensure you have gcsfuse installed on the core machine"
-        )
+            "Terminating, please ensure you have gcsfuse installed on the core machine")
         exit(1)
 
     print("\nWriting ansible inventory file...")
@@ -232,8 +226,8 @@ def create_gcp_monkeyfs(storage_name):
 def mount_gcp_monkeyfs(yaml):
     bucket_name = yaml["storage_name"]
     local_mount_point = yaml["local_monkeyfs_path"]
-    print("Attempting to mount gcs bucket: {} to {}".format(
-        bucket_name, local_mount_point))
+    print("Attempting to mount gcs bucket: {} to {}".format(bucket_name,
+                                                            local_mount_point))
     runner = ansible_runner.run(playbook='gcp_setup_checks.yml',
                                 private_data_dir='ansible',
                                 quiet=False)

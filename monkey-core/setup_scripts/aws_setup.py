@@ -20,20 +20,18 @@ readline.set_completer(comp.complete)
 
 def check_aws_provider(yaml):
     provider_name = yaml.get("name")
-    print("Checking integrity of", provider_name, "with type:",
-          yaml.get("type"))
+    print("Checking integrity of", provider_name, "with type:", yaml.get("type"))
 
     cred_environment = aws_cred_file_environment(yaml["aws_cred_file"])
 
-    runner = ansible_runner.run(playbook='aws_setup_checks.yml',
-                                private_data_dir='ansible',
-                                extravars={
-                                    "access_key_id":
-                                    cred_environment["AWS_ACCESS_KEY_ID"],
-                                    "access_key_secret":
-                                    cred_environment["AWS_SECRET_ACCESS_KEY"],
-                                },
-                                quiet=True)
+    runner = ansible_runner.run(
+        playbook='aws_setup_checks.yml',
+        private_data_dir='ansible',
+        extravars={
+            "access_key_id": cred_environment["AWS_ACCESS_KEY_ID"],
+            "access_key_secret": cred_environment["AWS_SECRET_ACCESS_KEY"],
+        },
+        quiet=True)
     events = [e for e in runner.events]
     if runner.status == "failed":
         printout_ansible_events(events)
@@ -46,8 +44,7 @@ def check_aws_provider(yaml):
 
 
 def generate_random_monkeyfs_name():
-    return "monkeyfs-" + ''.join(
-        random.choice(string.ascii_lowercase) for _ in range(6))
+    return "monkeyfs-" + ''.join(random.choice(string.ascii_lowercase) for _ in range(6))
 
 
 def create_aws_provider(provider_name, provider_yaml, args):
@@ -76,8 +73,7 @@ def create_aws_provider(provider_name, provider_yaml, args):
             print("Failed to read file")
     if aws_key_file is None or cred_environment is None:
         if args.noinput:
-            raise ValueError(
-                "Please input the identity-file (aws credential key file)")
+            raise ValueError("Please input the identity-file (aws credential key file)")
         while True:
             aws_key_file = input(
                 "AWS Account File (should have Access key ID and Secret Access Key in csv form)\n"
@@ -89,11 +85,9 @@ def create_aws_provider(provider_name, provider_yaml, args):
             except:
                 print("Failed to read and parse credentials")
 
-    def get_input_with_defaults(prompt_phrase, prompt_name, default_value,
-                                noinput):
+    def get_input_with_defaults(prompt_phrase, prompt_name, default_value, noinput):
         if noinput:
-            print(
-                f"{prompt_name} not provider. Defaulting to: {default_value}")
+            print(f"{prompt_name} not provider. Defaulting to: {default_value}")
             return default_value
         return input(f"{prompt_phrase} ({default_value}): ") or default_value
 
@@ -110,23 +104,20 @@ def create_aws_provider(provider_name, provider_yaml, args):
                                              noinput=args.noinput)
 
     if not args.ssh_key_name:
-        ssh_key_name = get_input_with_defaults(
-            prompt_phrase="Set AWS SSH Key Name",
-            prompt_name="AWS ssh key name",
-            default_value="monkey_aws",
-            noinput=args.noinput)
+        ssh_key_name = get_input_with_defaults(prompt_phrase="Set AWS SSH Key Name",
+                                               prompt_name="AWS ssh key name",
+                                               default_value="monkey_aws",
+                                               noinput=args.noinput)
 
     if not args.storage_name:
         filesystem_ok = False
         while not filesystem_ok:
             if not args.noinput and not args.storage_name:
-                aws_storage_name = input(
-                    "Set the monkey_fs aws s3 bucket name ({})".format(
-                        aws_storage_name)) or aws_storage_name
-            filesystem_ok = create_aws_monkeyfs(
-                storage_name=aws_storage_name,
-                cred_environment=cred_environment,
-                region=region_input)
+                aws_storage_name = input("Set the monkey_fs aws s3 bucket name ({})"
+                                         .format(aws_storage_name)) or aws_storage_name
+            filesystem_ok = create_aws_monkeyfs(storage_name=aws_storage_name,
+                                                cred_environment=cred_environment,
+                                                region=region_input)
 
             if not filesystem_ok:
                 if not args.storage_name:
@@ -156,12 +147,10 @@ def create_aws_provider(provider_name, provider_yaml, args):
         }))
     aws_vars.fa.set_block_style()
     aws_vars.yaml_set_start_comment("\nAWS Provider: {}".format(provider_name))
-    aws_vars.yaml_add_eol_comment("Used for mounting filesystems",
-                                  "aws_cred_file")
+    aws_vars.yaml_add_eol_comment("Used for mounting filesystems", "aws_cred_file")
     aws_vars.yaml_set_comment_before_after_key(
         "storage_name", before="\n\n###########\n# Optional\n###########")
-    aws_vars.yaml_add_eol_comment("Defaults to monkeyfs-XXXXXX",
-                                  "storage_name")
+    aws_vars.yaml_add_eol_comment("Defaults to monkeyfs-XXXXXX", "storage_name")
     aws_vars.yaml_add_eol_comment("Defaults to /monkeyfs", "monkeyfs_path")
 
     # Create filesystem bucket and pick a new id if failed
@@ -184,9 +173,7 @@ def create_aws_provider(provider_name, provider_yaml, args):
 
     # Creation of FS OK, now mounting FS to local mount point
     if not mount_aws_monkeyfs(aws_vars):
-        print(
-            "Terminating, please ensure you have s3fs installed on the core machine"
-        )
+        print("Terminating, please ensure you have s3fs installed on the core machine")
         exit(1)
 
     print("\nWriting ansible inventory file...")
@@ -237,19 +224,16 @@ def write_vars_file(aws_vars):
 
 def create_aws_monkeyfs(storage_name, cred_environment, region):
     print("\nSetting up monkeyfs...")
-    runner = ansible_runner.run(playbook='aws_create_fs.yml',
-                                private_data_dir='ansible',
-                                extravars={
-                                    "access_key_id":
-                                    cred_environment["AWS_ACCESS_KEY_ID"],
-                                    "access_key_secret":
-                                    cred_environment["AWS_SECRET_ACCESS_KEY"],
-                                    "storage_name":
-                                    storage_name,
-                                    "aws_region":
-                                    region
-                                },
-                                quiet=False)
+    runner = ansible_runner.run(
+        playbook='aws_create_fs.yml',
+        private_data_dir='ansible',
+        extravars={
+            "access_key_id": cred_environment["AWS_ACCESS_KEY_ID"],
+            "access_key_secret": cred_environment["AWS_SECRET_ACCESS_KEY"],
+            "storage_name": storage_name,
+            "aws_region": region
+        },
+        quiet=False)
 
     if runner.status == "failed":
         print("Failed installing and setting up monkeyfs")
@@ -261,20 +245,19 @@ def create_aws_monkeyfs(storage_name, cred_environment, region):
 def mount_aws_monkeyfs(yaml):
     bucket_name = yaml["storage_name"]
     local_mount_point = yaml["local_monkeyfs_path"]
-    print("Attempting to mount gcs bucket: {} to {}".format(
-        bucket_name, local_mount_point))
+    print("Attempting to mount gcs bucket: {} to {}".format(bucket_name,
+                                                            local_mount_point))
 
     cred_environment = aws_cred_file_environment(yaml["aws_cred_file"])
 
-    runner = ansible_runner.run(playbook='aws_setup_checks.yml',
-                                private_data_dir='ansible',
-                                extravars={
-                                    "access_key_id":
-                                    cred_environment["AWS_ACCESS_KEY_ID"],
-                                    "access_key_secret":
-                                    cred_environment["AWS_SECRET_ACCESS_KEY"],
-                                },
-                                quiet=False)
+    runner = ansible_runner.run(
+        playbook='aws_setup_checks.yml',
+        private_data_dir='ansible',
+        extravars={
+            "access_key_id": cred_environment["AWS_ACCESS_KEY_ID"],
+            "access_key_secret": cred_environment["AWS_SECRET_ACCESS_KEY"],
+        },
+        quiet=False)
     if runner.status == "failed":
         print("Failed to mount the AWS S3 filesystem")
         return False

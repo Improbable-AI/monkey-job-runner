@@ -50,17 +50,15 @@ class MonkeyProviderGCP(MonkeyProvider):
         logger.info("GCP Cloud Handler Instantiating {}".format(self))
         if "gcp_cred_file" not in provider_info:
             logger.error("Failed to provide gcp_cred_file for service account")
-            raise ValueError(
-                "Failed to provide gcp_cred_file for service account")
+            raise ValueError("Failed to provide gcp_cred_file for service account")
 
         self.credential_file = provider_info["gcp_cred_file"]
         self.credentials = service_account.Credentials.from_service_account_file(
             provider_info["gcp_cred_file"])
-        self.compute_api = googleapiclient.discovery.build(
-            'compute',
-            'v1',
-            credentials=self.credentials,
-            cache_discovery=False)
+        self.compute_api = googleapiclient.discovery.build('compute',
+                                                           'v1',
+                                                           credentials=self.credentials,
+                                                           cache_discovery=False)
 
     def is_valid(self):
         # Check filesystem
@@ -74,8 +72,8 @@ class MonkeyProviderGCP(MonkeyProvider):
 
     def check_connection(self):
         try:
-            result = self.compute_api.instances().list(
-                project=self.project, zone=self.zones[0]).execute()
+            result = self.compute_api.instances().list(project=self.project,
+                                                       zone=self.zones[0]).execute()
             result = result['items'] if 'items' in result else None
             if result:
                 return True
@@ -87,8 +85,7 @@ class MonkeyProviderGCP(MonkeyProvider):
         instances = []
         # MARK(alamp): AnsibleInternalAPI
         loader = DataLoader()
-        inventory = InventoryManager(loader=loader,
-                                     sources="ansible/inventory")
+        inventory = InventoryManager(loader=loader, sources="ansible/inventory")
         variable_manager = VariableManager(loader=loader, inventory=inventory)
         host_list = inventory.get_groups_dict().get("monkey_gcp", [])
         for host in host_list:
@@ -119,8 +116,8 @@ class MonkeyProviderGCP(MonkeyProvider):
         jobs = []
         for zone in self.zones:
             try:
-                result = self.compute_api.instances().list(
-                    project=self.project, zone=zone).execute()
+                result = self.compute_api.instances().list(project=self.project,
+                                                           zone=zone).execute()
                 result = result['items'] if 'items' in result else None
                 if result:
                     for item in result:
@@ -137,12 +134,10 @@ class MonkeyProviderGCP(MonkeyProvider):
     def list_images(self):
         images = []
         try:
-            result = self.compute_api.images().list(
-                project=self.project).execute()
+            result = self.compute_api.images().list(project=self.project).execute()
             result = result['items'] if 'items' in result else None
             if result:
-                images += [(inst["name"],
-                            inst["family"] if "family" in inst else None)
+                images += [(inst["name"], inst["family"] if "family" in inst else None)
                            for inst in result]
         except:
             pass
@@ -162,8 +157,7 @@ class MonkeyProviderGCP(MonkeyProvider):
         retries = 4
         while retries > 0:
             loader = DataLoader()
-            inventory = InventoryManager(loader=loader,
-                                         sources="ansible/inventory")
+            inventory = InventoryManager(loader=loader, sources="ansible/inventory")
             try:
                 h = inventory.get_host(machine_params["monkey_job_uid"])
                 host_vars = h.get_vars()

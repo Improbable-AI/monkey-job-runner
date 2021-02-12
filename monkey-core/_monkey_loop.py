@@ -41,8 +41,8 @@ def check_for_queued_jobs(self, log_file=None):
 
 def print_jobs_string(self, jobs):
     printout = ""
-    header = colored("{:^26} {:^24} {:^19} {:^13} ".format(
-        "Job Name", "State", "Elapsed(s)", "Timeout(s)"),
+    header = colored("{:^26} {:^24} {:^19} {:^13} ".format("Job Name", "State",
+                                                           "Elapsed(s)", "Timeout(s)"),
                      attrs=["bold"])
     printout += f"\n{header}\n"
     for job in jobs:
@@ -65,9 +65,7 @@ def check_for_dead_jobs(self, log_file=None):
     ]
 
     pending_job_num = len(current_jobs)
-    cleanup_jobs = [
-        x for x in pending_jobs if x.state == state.MONKEY_STATE_CLEANUP
-    ]
+    cleanup_jobs = [x for x in pending_jobs if x.state == state.MONKEY_STATE_CLEANUP]
     potential_missed_cleanup_num = len(cleanup_jobs)
     recently_finished_jos = [
         x for x in pending_jobs if x.state == state.MONKEY_STATE_FINISHED
@@ -98,14 +96,12 @@ def check_for_dead_jobs(self, log_file=None):
                 .format(job))
             continue
 
-        job.total_wall_time = (datetime.now() -
-                               job.creation_date).total_seconds()
+        job.total_wall_time = (datetime.now() - job.creation_date).total_seconds()
 
         timeout_for_state = state.state_to_timeout(job.state)
         time_elapsed = job.time_elapsed_in_state()
         if timeout_for_state is not None and time_elapsed > timeout_for_state and job.state != state.MONKEY_STATE_CLEANUP:
-            print("Found Timed out job with state {}.  Requeueing job".format(
-                job.state))
+            print("Found Timed out job with state {}.  Requeueing job".format(job.state))
             job.set_state(state.MONKEY_STATE_QUEUED)
         if job.provider_type == "local":
             print("looking for local instance: ", job.job_yml["instance"])
@@ -115,8 +111,8 @@ def check_for_dead_jobs(self, log_file=None):
 
         if (job.state not in [
                 state.MONKEY_STATE_QUEUED, state.MONKEY_STATE_FINISHED,
-                state.MONKEY_STATE_DISPATCHING_MACHINE,
-                state.MONKEY_STATE_DISPATCHING, state.MONKEY_STATE_CLEANUP
+                state.MONKEY_STATE_DISPATCHING_MACHINE, state.MONKEY_STATE_DISPATCHING,
+                state.MONKEY_STATE_CLEANUP
         ]):
             # Instance can't be found and should have been created already
             if (instance is None
@@ -130,9 +126,8 @@ def check_for_dead_jobs(self, log_file=None):
         if job.state == state.MONKEY_STATE_RUNNING:
             if (job.run_timeout_time != -1 and job.run_timeout_time != 0) \
                 and time_elapsed > job.run_timeout_time:
-                logger.info(
-                    "Reached maximum running time: {}.  Killing job".format(
-                        job.job_uid))
+                logger.info("Reached maximum running time: {}.  Killing job".format(
+                    job.job_uid))
                 # Will run until finished cleanup
                 job.set_state(state=state.MONKEY_STATE_CLEANUP)
         elif job.state == state.MONKEY_STATE_CLEANUP:
@@ -145,8 +140,7 @@ def check_for_dead_jobs(self, log_file=None):
                 ((time_elapsed > state.MONKEY_TIMEOUT_CLEANUP) and
                  (instance is not None and instance.check_online() == True))):
                 threading.Thread(target=instance.cleanup_job,
-                                 args=(job.job_yml,
-                                       found_provider.get_dict())).start()
+                                 args=(job.job_yml, found_provider.get_dict())).start()
                 job.run_cleanup_start_date = datetime.now()
             elif (instance is not None and instance.check_online() == False):
                 job.set_state(state.MONKEY_STATE_FINISHED)
@@ -160,8 +154,7 @@ def check_for_dead_jobs(self, log_file=None):
 
 
 def check_for_job_hyperparameters(self, log_file=None):
-    jobs_without_hyperparameters = MonkeyJob.objects(
-        experiment_hyperparameters=dict())
+    jobs_without_hyperparameters = MonkeyJob.objects(experiment_hyperparameters=dict())
     jobs_without_hyperparameters_num = len(jobs_without_hyperparameters)
 
     printout = f"Found: {jobs_without_hyperparameters_num} jobs without parameters\n"
@@ -171,8 +164,7 @@ def check_for_job_hyperparameters(self, log_file=None):
         log_file.write(printout)
 
     for job in jobs_without_hyperparameters:
-        if job.state not in (state.MONKEY_STATE_RUNNING,
-                             state.MONKEY_STATE_CLEANUP,
+        if job.state not in (state.MONKEY_STATE_RUNNING, state.MONKEY_STATE_CLEANUP,
                              state.MONKEY_STATE_FINISHED):
             continue
         found_provider = None
