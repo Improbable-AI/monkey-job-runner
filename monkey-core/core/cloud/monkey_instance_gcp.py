@@ -42,22 +42,19 @@ name: {}, ip: {}, state: {}
 
         # Look for public IP
         network_interfaces = ansible_info.get("networkInterfaces", [])
-        access_configs = next(iter(network_interfaces),
-                              dict()).get("accessConfigs", [])
+        access_configs = next(iter(network_interfaces), dict()).get("accessConfigs", [])
         self.ip_address = next(iter(access_configs), dict()).get("natIP", None)
 
-        super().__init__(name=name,
-                         ip_address=self.ip_address)
+        super().__init__(name=name, ip_address=self.ip_address)
         self.ansible_info = ansible_info
         self.state = ansible_info["status"]
 
     def install_dependency(self, dependency):
         print("Instance installing: ", dependency)
-        runner = ansible_runner.run(
-            host_pattern=self.name,
-            private_data_dir="ansible",
-            module="include_role",
-            module_args="name=install/{}".format(dependency))
+        runner = ansible_runner.run(host_pattern=self.name,
+                                    private_data_dir="ansible",
+                                    module="include_role",
+                                    module_args="name=install/{}".format(dependency))
 
         if runner.status == "failed":
             return False
@@ -77,17 +74,15 @@ name: {}, ip: {}, state: {}
         data_checksum = data_item["dataset_checksum"]
         dataset_filename = data_item["dataset_filename"]
         installation_location = os.path.join(home_dir_path, data_item["path"])
-        dataset_full_path = os.path.join(monkeyfs_path, "data", data_name,
-                                         data_checksum, dataset_filename)
-        print("Copying dataset from", dataset_full_path, " to ",
-              installation_location)
+        dataset_full_path = os.path.join(monkeyfs_path, "data", data_name, data_checksum,
+                                         dataset_filename)
+        print("Copying dataset from", dataset_full_path, " to ", installation_location)
 
         runner = ansible_runner.run(
             host_pattern=self.name,
             private_data_dir="ansible",
             module="file",
-            module_args="path={} state=directory".format(
-                installation_location))
+            module_args="path={} state=directory".format(installation_location))
 
         runner = ansible_runner.run(
             host_pattern=self.name,
@@ -104,12 +99,11 @@ name: {}, ip: {}, state: {}
     def unpack_code_and_persist(self, job_uid, monkeyfs_path, home_dir_path):
         job_path = os.path.join(monkeyfs_path, "jobs", job_uid)
 
-        runner = ansible_runner.run(
-            host_pattern=self.name,
-            private_data_dir="ansible",
-            module="copy",
-            module_args="src={} dest={} remote_src=true".format(
-                job_path + "/", home_dir_path))
+        runner = ansible_runner.run(host_pattern=self.name,
+                                    private_data_dir="ansible",
+                                    module="copy",
+                                    module_args="src={} dest={} remote_src=true".format(
+                                        job_path + "/", home_dir_path))
         if runner.status == "failed":
             return False, "Failed to copy directory"
 
@@ -124,8 +118,8 @@ name: {}, ip: {}, state: {}
 
         return True, "Unpacked code and persisted directories successfully"
 
-    def setup_persist_folder(self, job_uid, monkeyfs_bucket_name,
-                             home_dir_path, persist):
+    def setup_persist_folder(self, job_uid, monkeyfs_bucket_name, home_dir_path,
+                             persist):
         print("Persisting folder: ", persist)
         persist_path = persist["path"]
         persist_name = "." + persist_path.replace("/", "_") + "_sync.sh"
@@ -136,16 +130,15 @@ name: {}, ip: {}, state: {}
 
         print("Output folder: ", monkeyfs_output_folder)
         print("Input folder: ", persist_folder_path)
-        runner = ansible_runner.run(
-            host_pattern=self.name,
-            private_data_dir="ansible",
-            module="include_role",
-            module_args="name=gcp/configure/persist_folder",
-            extravars={
-                "persist_folder_path": persist_folder_path,
-                "persist_script_path": script_path,
-                "bucket_path": monkeyfs_output_folder,
-            })
+        runner = ansible_runner.run(host_pattern=self.name,
+                                    private_data_dir="ansible",
+                                    module="include_role",
+                                    module_args="name=gcp/configure/persist_folder",
+                                    extravars={
+                                        "persist_folder_path": persist_folder_path,
+                                        "persist_script_path": script_path,
+                                        "bucket_path": monkeyfs_output_folder,
+                                    })
 
         if runner.status == "failed":
             return False, "Failed to create persisted directory: " + persist_path
@@ -157,17 +150,16 @@ name: {}, ip: {}, state: {}
         monkeyfs_output_folder = "gs://" + \
             os.path.join(monkeyfs_bucket_name, "jobs", job_uid, "logs")
         script_path = os.path.join(home_dir_path, ".logs_sync.sh")
-        runner = ansible_runner.run(
-            host_pattern=self.name,
-            private_data_dir="ansible",
-            module="include_role",
-            module_args="name=gcp/configure/persist_folder",
-            extravars={
-                "persist_folder_path": logs_path,
-                "persist_script_path": script_path,
-                "bucket_path": monkeyfs_output_folder,
-                "persist_time": 3,
-            })
+        runner = ansible_runner.run(host_pattern=self.name,
+                                    private_data_dir="ansible",
+                                    module="include_role",
+                                    module_args="name=gcp/configure/persist_folder",
+                                    extravars={
+                                        "persist_folder_path": logs_path,
+                                        "persist_script_path": script_path,
+                                        "bucket_path": monkeyfs_output_folder,
+                                        "persist_time": 3,
+                                    })
 
         if runner.status == "failed":
             return False, "Failed to create persisted logs folder"
@@ -197,8 +189,7 @@ name: {}, ip: {}, state: {}
         if runner.status == "failed":
             return False, "Failed to mount filesystem"
 
-        home_dir_path = self.get_home_directory_from_service_key(
-            credential_file)
+        home_dir_path = self.get_home_directory_from_service_key(credential_file)
 
         for data_item in job.get("data", []):
             print("Setting up data item", data_item)
@@ -208,29 +199,26 @@ name: {}, ip: {}, state: {}
             if success == False:
                 return success, msg
 
-        success, msg = self.unpack_code_and_persist(
-            job_uid=job_uid,
-            monkeyfs_path=monkeyfs_path,
-            home_dir_path=home_dir_path)
+        success, msg = self.unpack_code_and_persist(job_uid=job_uid,
+                                                    monkeyfs_path=monkeyfs_path,
+                                                    home_dir_path=home_dir_path)
         if success == False:
             return success, msg
         print("Success in unpacking all datasets")
 
         print("Setting up logs folder")
-        success, msg = self.setup_logs_folder(
-            job_uid=job_uid,
-            monkeyfs_bucket_name=storage_name,
-            home_dir_path=home_dir_path)
+        success, msg = self.setup_logs_folder(job_uid=job_uid,
+                                              monkeyfs_bucket_name=storage_name,
+                                              home_dir_path=home_dir_path)
         if success == False:
             return success, msg
 
         for persist_item in job.get("persist", []):
             print("Setting up persist item", persist_item)
-            success, msg = self.setup_persist_folder(
-                job_uid=job_uid,
-                monkeyfs_bucket_name=storage_name,
-                home_dir_path=home_dir_path,
-                persist=persist_item)
+            success, msg = self.setup_persist_folder(job_uid=job_uid,
+                                                     monkeyfs_bucket_name=storage_name,
+                                                     home_dir_path=home_dir_path,
+                                                     persist=persist_item)
             if success == False:
                 return success, msg
 

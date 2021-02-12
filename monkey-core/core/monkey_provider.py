@@ -1,18 +1,6 @@
-import datetime
-import json
 import logging
-import random
-import string
-import time
 from concurrent.futures import Future
 from threading import Thread
-
-import ansible_runner
-import googleapiclient.discovery
-from ansible.inventory.manager import InventoryManager
-from ansible.parsing.dataloader import DataLoader
-from ansible.vars.manager import VariableManager
-from google.oauth2 import service_account
 
 logger = logging.getLogger(__name__)
 
@@ -30,10 +18,10 @@ def call_with_future(fn, future, args, kwargs):
 
 
 def threaded(fn):
+
     def wrapper(*args, **kwargs):
         future = Future()
-        Thread(target=call_with_future,
-               args=(fn, future, args, kwargs)).start()
+        Thread(target=call_with_future, args=(fn, future, args, kwargs)).start()
         return future
 
     return wrapper

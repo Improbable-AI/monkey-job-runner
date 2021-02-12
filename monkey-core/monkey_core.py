@@ -6,7 +6,6 @@ import logging
 import os
 import random
 import string
-import subprocess
 import sys
 import tarfile
 import tempfile
@@ -89,11 +88,11 @@ def get_new_job_uid():
         global date_format, instance_number, last_date
         new_date = datetime.now().strftime(date_format)
         if new_date != last_date:
+
             last_date = new_date
             instance_number = 1
         else:
-            logger.info(
-                f"Would be instance {last_date + str(instance_number + 1)}")
+            logger.info(f"Would be instance {last_date + str(instance_number + 1)}")
             pass
             instance_number += 1
         if UNIQUE_UIDS == True:
@@ -171,8 +170,7 @@ def get_job_output():
 
         persisted_items = job_yaml.get("persist", [])
         logger.info(f"Retrieving persisted items: {persisted_items}")
-        with tempfile.NamedTemporaryFile(delete=False,
-                                         suffix=".tar") as dir_tmp:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".tar") as dir_tmp:
             code_tar = tarfile.open(dir_tmp.name, "w")
             logger.info(persisted_items)
             for f in persisted_items:
@@ -233,9 +231,9 @@ def get_dataset_path(dataset_name, dataset_checksum, monkeyfs_path):
 
 
 def check_checksum_path(local_path, provider_path, directory, name, checksum):
+
     def get_checksum_path(base_path):
-        abs_path = os.path.abspath(
-            os.path.join(base_path, directory, name, checksum))
+        abs_path = os.path.abspath(os.path.join(base_path, directory, name, checksum))
         return abs_path, existing_dir(abs_path)
 
     local_path, local_found = get_checksum_path(base_path=local_path)
@@ -249,9 +247,11 @@ def check_checksum_path(local_path, provider_path, directory, name, checksum):
         sync_directories(local_path, provider_path)
 
     return jsonify({
-        "msg": f"Found existing {directory}"
-        if local_found else f"Need to upload {directory}...",
-        "found": local_found,
+        "msg":
+            f"Found existing {directory}"
+            if local_found else f"Need to upload {directory}...",
+        "found":
+            local_found,
     })
 
 
@@ -264,8 +264,7 @@ def check_dataset():
 
     if dataset_name is None or dataset_checksum is None or provider is None:
         return jsonify({
-            "msg":
-            "Did not provide dataset_name or dataset_checksum or provider",
+            "msg": "Did not provide dataset_name or dataset_checksum or provider",
             "found": False
         })
 
@@ -297,8 +296,9 @@ def upload_dataset():
             or dataset_extension is None or provider is None:
         return jsonify({
             "msg":
-            "Did not provide dataset_name or dataset_checksum or dataset_path or dataset_extension or provider",
-            "success": False
+                "Did not provide dataset_name or dataset_checksum or dataset_path or dataset_extension or provider",
+            "success":
+                False
         })
     monkeyfs_path = get_local_filesystem_for_provider(provider)
     local_path = get_dataset_path(dataset_name=dataset_name,
@@ -311,8 +311,8 @@ def upload_dataset():
 
     doc_yaml_path = os.path.join(local_path, "dataset.yaml")
     os.makedirs(local_path, exist_ok=True)
-    FileStorage(request.stream).save(
-        os.path.join(local_path, "data" + dataset_extension))
+    FileStorage(request.stream).save(os.path.join(local_path,
+                                                  "data" + dataset_extension))
     logger.info("Saved file to: {}".format(
         os.path.join(local_path, "data" + dataset_extension)))
     with open(doc_yaml_path, "w") as doc_yaml_file:
@@ -373,10 +373,7 @@ def upload_codebase():
 
     logger.info(f"Received upload codebase request: {job_uid}")
     if job_uid is None or provider is None:
-        return jsonify({
-            "msg": "Did not provide job_uid or provider",
-            "success": False
-        })
+        return jsonify({"msg": "Did not provide job_uid or provider", "success": False})
     monkeyfs_path = get_local_filesystem_for_provider(provider)
 
     job_folder_path = os.path.join(MONKEYFS_LOCAL_PATH, "jobs", job_uid)
@@ -386,8 +383,7 @@ def upload_codebase():
     if not os.path.exists(os.path.join(job_folder_path, "logs", "run.log")):
         with open(os.path.join(job_folder_path, "logs", "run.log"), "a") as f:
             f.write("Initializing machines...")
-    if not os.path.exists(
-            os.path.join(provider_job_folder_path, "logs", "run.log")):
+    if not os.path.exists(os.path.join(provider_job_folder_path, "logs", "run.log")):
         with open(os.path.join(job_folder_path, "logs", "run.log"), "a") as f:
             f.write("Initializing machines...")
     logger.info("Writing local code.yaml")
@@ -415,8 +411,7 @@ def upload_codebase():
         y.dump(code_yaml, f)
 
     def get_codebase_folder_path(base_path):
-        path = os.path.abspath(
-            os.path.join(base_path, "code", run_name, checksum, ""))
+        path = os.path.abspath(os.path.join(base_path, "code", run_name, checksum, ""))
         os.makedirs(path, exist_ok=True)
         return path
 
@@ -434,16 +429,14 @@ def upload_codebase():
         FileStorage(request.stream).save(destination_path)
 
         logger.info(f"Saved file to: {destination_path}")
-        with open(os.path.join(local_codebase_folder_path, "code.yaml"),
-                  "w") as f:
+        with open(os.path.join(local_codebase_folder_path, "code.yaml"), "w") as f:
             y = YAML()
             code_yaml.fa.set_block_style()
             y.explicit_start = True
             y.default_flow_style = False
             y.dump(code_yaml, f)
         logger.info("Syncing codebase folder")
-        sync_directories(local_codebase_folder_path,
-                         provider_codebase_folder_path)
+        sync_directories(local_codebase_folder_path, provider_codebase_folder_path)
         logger.info("Syncing codebase folder: DONE")
     else:
         logger.info("Skipping uploading codebase")
@@ -458,10 +451,7 @@ def upload_persist():
     provider = request.args.get('provider', None)
 
     if job_uid is None or provider is None:
-        return jsonify({
-            "msg": "Did not provide job_uid or provider",
-            "success": False
-        })
+        return jsonify({"msg": "Did not provide job_uid or provider", "success": False})
     monkeyfs_path = get_local_filesystem_for_provider(provider)
     create_folder_path = os.path.join(monkeyfs_path, "jobs", job_uid)
     os.makedirs(create_folder_path, exist_ok=True)
@@ -514,6 +504,7 @@ def get_state():
 @application.route('/log')
 @application.route('/logs')
 def get_logs():
+
     def logs():
         with open('/var/log/monkey-client.log', 'r') as log_file:
             while True:
@@ -585,10 +576,7 @@ def main():
     parsed_args = parse_args(sys.argv[1:])
     if parsed_args.dev:
         logger.info("\n\nStarting in debug mode...\n\n")
-        application.run(host='0.0.0.0',
-                        port=9990,
-                        debug=True,
-                        use_reloader=True)
+        application.run(host='0.0.0.0', port=9990, debug=True, use_reloader=True)
     else:
         application.run(host='0.0.0.0', port=9990)
     return 0

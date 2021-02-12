@@ -13,8 +13,7 @@ from ansible.parsing.dataloader import DataLoader
 from ansible.vars.manager import VariableManager
 from core.cloud.monkey_instance_aws import MonkeyInstanceAWS
 from core.monkey_provider import MonkeyProvider
-from setup_scripts.utils import (aws_cred_file_environment,
-                                 printout_ansible_events)
+from setup_scripts.utils import (aws_cred_file_environment, printout_ansible_events)
 
 logger = logging.getLogger(__name__)
 logging.getLogger("botocore").setLevel(logging.WARNING)
@@ -58,8 +57,7 @@ class MonkeyProviderAWS(MonkeyProvider):
         if self.check_filesystem_mounted() == False:
             print("Filesystem mount not found")
             print("Remounting filesystem.... ")
-            if self.check_provider() == False or self.check_filesystem_mounted(
-            ):
+            if self.check_provider() == False or self.check_filesystem_mounted():
                 print("Failed to remount filesystem")
                 return None
             else:
@@ -70,8 +68,7 @@ class MonkeyProviderAWS(MonkeyProvider):
         print("Checking for mounted filesystem")
 
         fs_output = subprocess.run("df {} | grep monkeyfs".format(
-            self.provider_info.get("local_monkeyfs_path",
-                                   "ansible/monkeyfs-aws")),
+            self.provider_info.get("local_monkeyfs_path", "ansible/monkeyfs-aws")),
                                    shell=True,
                                    capture_output=True).stdout.decode("utf-8")
         if fs_output is not None and fs_output != "":
@@ -81,8 +78,7 @@ class MonkeyProviderAWS(MonkeyProvider):
         return False
 
     def check_provider(self):
-        cred_environment = aws_cred_file_environment(
-            self.provider_info["aws_cred_file"])
+        cred_environment = aws_cred_file_environment(self.provider_info["aws_cred_file"])
 
         runner = ansible_runner.run(
             playbook='aws_setup_checks.yml',
@@ -115,8 +111,7 @@ class MonkeyProviderAWS(MonkeyProvider):
             return sorted(list(self.instances.values()))
         # MARK(alamp): AnsibleInternalAPI
         loader = DataLoader()
-        inventory = InventoryManager(loader=loader,
-                                     sources="ansible/inventory")
+        inventory = InventoryManager(loader=loader, sources="ansible/inventory")
         host_list = inventory.get_groups_dict().get("monkey_aws", [])
         detected_instances = []
         for host in host_list:
@@ -133,8 +128,7 @@ class MonkeyProviderAWS(MonkeyProvider):
             else:
                 self.instances[detected_instance.name] = detected_instance
 
-        offline_instances = set(
-            self.instances.keys()).difference(detected_names)
+        offline_instances = set(self.instances.keys()).difference(detected_names)
         for offline_instance in offline_instances:
             self.instances[offline_instance].state = "offline"
 
@@ -162,16 +156,15 @@ class MonkeyProviderAWS(MonkeyProvider):
         jobs = []
         for zone in self.zones:
             try:
-                result = self.compute_api.instances().list(
-                    project=self.project, zone=zone).execute()
+                result = self.compute_api.instances().list(project=self.project,
+                                                           zone=zone).execute()
                 result = result['items'] if 'items' in result else None
                 if result:
                     for item in result:
                         labels = item['labels'] if 'labels' in item else []
                         monkey_identifier_target = self.machine_defaults[
                             'monkey-identifier']
-                        identifier_target = labels.get("monkey-identifier",
-                                                       None)
+                        identifier_target = labels.get("monkey-identifier", None)
                         if identifier_target == monkey_identifier_target:
                             jobs.append(item['name'])
             except Exception as e:
@@ -181,12 +174,10 @@ class MonkeyProviderAWS(MonkeyProvider):
     def list_images(self):
         images = []
         try:
-            result = self.compute_api.images().list(
-                project=self.project).execute()
+            result = self.compute_api.images().list(project=self.project).execute()
             result = result['items'] if 'items' in result else None
             if result:
-                images += [(inst["name"],
-                            inst["family"] if "family" in inst else None)
+                images += [(inst["name"], inst["family"] if "family" in inst else None)
                            for inst in result]
         except:
             pass
@@ -208,8 +199,7 @@ class MonkeyProviderAWS(MonkeyProvider):
         retries = 1
         while retries > 0:
             loader = DataLoader()
-            inventory = InventoryManager(loader=loader,
-                                         sources="ansible/inventory")
+            inventory = InventoryManager(loader=loader, sources="ansible/inventory")
             try:
                 print("Checking inventory for host machine")
                 h = inventory.get_host(machine_params["monkey_job_uid"])

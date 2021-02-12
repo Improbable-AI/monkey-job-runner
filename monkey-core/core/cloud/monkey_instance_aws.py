@@ -39,8 +39,8 @@ name: {}, ip: {}, state: {}
         self.machine_zone = ansible_info["placement"]["availability_zone"]
 
         try:
-            self.ip_address = ansible_info["network_interfaces"][0][
-                "association"]["public_ip"]
+            self.ip_address = ansible_info["network_interfaces"][0]["association"][
+                "public_ip"]
         except:
             self.ip_address = None
 
@@ -55,20 +55,19 @@ name: {}, ip: {}, state: {}
         self.machine_zone = other.machine_zone
 
     def check_online(self):
+
         return super().check_online() and self.state == "running"
 
     def install_dependency(self, dependency):
-        print("Instance installing: ", dependency)
+        logger.info(f"Instance installing: {dependency}")
 
         uuid = self.update_uuid()
-        runner = self.run_ansible_role(rolename=f"install/{dependency}",
-                                       uuid=uuid)
-        print(runner.status)
+        runner = self.run_ansible_role(rolename=f"install/{dependency}", uuid=uuid)
         if runner.status == "failed" or self.get_uuid() != uuid:
-            print("Installing Dependency: ", dependency, " failed!")
+            logger.error(f"Installing Dependency: {dependency} failed")
             return False
 
-        print("Installing Dependency: ", dependency, " succeeded!")
+        logger.info(f"Installing Dependency: {dependency} succeeded!")
         return True
 
     def setup_data_item(self, data_item, monkeyfs_path, home_dir_path):
@@ -77,10 +76,9 @@ name: {}, ip: {}, state: {}
         data_checksum = data_item["dataset_checksum"]
         dataset_filename = data_item["dataset_filename"]
         installation_location = os.path.join(home_dir_path, data_item["path"])
-        dataset_full_path = os.path.join(monkeyfs_path, "data", data_name,
-                                         data_checksum, dataset_filename)
-        print("Copying dataset from", dataset_full_path, " to ",
-              installation_location)
+        dataset_full_path = os.path.join(monkeyfs_path, "data", data_name, data_checksum,
+                                         dataset_filename)
+        print("Copying dataset from", dataset_full_path, " to ", installation_location)
 
         uuid = self.update_uuid()
 
@@ -180,8 +178,7 @@ name: {}, ip: {}, state: {}
         print("Persisting folder: ", persist)
         persist_path = persist
         script_path = os.path.join(home_dir_path, "sync", "persist_all.sh")
-        script_loop_path = os.path.join(home_dir_path, "sync",
-                                        "persist_all_loop.sh")
+        script_loop_path = os.path.join(home_dir_path, "sync", "persist_all_loop.sh")
         monkeyfs_output_folder = \
             os.path.join("/monkeyfs", "jobs", job_uid, persist_path, "")
         persist_folder_path = os.path.join(home_dir_path, persist_path, "")
@@ -270,10 +267,9 @@ name: {}, ip: {}, state: {}
             return success, msg
 
         for code_item in job.get("code", []):
-            success, msg = self.unpack_code_and_persist(
-                code_item=code_item,
-                monkeyfs_path=monkeyfs_path,
-                home_dir_path=home_dir_path)
+            success, msg = self.unpack_code_and_persist(code_item=code_item,
+                                                        monkeyfs_path=monkeyfs_path,
+                                                        home_dir_path=home_dir_path)
             if not success:
                 return success, msg
             print("Success in unpacking all datasets")
@@ -286,10 +282,9 @@ name: {}, ip: {}, state: {}
 
         for persist_item in job.get("persist", []):
             print("Setting up persist item", persist_item)
-            success, msg = self.setup_persist_folder(
-                job_uid=job_uid,
-                home_dir_path=home_dir_path,
-                persist=persist_item)
+            success, msg = self.setup_persist_folder(job_uid=job_uid,
+                                                     home_dir_path=home_dir_path,
+                                                     persist=persist_item)
             if not success:
                 return success, msg
 
@@ -367,8 +362,7 @@ name: {}, ip: {}, state: {}
         script_path = os.path.join("/home/ubuntu", "sync", "persist_all.sh")
         print(script_path)
         uuid = self.update_uuid()
-        runner = self.run_ansible_shell(command=f"bash {script_path}",
-                                        uuid=uuid)
+        runner = self.run_ansible_shell(command=f"bash {script_path}", uuid=uuid)
         if runner.status == "failed" or self.get_uuid() != uuid:
             return False, "Failed to run sync command properly: "
         print("Ended syncing")
@@ -390,15 +384,14 @@ name: {}, ip: {}, state: {}
         for key, val in get_aws_vars().items():
             delete_instance_params[key] = val
 
-        runner = ansible_runner.run(
-            host_pattern="localhost",
-            private_data_dir="ansible",
-            module="include_role",
-            module_args="name=aws/delete",
-            extravars=delete_instance_params,
-            quiet=monkey_global.QUIET_ANSIBLE,
-            cancel_callback=self.ansible_runner_uuid_cancel(
-                self.update_uuid()))
+        runner = ansible_runner.run(host_pattern="localhost",
+                                    private_data_dir="ansible",
+                                    module="include_role",
+                                    module_args="name=aws/delete",
+                                    extravars=delete_instance_params,
+                                    quiet=monkey_global.QUIET_ANSIBLE,
+                                    cancel_callback=self.ansible_runner_uuid_cancel(
+                                        self.update_uuid()))
 
         if runner.status == "failed":
             print("Failed Deletion of machine")

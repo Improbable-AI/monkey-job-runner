@@ -1,7 +1,7 @@
 import logging
 
 logger = logging.getLogger(__name__)
-from mongo import *
+from mongo.monkey_job import MonkeyJob
 
 
 def get_job_uid(self, uid):
@@ -55,8 +55,8 @@ def get_list_jobs(self, options=dict()):
 
     if num_jobs is not None and num_jobs != -1:
         jobs = [
-            x.get_dict() for x in MonkeyJob.objects().order_by(
-                "-creation_date").limit(num_jobs)
+            x.get_dict()
+            for x in MonkeyJob.objects().order_by("-creation_date").limit(num_jobs)
         ]
     else:
         jobs = [x.get_dict() for x in MonkeyJob.objects()]

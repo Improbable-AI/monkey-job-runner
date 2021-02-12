@@ -32,11 +32,14 @@ def get_gcp_vars():
 
 
 def printout_ansible_events(events):
-    events = [(x.get("event_data", {}).get("task", "unknown"),
-               x.get("event_data", {}).get("playbook", "unknown"),
-               x.get("event_data", {}).get("task_action", "unknown"),
-               x.get("event_data", {}).get("task_args",
-                                           "unknown"), x.get("stdout", None))
+    events = [(x.get("event_data",
+                     {}).get("task", "unknown"), x.get("event_data",
+                                                       {}).get("playbook", "unknown"),
+               x.get("event_data",
+                     {}).get("task_action",
+                             "unknown"), x.get("event_data",
+                                               {}).get("task_args",
+                                                       "unknown"), x.get("stdout", None))
               for x in events]
 
     for task, playbook, action, args, stdout in events:
@@ -91,8 +94,7 @@ def aws_cred_file_environment(file):
         d = dict(zip(names, values))
 
         if "Access key ID" not in d or "Secret access key" not in d:
-            raise ValueError(
-                "The AWS Cred File does not look like a csv cred file")
+            raise ValueError("The AWS Cred File does not look like a csv cred file")
 
         access_key_id = d["Access key ID"]
         access_key_secret = d["Secret access key"]
@@ -103,6 +105,7 @@ def aws_cred_file_environment(file):
 
 
 class Completer(object):
+
     def _listdir(self, root):
         "List directory 'root' appending the path sep arator to subdirs."
         res = []
@@ -120,8 +123,7 @@ class Completer(object):
         dirname, rest = os.path.split(path)
         tmp = dirname if dirname else '.'
         res = [
-            os.path.join(dirname, p) for p in self._listdir(tmp)
-            if p.startswith(rest)
+            os.path.join(dirname, p) for p in self._listdir(tmp) if p.startswith(rest)
         ]
         # more than one match, or single match which does not exist (typo)
         if len(res) > 1 or not os.path.exists(path):

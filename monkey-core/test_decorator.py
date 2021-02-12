@@ -12,6 +12,7 @@ class Examp():
     executor = ThreadPoolExecutor(max_workers=1)
 
     def threaded(fn):
+
         def wrapper(*args, **kwargs):
             self = args[0]
             future = Future()

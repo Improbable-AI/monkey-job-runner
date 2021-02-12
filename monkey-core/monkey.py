@@ -1,6 +1,6 @@
 import logging
 import threading
-from datetime import datetime, timedelta
+from datetime import datetime
 
 import yaml
 from termcolor import colored
@@ -27,11 +27,13 @@ class Monkey():
     lock = threading.Lock()
     providers = []
 
-    from _monkey_list import (get_job_info, get_job_uid, get_list_instances,
-                              get_list_jobs, get_list_local_instances,get_job_config,
-                              get_list_providers)
-    from _monkey_loop import (check_for_dead_jobs, check_for_queued_jobs,check_for_job_hyperparameters,
-                              daemon_loop, print_jobs_string)
+    from _monkey_list import (get_job_config, get_job_info, get_job_uid,
+                              get_list_instances, get_list_jobs,
+                              get_list_local_instances, get_list_providers)
+    from _monkey_loop import (check_for_dead_jobs,
+                              check_for_job_hyperparameters,
+                              check_for_queued_jobs, daemon_loop,
+                              print_jobs_string)
 
     def __init__(self, providers_path="providers.yml", start_loop=True):
         super().__init__()
@@ -45,12 +47,10 @@ class Monkey():
         providers = dict()
         try:
             with open(providers_path, 'r') as providers_file:
-                providers_yaml = yaml.load(providers_file,
-                                           Loader=yaml.FullLoader)
+                providers_yaml = yaml.load(providers_file, Loader=yaml.FullLoader)
                 providers = providers_yaml["providers"]
         except:
-            logger.error(
-                "Could not read providers.yml for configured providers")
+            logger.error("Could not read providers.yml for configured providers")
 
         if len(providers) == 0:
             logger.error(
@@ -58,8 +58,7 @@ class Monkey():
             )
             raise ValueError("No providers found")
         else:
-            logger.info("Found Providers: {}".format(
-                ([p["name"] for p in providers])))
+            logger.info("Found Providers: {}".format(([p["name"] for p in providers])))
 
         for provider in providers:
             try:
@@ -69,8 +68,7 @@ class Monkey():
                     self.providers.append(handler)
                 else:
                     raise ValueError(
-                        "Instantiated Handler is not valid: {}".format(
-                            handler))
+                        "Instantiated Handler is not valid: {}".format(handler))
             except Exception as e:
                 logger.error("Could not instantiate provider \n{}".format(e))
 
@@ -133,8 +131,7 @@ class Monkey():
                 break
         machine_params["monkey_job_uid"] = job_uid
 
-        dbMonkeyJob.set_state(
-            state=mongo_state.MONKEY_STATE_DISPATCHING_MACHINE)
+        dbMonkeyJob.set_state(state=mongo_state.MONKEY_STATE_DISPATCHING_MACHINE)
         created_host, creation_success = provider.create_instance(
             machine_params=machine_params, job_yml=job_yml)
         logger.info(f"Created Host: {created_host}")
@@ -144,8 +141,7 @@ class Monkey():
             return False, "Failed to create and virtualize instance properly"
         logger.info(f"{job_uid}: Successfully dispatched machine")
 
-        dbMonkeyJob.set_state(
-            state=mongo_state.MONKEY_STATE_DISPATCHING_INSTALLS)
+        dbMonkeyJob.set_state(state=mongo_state.MONKEY_STATE_DISPATCHING_INSTALLS)
         # Run install scripts
         for install_item in job_yml.get("install", []):
             print("Installing item: ", install_item)
@@ -158,28 +154,25 @@ class Monkey():
         logger.info(f"{job_uid}: Successfully configured machine installs")
 
         dbMonkeyJob.set_state(state=mongo_state.MONKEY_STATE_DISPATCHING_SETUP)
-        success, msg = created_host.setup_job(
-            job_yml, provider_info=provider.get_dict())
+        success, msg = created_host.setup_job(job_yml, provider_info=provider.get_dict())
         if success is False:
             print("Failed to setup host:", msg)
             dbMonkeyJob.set_state(state=mongo_state.MONKEY_STATE_QUEUED)
             return success, msg
-        logger.info(
-            f"{job_uid}: Successfully configured host environment: {msg}")
+        logger.info(f"{job_uid}: Successfully configured host environment: {msg}")
 
         dbMonkeyJob.set_state(state=mongo_state.MONKEY_STATE_RUNNING)
-        success, msg = created_host.run_job(job_yml,
-                                            provider_info=provider.get_dict())
+        success, msg = created_host.run_job(job_yml, provider_info=provider.get_dict())
         print("Returning from run job")
         if success is False:
             print("Failed to run job:", msg)
             dbMonkeyJob.set_state(state=mongo_state.MONKEY_STATE_QUEUED)
             return success, msg
-        dbMonkeyJob.total_wall_time = (
-            datetime.now() - dbMonkeyJob.creation_date).total_seconds()
+        dbMonkeyJob.total_wall_time = (datetime.now() -
+                                       dbMonkeyJob.creation_date).total_seconds()
         dbMonkeyJob.set_state(state=mongo_state.MONKEY_STATE_CLEANUP)
-        success, msg = created_host.cleanup_job(
-            job_yml, provider_info=provider.get_dict())
+        success, msg = created_host.cleanup_job(job_yml,
+                                                provider_info=provider.get_dict())
         if success is False:
             print("Job ran correctly, but cleanup failed:", msg)
             return success, msg

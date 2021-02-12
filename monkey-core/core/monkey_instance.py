@@ -25,10 +25,10 @@ def call_with_future(fn, future, args, kwargs):
 
 
 def threaded(fn):
+
     def wrapper(*args, **kwargs):
         future = Future()
-        Thread(target=call_with_future,
-               args=(fn, future, args, kwargs)).start()
+        Thread(target=call_with_future, args=(fn, future, args, kwargs)).start()
         return future
 
     return wrapper
@@ -65,8 +65,7 @@ class MonkeyInstance():
         if self.ip_address is None:
             return False
         try:
-            r = requests.get("http://{}:9991/ping".format(self.ip_address),
-                             timeout=4)
+            r = requests.get("http://{}:9991/ping".format(self.ip_address), timeout=4)
         except:
             self.offline_count += 1
             return self.offline_count >= self.offline_retries
@@ -93,6 +92,7 @@ class MonkeyInstance():
         return new_uuid
 
     def ansible_runner_uuid_cancel(self, uuid):
+
         def check_for_uuid_change():
             change = self.last_uuid != uuid
             # print("Checking uuid: {} != {}, : {}".format(
@@ -112,8 +112,7 @@ class MonkeyInstance():
         if self.ip_address is None:
             return None
         try:
-            r = requests.get("http://{}:9991/config".format(self.ip_address),
-                             timeout=4)
+            r = requests.get("http://{}:9991/config".format(self.ip_address), timeout=4)
             r.raise_for_status()
             result = r.json()
             if result['ok']:
@@ -123,11 +122,7 @@ class MonkeyInstance():
         except:
             return None
 
-    def run_ansible_role(self,
-                         rolename,
-                         uuid,
-                         extravars=dict(),
-                         envvars=dict()):
+    def run_ansible_role(self, rolename, uuid, extravars=dict(), envvars=dict()):
         extravars.update(self.additional_extravars)
         runner = ansible_runner.run(
             host_pattern=self.name,
