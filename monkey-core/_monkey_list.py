@@ -1,7 +1,7 @@
 import logging
 
 logger = logging.getLogger(__name__)
-from mongo import *
+from mongo.monkey_job import MonkeyJob
 
 
 def get_job_uid(self, uid):

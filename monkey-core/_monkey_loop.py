@@ -67,9 +67,6 @@ def check_for_dead_jobs(self, log_file=None):
     pending_job_num = len(current_jobs)
     cleanup_jobs = [x for x in pending_jobs if x.state == state.MONKEY_STATE_CLEANUP]
     potential_missed_cleanup_num = len(cleanup_jobs)
-    recently_finished_jos = [
-        x for x in pending_jobs if x.state == state.MONKEY_STATE_FINISHED
-    ]
 
     printout = f"Found: {pending_job_num} jobs in pending state\n"
     printout += f"Checking: {potential_missed_cleanup_num} jobs for late cleanup\n"

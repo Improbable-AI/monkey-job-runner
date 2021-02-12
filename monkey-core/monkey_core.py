@@ -6,7 +6,6 @@ import logging
 import os
 import random
 import string
-import subprocess
 import sys
 import tarfile
 import tempfile
@@ -89,6 +88,7 @@ def get_new_job_uid():
         global date_format, instance_number, last_date
         new_date = datetime.now().strftime(date_format)
         if new_date != last_date:
+
             last_date = new_date
             instance_number = 1
         else:
