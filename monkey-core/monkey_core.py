@@ -135,6 +135,7 @@ def get_job_config():
     job_uid = request.args.get("job_uid", None)
     if job_uid is None:
         return jsonify({"success": False, "msg": "No job_uid provided"})
+
     else:
         job_config = monkey.get_job_config(job_uid)
         return jsonify({

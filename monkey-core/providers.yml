@@ -8,7 +8,6 @@ providers:
   monkeyfs_scratch: ~/monkey-scratch # Defaults to ~/monkey-scratch
   local_monkeyfs_path: /home/avery/Developer/projects/monkey/monkey-core/ansible/monkeyfs
   local_instance_details: local.yml  # Defaults to local.yml
-  monkeyfs_public_ip: localhost
+  monkeyfs_public_ip: 192.168.99.41
   monkeyfs_public_port: '22'
   monkeyfs_user: avery
-  localhost_only: true

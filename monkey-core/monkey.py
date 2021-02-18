@@ -43,7 +43,7 @@ class Monkey():
         if start_loop:
             threading.Thread(target=self.daemon_loop, daemon=True).start()
 
-    def instantiate_providers(self, providers_path="providers.yml"):
+    def instantiate_providers(self, providers_path: str = "providers.yml"):
         providers = dict()
         try:
             with open(providers_path, 'r') as providers_file:
@@ -72,7 +72,7 @@ class Monkey():
             except Exception as e:
                 logger.error("Could not instantiate provider \n{}".format(e))
 
-    def submit_job(self, job_yml: dict, foreground=True) -> (bool, str):
+    def submit_job(self, job_yml: dict, foreground: bool = True) -> (bool, str):
         """ Persists a job to run
 
         Args:
@@ -82,13 +82,13 @@ class Monkey():
         Returns:
             (bool, str): (Success, Message)
         """
-        print("Monkey job yml submitted:")
         provider_name = job_yml["provider"]
         found_provider = None
         for p in self.providers:
             if p.name == provider_name:
                 found_provider = p
 
+        logger.info("Monkey job yml submitted:")
         if found_provider is None:
             return False, "No matching provider found"
 
@@ -109,7 +109,7 @@ class Monkey():
         else:
             return True, "Running in background"
 
-    def run_job(self, provider, job_yml):
+    def run_job(self, provider: MonkeyProvider, job_yml):
         """ Runs a job in the monkey core system
 
         Args:
