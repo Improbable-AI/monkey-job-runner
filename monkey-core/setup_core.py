@@ -16,7 +16,10 @@ from setup_scripts.utils import Completer, get_monkey_fs
 comp = Completer()
 # we want to treat '/' as part of a word, so override the delimiters
 readline.set_completer_delims(' \t\n;')
-readline.parse_and_bind("tab: complete")
+if 'libedit' in readline.__doc__:
+    readline.parse_and_bind("bind ^I rl_complete")
+else:
+    readline.parse_and_bind("tab: complete")
 readline.set_completer(comp.complete)
 
 
