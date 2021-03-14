@@ -78,7 +78,8 @@ class MonkeyProviderAWS(MonkeyProvider):
         return False
 
     def check_provider(self):
-        cred_environment = aws_cred_file_environment(self.provider_info["aws_cred_file"])
+        cred_environment = aws_cred_file_environment(
+            cred_file=self.provider_info["aws_cred_file"])
 
         runner = ansible_runner.run(
             playbook='aws_setup_checks.yml',
@@ -89,7 +90,6 @@ class MonkeyProviderAWS(MonkeyProvider):
             },
             quiet=True)
 
-        events = [e for e in runner.events]
         if runner.status == "failed":
             print("Failed to mount the AWS S3 filesystem")
             return False
@@ -106,8 +106,8 @@ class MonkeyProviderAWS(MonkeyProvider):
         pass
 
     def list_instances(self):
-        if (datetime.now() - self.last_instance_fetch
-            ).total_seconds() < self.instance_list_refresh_period:
+        time_difference = (datetime.now() - self.last_instance_fetch)
+        if time_difference.total_seconds() < self.instance_list_refresh_period:
             return sorted(list(self.instances.values()))
         # MARK(alamp): AnsibleInternalAPI
         loader = DataLoader()

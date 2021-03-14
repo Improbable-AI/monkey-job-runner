@@ -31,10 +31,10 @@ def check_aws_provider(yaml):
             "access_key_secret": cred_environment["AWS_SECRET_ACCESS_KEY"],
         },
         quiet=True)
-    events = [e for e in runner.events]
-    if runner.status == "failed":
-        printout_ansible_events(events)
 
+    if runner.status == "failed":
+        events = [e for e in runner.events]
+        printout_ansible_events(events)
         print("Failed to mount the AWS S3 filesystem")
         return False
     print("Mount successful")
@@ -206,8 +206,8 @@ def write_commented_file(filename, yaml_params):
             y.explicit_start = True
             y.default_flow_style = False
             y.dump(yaml_params, f)
-        except:
-            print(f"Failed to write aws file: {filename}")
+        except Exception as e:
+            print(f"Failed to write aws file: {filename}\n{e}")
             exit(1)
 
 
@@ -244,8 +244,8 @@ def create_aws_monkeyfs(storage_name, cred_environment, region):
 def mount_aws_monkeyfs(yaml):
     bucket_name = yaml["storage_name"]
     local_mount_point = yaml["local_monkeyfs_path"]
-    print("Attempting to mount gcs bucket: {} to {}".format(bucket_name,
-                                                            local_mount_point))
+    print("Attempting to mount s3 bucket: {} to {}".format(bucket_name,
+                                                           local_mount_point))
 
     cred_environment = aws_cred_file_environment(yaml["aws_cred_file"])
 
