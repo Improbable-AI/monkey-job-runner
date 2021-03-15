@@ -101,7 +101,16 @@ def unpack_code_and_persist(self, job_uid, code_item):
     return True, "Unpacked code and persisted directories successfully"
 
 
+#############################################
+#
+#  4. Sets up Logs folder
+#
+#############################################
 def setup_logs_folder(self, job_uid):
+    """
+    Creates a logs folder and a sync script which will get executed
+    Every time persist_all is executed
+    """
     print("Persisting logs: ")
     job_dir_path = self.get_job_dir(job_uid=job_uid)
     logs_path = os.path.join(job_dir_path, "logs", "")
@@ -109,7 +118,7 @@ def setup_logs_folder(self, job_uid):
     monkeyfs_output_folder = os.path.join(monkeyfs_job_dir, "logs", "")
 
     sync_logs_path = os.path.join(job_dir_path, "logs", "sync.log")
-    script_path = os.path.join(job_dir_path, ".logs_sync.sh")
+    script_path = os.path.join(job_dir_path, "logs_sync.sh")
     sync_folder_path = os.path.join(job_dir_path, "sync")
     persist_folder_args = {
         "persist_folder_path": logs_path,
@@ -132,7 +141,17 @@ def setup_logs_folder(self, job_uid):
     return True, "Setup logs persistence ran successfully"
 
 
+#############################################
+#
+#  5. Set up Persist folders
+#
+#############################################
 def setup_persist_folder(self, job_uid, persist):
+    """
+    For every folder defined, a persist script is generated.
+    The persist script will live in {job_dir}/sync/ and be executed
+    periodically at shutdown or upon completion
+    """
     print("Persisting folder: ", persist)
     job_dir_path = self.get_job_dir(job_uid=job_uid)
     persist_path = persist
@@ -164,7 +183,17 @@ def setup_persist_folder(self, job_uid, persist):
     return True, "Setup persist ran successfully"
 
 
+#############################################
+#
+#  6. Starts Persist Script Loop
+#
+#############################################
 def start_persist(self, job_uid):
+    """
+    The persist script loop runs every designated time period
+    and will sync all persisted folders, logs, or other defined persists
+    The persist script loop is uniquely named to allow for killing by name
+    """
     job_dir_path = self.get_job_dir(job_uid=job_uid)
     unique_persist_all_script_name = job_uid + "_" + "persist_all_loop.sh"
     sync_folder_path = os.path.join(job_dir_path, "sync")
@@ -191,7 +220,16 @@ def start_persist(self, job_uid):
     return True, "Start persist ran successfully"
 
 
+#############################################
+#
+#  7. Setup Environment Activation
+#
+#############################################
 def setup_dependency_manager(self, job_uid, run_yml):
+    """
+    For every environment type, there needs to be special activation code
+    added to the .monkey_activate to load environment variables upon run script.
+    """
     job_dir_path = self.get_job_dir(job_uid=job_uid)
     env_type = run_yml["env_type"]
     env_file = run_yml["env_file"]
@@ -223,3 +261,62 @@ def setup_dependency_manager(self, job_uid, run_yml):
 
     return True, "Successfully created dependency manager" + \
         "\nStored initialization in .monkey_activate"
+
+
+#############################################
+#
+#  8. Run Command
+#
+#############################################
+def execute_command(self, job_uid, cmd, run_yml):
+    """
+    This helper function will activate the .monkey_activate
+    and run the defined command while piping output to the logs folder
+    """
+    print("Executing cmd: ", cmd)
+    print("Environment Variables:", run_yml.get("env", dict()))
+
+    job_dir_path = self.get_job_dir(job_uid=job_uid)
+    activate_file = self.get_monkey_activate_file(job_uid=job_uid)
+
+    try:
+        self.run_ansible_role(
+            rolename="run/local/cmd",
+            extravars={
+                "run_command": cmd,
+                "job_dir_path": job_dir_path,
+                "activate_file": activate_file,
+            },
+            envvars=run_yml.get("env", dict()),
+        )
+
+    except Exception as e:
+        print(e)
+        return False, "Failed to run command properly: " + cmd
+
+    return True, "Successfully ran job"
+
+
+def run_job(self, job_yml, provider_info=dict()):
+    """
+    This function will run the job after setup and sync all persisted
+    folders upon job completion
+    """
+    print("Running job: ", job_yml)
+    job_uid = job_yml["job_uid"]
+    success, msg = self.execute_command(job_uid=job_uid,
+                                        cmd=job_yml["cmd"],
+                                        run_yml=job_yml["run"])
+    if not success:
+        return success, msg
+
+    print("\n\nRan job:", job_uid, " SUCCESSFULLY!\n\n")
+
+    sync_all_script_path = self.get_persist_all_script(job_uid=job_uid)
+    try:
+        self.run_ansible_shell(command=f"bash {sync_all_script_path}",)
+    except Exception as e:
+        print(e)
+        return False, "Failed to run sync command properly: "
+    print("Ended syncing")
+    return True, "Ran job successfully"

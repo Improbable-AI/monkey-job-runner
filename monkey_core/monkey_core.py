@@ -124,12 +124,16 @@ def main():
     parsed_args = parse_args(sys.argv[1:])
     if parsed_args.dev:
         logger.info("\n\nStarting in debug mode...\n\n")
-        application.run(host='0.0.0.0', port=9990, debug=True, use_reloader=True)
+        application.run(host='0.0.0.0',
+                        port=9990,
+                        debug=True,
+                        use_reloader=True)
     else:
         application.run(host='0.0.0.0', port=9990)
     return 0
 
 
 if __name__ == '__main__':
+    m = monkey_global.get_monkey()
     logger.info("Starting Monkey Core")
     exit(main())

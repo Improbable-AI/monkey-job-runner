@@ -6,6 +6,7 @@ import sys
 from collections import OrderedDict
 
 import ansible_runner
+from core.provider.monkey_provider_local import MonkeyProviderLocal
 from core.setup_scripts.utils import Completer, printout_ansible_events
 from ruamel.yaml import YAML, round_trip_load
 from ruamel.yaml.comments import CommentedMap
@@ -19,7 +20,8 @@ readline.set_completer(comp.complete)
 
 def check_local_provider(yaml):
     provider_name = yaml.get("name")
-    print("Checking integrity of", provider_name, "with type:", yaml.get("type"))
+    print("Checking integrity of", provider_name, "with type:",
+          yaml.get("type"))
 
     runner = ansible_runner.run(playbook='local_setup_checks.yml',
                                 private_data_dir='ansible',
@@ -38,12 +40,14 @@ def scan_for_local_ip():
     cmd = 'ifconfig | grep -B 8 -e "packets [^0]" | grep -e UP -e packets -e "inet "'
     p = subprocess.run(cmd, shell=True, check=True, capture_output=True)
     output = [x.strip() for x in p.stdout.decode("utf-8").split("\n")]
-    interfaces = [(x.split(":")[0], output.index(x)) for x in output if "UP" in x]
+    interfaces = [
+        (x.split(":")[0], output.index(x)) for x in output if "UP" in x
+    ]
     res = []
     for _, index in interfaces:
         if index < len(output) + 3 and "inet" in output[
-                index + 1] and "packets" in output[index +
-                                                   2] and "packets" in output[index + 3]:
+                index + 1] and "packets" in output[
+                    index + 2] and "packets" in output[index + 3]:
             try:
                 inet = output[index + 1].split(" ")[1]
                 packets = int(output[index + 2].split(" ")[2]) + int(
@@ -119,11 +123,13 @@ def create_local_provider(provider_name, yaml_input, args):
     if not args.noinput:
         if not args.monkeyfs_path:
             monkeyfs_path = input(
-                f"Set remote filesystem mount path ({monkeyfs_path}): ") or monkeyfs_path
+                f"Set remote filesystem mount path ({monkeyfs_path}): "
+            ) or monkeyfs_path
         print(f"Monkeyfs mount path: {monkeyfs_path}")
         if not args.monkeyfs_scratch:
             monkeyfs_scratch = input(
-                f"Set remote scratch ({monkeyfs_scratch}): ") or monkeyfs_scratch
+                f"Set remote scratch ({monkeyfs_scratch}): "
+            ) or monkeyfs_scratch
         print(f"Monkeyfs scratch path: {monkeyfs_scratch}")
         ip_found = scan_for_local_ip() or monkeyfs_public_ip
         if not args.monkeyfs_public_ip:
@@ -155,10 +161,13 @@ def create_local_provider(provider_name, yaml_input, args):
     if args.localhost_only:
         local_vars["localhost_only"] = True
     local_vars.fa.set_block_style()
-    local_vars.yaml_set_start_comment("\nLocal Provider: {}".format(provider_name))
+    local_vars.yaml_set_start_comment(
+        "\nLocal Provider: {}".format(provider_name))
     local_vars.yaml_add_eol_comment("Defaults to ~/monkeyfs", "monkeyfs_path")
-    local_vars.yaml_add_eol_comment("Defaults to ~/monkey-scratch", "monkeyfs_scratch")
-    local_vars.yaml_add_eol_comment(f"Defaults to local.yml", "local_instance_details")
+    local_vars.yaml_add_eol_comment("Defaults to ~/monkey-scratch",
+                                    "monkeyfs_scratch")
+    local_vars.yaml_add_eol_comment(f"Defaults to local.yml",
+                                    "local_instance_details")
     write_vars_to_provider(yaml_input, local_vars)
     write_vars_file(local_vars)
     create_local_monkeyfs()
@@ -176,19 +185,20 @@ def create_local_provider(provider_name, yaml_input, args):
 
     print(f"{len(existing_hosts)} existing hosts found")
 
-    from core.provider.monkey_provider_local import MonkeyProviderLocal
     local_provider = MonkeyProviderLocal(local_vars)
     for host in existing_hosts:
         print(f"Checking integrity for host: {host}")
-        instance = local_provider.create_local_instance(name=host, hostname=host)
+        instance = local_provider.create_local_instance(name=host,
+                                                        hostname=host)
         if instance is None:
             print(f"FAILED: to create instance {host}")
 
     if not args.noinput:
-        check_inventory_file_for_more_hosts(local_provider=local_provider,
-                                            local_vars=local_vars,
-                                            existing_hosts=existing_hosts,
-                                            instance_details_yaml=instance_details_yaml)
+        check_inventory_file_for_more_hosts(
+            local_provider=local_provider,
+            local_vars=local_vars,
+            existing_hosts=existing_hosts,
+            instance_details_yaml=instance_details_yaml)
     else:
 
         if args.local_hosts:
@@ -234,8 +244,8 @@ def add_and_test_host(local_provider,
         monkeyfs_public_ip=local_vars["monkeyfs_public_ip"],
         monkeyfs_public_port=local_vars["monkeyfs_public_port"])
     existing_hosts[new_host] = new_host_dict
-    write_instance_details(local_vars["local_instance_details"], instance_details_yaml,
-                           existing_hosts)
+    write_instance_details(local_vars["local_instance_details"],
+                           instance_details_yaml, existing_hosts)
     print(f"Creating instance {new_host}...\n")
     retry = True
     while retry:
@@ -252,8 +262,9 @@ def add_and_test_host(local_provider,
                 existing_hosts[new_host]["status"] = "unknown"
                 break
         except KeyboardInterrupt as e:
-            print(f"\n\nKeyboard interrupt detected...\nSkipping {new_host}\n" +
-                  f"Failed to add {new_host}: \n{e}")
+            print(
+                f"\n\nKeyboard interrupt detected...\nSkipping {new_host}\n" +
+                f"Failed to add {new_host}: \n{e}")
             del existing_hosts[new_host]
             continue
         except Exception as e:
@@ -261,8 +272,8 @@ def add_and_test_host(local_provider,
             retry = failed_instance_creation_change_defaults_retry(
                 existing_hosts, new_host)
             continue
-    write_instance_details(local_vars["local_instance_details"], instance_details_yaml,
-                           existing_hosts)
+    write_instance_details(local_vars["local_instance_details"],
+                           instance_details_yaml, existing_hosts)
 
 
 def failed_instance_creation_change_defaults_retry(existing_hosts, key):
@@ -275,7 +286,8 @@ def failed_instance_creation_change_defaults_retry(existing_hosts, key):
             f"\n(ctrl-c to skip host) (default: {default_ip}): ") or default_ip
         print(f"Setting public ip for {key} to {alt_public_ip}")
         alt_public_port = input(
-            f"\nTry an alternative public port? ({default_port}) : ") or default_port
+            f"\nTry an alternative public port? ({default_port}) : "
+        ) or default_port
         print(f"Setting the port for {key} to {alt_public_port}")
 
         existing_hosts[key]["monkeyfs_public_ip"] = alt_public_ip
@@ -289,8 +301,8 @@ def failed_instance_creation_change_defaults_retry(existing_hosts, key):
         return False
 
 
-def check_inventory_file_for_more_hosts(local_provider, local_vars, existing_hosts,
-                                        instance_details_yaml):
+def check_inventory_file_for_more_hosts(local_provider, local_vars,
+                                        existing_hosts, instance_details_yaml):
     # Check inventory file for non existing hosts
     inventory_yaml = load_local_inventory_file()
 
@@ -303,8 +315,9 @@ def check_inventory_file_for_more_hosts(local_provider, local_vars, existing_hos
                or existing_hosts[new_host]["status"] == "init"):
             inpt = None
             while inpt is None:
-                inpt = input(f"'{new_host}', not found in local provider.  \n" +
-                             "Add it? (Y/n/s) (Yes/no/skip all): ")
+                inpt = input(
+                    f"'{new_host}', not found in local provider.  \n" +
+                    "Add it? (Y/n/s) (Yes/no/skip all): ")
                 if inpt == "":
                     inpt = "y"
                 inpt = inpt[0].lower()
@@ -319,6 +332,7 @@ def check_inventory_file_for_more_hosts(local_provider, local_vars, existing_hos
                                   host_group=host_group)
             elif inpt == "n":
                 print(f"Not adding {new_host}...\n")
+                break
             elif inpt == "s":
                 print("Skipping all further prompts")
                 done = 2
@@ -326,8 +340,8 @@ def check_inventory_file_for_more_hosts(local_provider, local_vars, existing_hos
         if done == 2:
             break
 
-    write_instance_details(local_vars["local_instance_details"], instance_details_yaml,
-                           existing_hosts)
+    write_instance_details(local_vars["local_instance_details"],
+                           instance_details_yaml, existing_hosts)
 
 
 def create_local_monkeyfs():

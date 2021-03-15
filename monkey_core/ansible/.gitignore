@@ -10,3 +10,4 @@ inventory/aws/inventory.compute.aws_ec2.yml
 inventory/gcp/inventory.compute.gcp.yml
 inventory/group_vars/monkey_aws.yml
 inventory/group_vars/monkey_gcp.yml
+inventory/group_vars/monkey_local.yml

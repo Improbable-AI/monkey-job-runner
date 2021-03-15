@@ -8,7 +8,7 @@ from uuid import uuid1
 
 import ansible_runner
 import requests
-from core import monkey_global
+from core.monkey_global import QUIET_ANSIBLE
 
 logger = logging.getLogger(__name__)
 
@@ -131,11 +131,12 @@ class MonkeyInstance():
             return None
 
     def print_failed_event(self, runner):
-        events = list(runner.events)[-2:]
+        events = list(runner.events)[-10:]
         for e in events:
             event_data = e.get("event_data", dict())
             print("TASK-----------------------------")
-            print(event_data.get("name", "unknown name"))
+            print(e)
+            print(event_data.get("task", "unknown name"))
             print("STDOUT:")
             print(e.get("stdout", "no stdout"))
             print("TASK ACTION: " + event_data.get("task_action", "unknown"))
@@ -153,7 +154,7 @@ class MonkeyInstance():
                                     private_data_dir="ansible",
                                     module="include_role",
                                     module_args=f"name={rolename}",
-                                    quiet=monkey_global.QUIET_ANSIBLE,
+                                    quiet=QUIET_ANSIBLE,
                                     extravars=extravars,
                                     envvars=envvars,
                                     cancel_callback=cancel_callback)
@@ -189,7 +190,7 @@ class MonkeyInstance():
                                     private_data_dir="ansible",
                                     module=modulename,
                                     module_args=args_string,
-                                    quiet=monkey_global.QUIET_ANSIBLE,
+                                    quiet=QUIET_ANSIBLE,
                                     cancel_callback=cancel_callback)
         return runner
 
@@ -217,7 +218,7 @@ class MonkeyInstance():
                                     playbook=playbook,
                                     private_data_dir="ansible",
                                     extravars=extravars,
-                                    quiet=monkey_global.QUIET_ANSIBLE,
+                                    quiet=QUIET_ANSIBLE,
                                     cancel_callback=cancel_callback)
         return runner
 
@@ -237,15 +238,17 @@ class MonkeyInstance():
             raise AnsibleRunException("Ansible module failed to run")
 
     def run_ansible_shell_inexclusively(self, command, cancel_callback=None):
+        args = f"cmd='{command}' executable=/bin/bash"
+        print(f"Running in shell: {args}")
         runner = ansible_runner.run(host_pattern=self.name,
                                     private_data_dir="ansible",
                                     module="shell",
-                                    module_args=f"cmd={command}",
-                                    quiet=monkey_global.QUIET_ANSIBLE,
+                                    module_args=f'/bin/bash -c "{command}"',
+                                    quiet=QUIET_ANSIBLE,
                                     cancel_callback=cancel_callback)
         return runner
 
-    def run_ansible_shell(self, command):
+    def run_ansible_shell(self, command, printout=False):
         uuid = self.update_uuid()
         runner = self.run_ansible_shell_inexclusively(
             command=command,
@@ -257,11 +260,14 @@ class MonkeyInstance():
         if runner.status == "failed":
             self.print_failed_event(runner=runner)
             raise AnsibleRunException("Ansible module failed to run")
+        if printout:
+            self.print_failed_event(runner)
 
     def install_dependency(self, dependency):
         raise NotImplementedError("This is not implemented yet")
 
-    from core.instance.monkey_instance_shared import (setup_data_item,
+    from core.instance.monkey_instance_shared import (execute_command, run_job,
+                                                      setup_data_item,
                                                       setup_dependency_manager,
                                                       setup_logs_folder,
                                                       setup_persist_folder,
@@ -336,10 +342,7 @@ class MonkeyInstance():
 
         return True, "Successfully setup the job"
 
-    def run_job(self, job, provider_info=dict()):
-        raise NotImplementedError("This is not implemented yet")
-
-    def cleanup_job(self, job, provider_info=dict()):
+    def cleanup_job(self, job_yml, provider_info=dict()):
         raise NotImplementedError("This is not implemented yet")
 
     def get_monkeyfs_dir(self):
@@ -355,12 +358,42 @@ class MonkeyInstance():
         return os.path.join(self.get_monkeyfs_dir(), "jobs", job_uid, "")
 
     def get_dataset_path(self, data_name, checksum, extension):
-        return os.path.join(self.get_monkeyfs_dir(), "data", data_name,
-                            checksum, "data" + extension)
+        return os.path.join(
+            self.get_monkeyfs_dir(),
+            "data",
+            data_name,
+            checksum,
+            "data" + extension,
+        )
 
     def get_codebase_path(self, run_name, checksum, extension):
-        return os.path.join(self.get_monkeyfs_dir(), "code", run_name)
+        return os.path.join(
+            self.get_monkeyfs_dir(),
+            "code",
+            run_name,
+        )
 
     def get_codebase_file_path(self, run_name, checksum, extension):
-        return os.path.join(self.get_monkeyfs_dir(), "code", run_name,
-                            checksum, "code" + extension)
+        return os.path.join(
+            self.get_monkeyfs_dir(),
+            "code",
+            run_name,
+            checksum,
+            "code" + extension,
+        )
+
+    def get_persist_all_script(self, job_uid):
+        return os.path.join(
+            self.get_job_dir(job_uid=job_uid),
+            "sync",
+            "persist_all.sh",
+        )
+
+    def get_unique_persist_all_script_name(self, job_uid):
+        return job_uid + "_persist_all_loop.sh"
+
+    def get_monkey_activate_file(self, job_uid):
+        return os.path.join(
+            self.get_job_dir(job_uid=job_uid),
+            ".monkey_activate",
+        )

@@ -8,11 +8,13 @@ import tempfile
 import threading
 from datetime import datetime
 
-import yaml from core import monkey_global from core.routes.utils import (existing_dir, get_codebase_path,
-                               get_dataset_file_path, get_dataset_path,
+import yaml
+from core import monkey_global
+from core.routes.utils import (existing_dir, get_dataset_file_path,
+                               get_dataset_path,
                                get_local_filesystem_for_provider,
                                sync_directories)
-from flask import Blueprint, jsonify, request, send_file
+from flask import Blueprint, jsonify, request
 from ruamel.yaml import YAML, round_trip_load
 from werkzeug.datastructures import FileStorage
 
@@ -39,7 +41,8 @@ def get_new_job_uid():
             last_date = new_date
             instance_number = 1
         else:
-            logger.info(f"Would be instance {last_date + str(instance_number + 1)}")
+            logger.info(
+                f"Would be instance {last_date + str(instance_number + 1)}")
             pass
             instance_number += 1
         if UNIQUE_UIDS == True:
@@ -51,7 +54,8 @@ def get_new_job_uid():
 def check_checksum_path(local_path, provider_path, directory, name, checksum):
 
     def get_checksum_path(base_path):
-        abs_path = os.path.abspath(os.path.join(base_path, directory, name, checksum))
+        abs_path = os.path.abspath(
+            os.path.join(base_path, directory, name, checksum))
         return abs_path, existing_dir(abs_path)
 
     local_path, local_found = get_checksum_path(base_path=local_path)
@@ -119,9 +123,10 @@ def upload_dataset():
                 False
         })
     monkeyfs_path = get_local_filesystem_for_provider(provider)
-    local_path = get_dataset_path(dataset_name=dataset_name,
-                                  dataset_checksum=dataset_checksum,
-                                  monkeyfs_path=monkey_global.MONKEYFS_LOCAL_PATH)
+    local_path = get_dataset_path(
+        dataset_name=dataset_name,
+        dataset_checksum=dataset_checksum,
+        monkeyfs_path=monkey_global.MONKEYFS_LOCAL_PATH)
 
     provider_path = get_dataset_path(dataset_name=dataset_name,
                                      dataset_checksum=dataset_checksum,
@@ -196,17 +201,22 @@ def upload_codebase():
 
     logger.info(f"Received upload codebase request: {job_uid}")
     if job_uid is None or provider is None:
-        return jsonify({"msg": "Did not provide job_uid or provider", "success": False})
+        return jsonify({
+            "msg": "Did not provide job_uid or provider",
+            "success": False
+        })
     monkeyfs_path = get_local_filesystem_for_provider(provider)
 
-    job_folder_path = os.path.join(monkey_global.MONKEYFS_LOCAL_PATH, "jobs", job_uid)
+    job_folder_path = os.path.join(monkey_global.MONKEYFS_LOCAL_PATH, "jobs",
+                                   job_uid)
     provider_job_folder_path = os.path.join(monkeyfs_path, "jobs", job_uid)
     os.makedirs(os.path.join(job_folder_path, "logs"), exist_ok=True)
     os.makedirs(os.path.join(provider_job_folder_path, "logs"), exist_ok=True)
     if not os.path.exists(os.path.join(job_folder_path, "logs", "run.log")):
         with open(os.path.join(job_folder_path, "logs", "run.log"), "a") as f:
             f.write("Initializing machines...")
-    if not os.path.exists(os.path.join(provider_job_folder_path, "logs", "run.log")):
+    if not os.path.exists(
+            os.path.join(provider_job_folder_path, "logs", "run.log")):
         with open(os.path.join(job_folder_path, "logs", "run.log"), "a") as f:
             f.write("Initializing machines...")
     logger.info("Writing local code.yaml")
@@ -234,7 +244,8 @@ def upload_codebase():
         y.dump(code_yaml, f)
 
     def get_codebase_folder_path(base_path):
-        path = os.path.abspath(os.path.join(base_path, "code", run_name, checksum, ""))
+        path = os.path.abspath(
+            os.path.join(base_path, "code", run_name, checksum, ""))
         os.makedirs(path, exist_ok=True)
         return path
 
@@ -253,14 +264,16 @@ def upload_codebase():
         FileStorage(request.stream).save(destination_path)
 
         logger.info(f"Saved file to: {destination_path}")
-        with open(os.path.join(local_codebase_folder_path, "code.yaml"), "w") as f:
+        with open(os.path.join(local_codebase_folder_path, "code.yaml"),
+                  "w") as f:
             y = YAML()
             code_yaml.fa.set_block_style()
             y.explicit_start = True
             y.default_flow_style = False
             y.dump(code_yaml, f)
         logger.info("Syncing codebase folder")
-        sync_directories(local_codebase_folder_path, provider_codebase_folder_path)
+        sync_directories(local_codebase_folder_path,
+                         provider_codebase_folder_path)
         logger.info("Syncing codebase folder: DONE")
     else:
         logger.info("Skipping uploading codebase")
@@ -275,8 +288,10 @@ def upload_persist():
     provider = request.args.get('provider', None)
 
     if job_uid is None or provider is None:
-        return jsonify({"msg": "Did not provide job_uid or provider", "success": False})
-    monkey = monkey_global.get_monkey()
+        return jsonify({
+            "msg": "Did not provide job_uid or provider",
+            "success": False
+        })
     monkeyfs_path = get_local_filesystem_for_provider(provider)
     create_folder_path = os.path.join(monkeyfs_path, "jobs", job_uid)
     os.makedirs(create_folder_path, exist_ok=True)
@@ -300,7 +315,8 @@ def submit_job():
     provider = job_args["provider"]
     monkey = monkey_global.get_monkey()
     monkeyfs_path = get_local_filesystem_for_provider(provider)
-    job_folder_path = os.path.join(monkey_global.MONKEYFS_LOCAL_PATH, "jobs", job_uid)
+    job_folder_path = os.path.join(monkey_global.MONKEYFS_LOCAL_PATH, "jobs",
+                                   job_uid)
     provider_job_folder_path = os.path.join(monkeyfs_path, "jobs", job_uid)
 
     with open(os.path.join(job_folder_path, "job.yaml"), "w") as f:

@@ -15,9 +15,11 @@ relative_monkeyfs_path = os.path.join(file_path, "../", "ansible/monkeyfs")
 MONKEYFS_LOCAL_PATH = os.path.abspath(relative_monkeyfs_path)
 print(f"Local monkeyfs path: {MONKEYFS_LOCAL_PATH}")
 
-monkey = Monkey()
+monkey = None
 
 
 def get_monkey():
     global monkey
+    if monkey is None:
+        monkey = Monkey()
     return monkey

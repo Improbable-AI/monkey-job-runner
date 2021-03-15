@@ -101,45 +101,8 @@ name: {}, ip: {}, state: {}
             return False, "Failed to mount monkeyfs filesystem"
         return True, "Mounted Monkeyfs properly"
 
-    def execute_command(self, cmd, run_yml):
-        print("Executing cmd: ", cmd)
-        print("Environment Variables:", run_yml.get("env", dict()))
-
-        try:
-            self.run_ansible_role(
-                rolename="run/cmd",
-                extravars={"run_command": cmd},
-                envvars=run_yml.get("env", dict()),
-            )
-        except AnsibleRunException as e:
-            print(e)
-            return False, "Failed to run command properly: " + cmd
-
-        return True, "Successfully ran job"
-
-    def run_job(self, job, provider_info=dict()):
-        print("Running job: ", job)
-        job_uid = job["job_uid"]
-        success, msg = self.execute_command(cmd=job["cmd"], run_yml=job["run"])
-        if not success:
-            return success, msg
-
-        print("\n\nRan job:", job_uid, " SUCCESSFULLY!\n\n")
-
-        print("\n\nForce Syncing outputs:", job_uid, " SUCCESSFULLY!\n\n")
-        script_path = os.path.join("/home/ubuntu", "sync", "persist_all.sh")
-        print(script_path)
-        try:
-            self.run_ansible_shell(command=f"bash {script_path}",)
-        except AnsibleRunException as e:
-            print(e)
-            return False, "Failed to run sync command properly: "
-        print("Ended syncing")
-
-        return True, "Job completed"
-
-    def cleanup_job(self, job, provider_info={}):
-        job_uid = job["job_uid"]
+    def cleanup_job(self, job_yml, provider_info={}):
+        job_uid = job_yml["job_uid"]
         print("\n\nTerminating Machine:", job_uid, "\n\n")
         # Cleanup skipped for now
         print(provider_info)
