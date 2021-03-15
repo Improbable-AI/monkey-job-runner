@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 import argparse
 
-from core.setup_scripts.utils import aws_cred_file_environment
+# relative import because this is called as a script helper file
+from utils import aws_cred_file_environment
 
 parser = argparse.ArgumentParser()
 

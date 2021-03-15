@@ -189,10 +189,8 @@ class MonkeyCLI(Cmd):
                 job_uid=job_uid,
                 run_name=run_name,
                 provider_name=provider)
-            codebase["codebase_checksum"] = codebase_params[
-                "codebase_checksum"]
-            codebase["codebase_extension"] = codebase_params[
-                "codebase_extension"]
+            codebase["checksum"] = codebase_params["checksum"]
+            codebase["extension"] = codebase_params["extension"]
             codebase["run_name"] = codebase_params["run_name"]
         job_yaml["code"] = code_yaml
 

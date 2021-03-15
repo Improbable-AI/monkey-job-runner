@@ -113,7 +113,8 @@ def get_job_output():
         return jsonify({"success": False, "msg": "No job_uid provided"})
     else:
         logger.info(f"Getting output for {job_uid}")
-        job_folder_path = os.path.join(MONKEYFS_LOCAL_PATH, "jobs", job_uid)
+        job_folder_path = os.path.join(monkey_global.MONKEYFS_LOCAL_PATH,
+                                       "jobs", job_uid)
         job_yaml_file = os.path.join(job_folder_path, "job.yaml")
         logger.info(job_yaml_file)
         try:
@@ -124,7 +125,7 @@ def get_job_output():
             logger.info(f"Unable to parse job.yml, path: {job_yaml_file}")
             raise ValueError("Could not read job file")
         provider = job_yaml["provider"]
-        monkeyfs_path = get_local_filesystem_for_provider(monkey, provider)
+        monkeyfs_path = get_local_filesystem_for_provider(provider)
         provider_job_folder_path = os.path.join(monkeyfs_path, "jobs", job_uid)
         logger.info(f"Syncing: {provider_job_folder_path} {job_folder_path}")
         sync_directories(os.path.join(provider_job_folder_path, ""),
@@ -132,7 +133,8 @@ def get_job_output():
 
         persisted_items = job_yaml.get("persist", [])
         logger.info(f"Retrieving persisted items: {persisted_items}")
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".tar") as dir_tmp:
+        with tempfile.NamedTemporaryFile(delete=False,
+                                         suffix=".tar") as dir_tmp:
             code_tar = tarfile.open(dir_tmp.name, "w")
             logger.info(persisted_items)
             for f in persisted_items:

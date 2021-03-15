@@ -213,6 +213,7 @@ def write_commented_file(filename, yaml_params):
 
 def write_inventory_file(aws_inventory):
     ansible_aws_file = "ansible/inventory/aws/inventory.compute.aws_ec2.yml"
+    os.makedirs("ansible/inventory/aws/", exist_ok=True)
     write_commented_file(ansible_aws_file, aws_inventory)
 
 

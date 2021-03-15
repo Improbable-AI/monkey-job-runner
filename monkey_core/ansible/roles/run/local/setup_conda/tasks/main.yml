@@ -5,7 +5,7 @@
     state: touch
 
 - name: Conda init bash/zsh
-  shell: bash -ic ". ~/.bashrc;  conda init bash; conda init zsh"
+  shell: bash -ic ". {{activate_file}};  conda init bash; conda init zsh"
 
 - name: Read conda environment file
   slurp:

@@ -44,5 +44,12 @@ def get_dataset_path(dataset_name, dataset_checksum, monkeyfs_path):
         os.path.join(monkeyfs_path, "data", dataset_name, dataset_checksum))
 
 
+def get_dataset_file_path(dataset_name, dataset_checksum, dataset_extension,
+                          monkeyfs_path):
+    return os.path.abspath(
+        os.path.join(monkeyfs_path, "data", dataset_name, dataset_checksum,
+                     "data" + dataset_extension))
+
+
 def existing_dir(path):
     return os.path.isdir(path)

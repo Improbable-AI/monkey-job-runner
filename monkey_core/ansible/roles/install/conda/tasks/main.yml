@@ -9,7 +9,8 @@
   when: conda_installed.stat.exists == false
   block:
     - name: Get facts
-      gather_facts:
+      setup:
+        filter: "ansible_architecture"
     - name: task to run for x86 architecture
       debug:
         msg: "Architecture {{ ansible_architecture}}"

@@ -6,7 +6,6 @@ import sys
 from collections import OrderedDict
 
 import ansible_runner
-from core.provider.monkey_provider_local import MonkeyProviderLocal
 from core.setup_scripts.utils import Completer, printout_ansible_events
 from ruamel.yaml import YAML, round_trip_load
 from ruamel.yaml.comments import CommentedMap
@@ -177,6 +176,7 @@ def create_local_provider(provider_name, yaml_input, args):
 
     print(f"{len(existing_hosts)} existing hosts found")
 
+    from core.provider.monkey_provider_local import MonkeyProviderLocal
     local_provider = MonkeyProviderLocal(local_vars)
     for host in existing_hosts:
         print(f"Checking integrity for host: {host}")

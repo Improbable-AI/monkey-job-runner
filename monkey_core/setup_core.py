@@ -219,6 +219,8 @@ def main():
         elif "local" == provider_type:
             create_local_provider(provider_name, provider_yaml, args)
 
+    # Make main monkeyfs dir
+    os.makedirs("ansible/monkeyfs", exist_ok=True)
     db_connection_success = get_monkey_db()
     if db_connection_success:
         print("MonkeyDB connection successful!")

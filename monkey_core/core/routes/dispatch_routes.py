@@ -8,10 +8,8 @@ import tempfile
 import threading
 from datetime import datetime
 
-import yaml
-from core import monkey_global
-from core.routes.utils import (existing_dir, get_codebase_path,
-                               get_dataset_path,
+import yaml from core import monkey_global from core.routes.utils import (existing_dir, get_codebase_path,
+                               get_dataset_file_path, get_dataset_path,
                                get_local_filesystem_for_provider,
                                sync_directories)
 from flask import Blueprint, jsonify, request, send_file
@@ -77,14 +75,14 @@ def check_checksum_path(local_path, provider_path, directory, name, checksum):
 
 @dispatch_routes.route('/check/dataset')
 def check_dataset():
-    dataset_name = request.args.get('dataset_name', None)
-    dataset_checksum = request.args.get('dataset_checksum', None)
+    dataset_name = request.args.get('name', None)
+    dataset_checksum = request.args.get('checksum', None)
     logger.info(f"Checking dataset: {dataset_name}:{dataset_checksum}")
     provider = request.args.get('provider', None)
 
     if dataset_name is None or dataset_checksum is None or provider is None:
         return jsonify({
-            "msg": "Did not provide dataset_name or dataset_checksum or provider",
+            "msg": "Did not provide name or checksum or provider",
             "found": False
         })
 
@@ -100,23 +98,23 @@ def check_dataset():
 @dispatch_routes.route('/upload/dataset', methods=["POST"])
 def upload_dataset():
     logger.info("Received upload dataset request")
-    dataset_name = request.args.get('dataset_name', None)
-    dataset_checksum = request.args.get('dataset_checksum', None)
-    dataset_path = request.args.get('dataset_path', None)
-    dataset_extension = request.args.get('dataset_extension', None)
+    dataset_name = request.args.get('name', None)
+    dataset_checksum = request.args.get('checksum', None)
+    dataset_path = request.args.get('path', None)
+    dataset_extension = request.args.get('extension', None)
     provider = request.args.get('provider', None)
     dataset_yaml = {
-        "dataset_name": dataset_name,
-        "dataset_checksum": dataset_checksum,
-        "dataset_path": dataset_path,
-        "dataset_extension": dataset_extension,
+        "name": dataset_name,
+        "checksum": dataset_checksum,
+        "path": dataset_path,
+        "extension": dataset_extension,
     }
     logger.info(dataset_yaml)
     if dataset_name is None or dataset_checksum is None or dataset_path is None \
             or dataset_extension is None or provider is None:
         return jsonify({
             "msg":
-                "Did not provide dataset_name or dataset_checksum or dataset_path or dataset_extension or provider",
+                "Did not provide name or checksum or path or extension or provider, for dataset upload",
             "success":
                 False
         })
@@ -131,8 +129,13 @@ def upload_dataset():
 
     doc_yaml_path = os.path.join(local_path, "dataset.yaml")
     os.makedirs(local_path, exist_ok=True)
-    FileStorage(request.stream).save(os.path.join(local_path,
-                                                  "data" + dataset_extension))
+
+    local_dataset_file_path = get_dataset_file_path(
+        dataset_name=dataset_name,
+        dataset_checksum=dataset_checksum,
+        dataset_extension=dataset_extension,
+        monkeyfs_path=monkey_global.MONKEYFS_LOCAL_PATH)
+    FileStorage(request.stream).save(local_dataset_file_path)
     logger.info("Saved file to: {}".format(
         os.path.join(local_path, "data" + dataset_extension)))
     with open(doc_yaml_path, "w") as doc_yaml_file:
@@ -144,13 +147,13 @@ def upload_dataset():
 @dispatch_routes.route('/check/codebase')
 def check_codebase():
     run_name = request.args.get('run_name', None)
-    codebase_checksum = request.args.get('codebase_checksum', None)
+    codebase_checksum = request.args.get('checksum', None)
     logger.info("Checking codebase: {}:{}".format(run_name, codebase_checksum))
     provider = request.args.get('provider', None)
 
     if run_name is None or codebase_checksum is None or provider is None:
         return jsonify({
-            "msg": "Did not provide run_name or codebase_checksum or provider",
+            "msg": "Did not provide run_name or checksum or provider",
             "found": False
         })
 
@@ -167,9 +170,9 @@ def upload_codebase():
     job_uid = request.args.get('job_uid', None)
     provider = request.args.get('provider', None)
     run_name = request.args.get('run_name', None)
-    checksum = request.args.get('codebase_checksum', None)
+    checksum = request.args.get('checksum', None)
     already_uploaded = request.args.get("already_uploaded", False)
-    codebase_extension = request.args.get('codebase_extension', None)
+    codebase_extension = request.args.get('extension', None)
 
     logger.info(f"Already uploaded: {already_uploaded is not None}")
     if already_uploaded is not None:
@@ -188,7 +191,7 @@ def upload_codebase():
         "run_name": run_name,
         "checksum": checksum,
         "provider": provider,
-        "codebase_extension": codebase_extension
+        "extension": codebase_extension
     }
 
     logger.info(f"Received upload codebase request: {job_uid}")

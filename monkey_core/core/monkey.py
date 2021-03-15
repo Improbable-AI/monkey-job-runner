@@ -155,7 +155,14 @@ class Monkey():
         logger.info(f"{job_uid}: Successfully configured machine installs")
 
         dbMonkeyJob.set_state(state=mongo_state.MONKEY_STATE_DISPATCHING_SETUP)
-        success, msg = created_host.setup_job(job_yml, provider_info=provider.get_dict())
+        success, msg = created_host.mount_monkeyfs(job_yml=job_yml,
+                                                   provider_info=provider.get_dict())
+        if success is False:
+            print("Failed to setup host:", msg)
+            dbMonkeyJob.set_state(state=mongo_state.MONKEY_STATE_QUEUED)
+            return success, msg
+        success, msg = created_host.setup_job(job_yml=job_yml,
+                                              provider_info=provider.get_dict())
         if success is False:
             print("Failed to setup host:", msg)
             dbMonkeyJob.set_state(state=mongo_state.MONKEY_STATE_QUEUED)

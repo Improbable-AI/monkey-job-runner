@@ -37,7 +37,7 @@
     
     - name: Setting name
       set_fact:
-        new_gcp_host: "{{ inventory_hostname}}"
+        new_aws_host: "{{ inventory_hostname}}"
   roles:
     - aws/install_deps
     - monkey_client/install

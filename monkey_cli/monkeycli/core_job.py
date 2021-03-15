@@ -28,9 +28,9 @@ def check_or_upload_dataset(dataset, provider_name, compression_type="tar"):
     compression_suffix = compression_map[compression_type]
 
     dataset_params = {
-        "dataset_name": dataset_name,
+        "name": dataset_name,
         "checksum": checksum,
-        "dataset_path": dataset_path,
+        "path": dataset_path,
         "extension": compression_suffix,
         "provider": provider_name
     }
@@ -51,11 +51,10 @@ def check_or_upload_dataset(dataset, provider_name, compression_type="tar"):
                                       allow_redirects=True)
                     success = r.json()["success"]
                     print("Upload Dataset Success: ", success)
-            except:
-                print("Upload failure")
+            except Exception as e:
+                print(f"Upload failure {e}")
             finally:
                 os.remove(compressed_name)
-    dataset_filename = "data" + compression_suffix
     return checksum, compression_suffix
 
 
@@ -94,8 +93,8 @@ def upload_persisted_folder(persist, job_uid, provider_name):
                     "Upload Persisted Folder:",
                     colored("Successful", "green") if success else colored(
                         "FAILED", "red"))
-        except:
-            print("Upload failure")
+        except Exception as e:
+            print(f"Upload failure: {e}")
         if success == False:
             raise ValueError("Failed to upload codebase")
     print()
@@ -151,8 +150,8 @@ def check_or_upload_codebase(code,
         "job_uid": job_uid,
         "run_name": run_name,
         "provider": provider_name,
-        "codebase_checksum": files_checksum,
-        "codebase_extension": compression_suffix,
+        "checksum": files_checksum,
+        "extension": compression_suffix,
     }
 
     r = requests.get(build_url("check/codebase"), params=codebase_params)

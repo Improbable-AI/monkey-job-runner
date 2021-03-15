@@ -1,6 +1,7 @@
 ---
 - name: Gather Facts
   setup:
+    filter: "ansible_distribution"
 - name: 20.04 Cuda 11.1 Download
   when: ansible_distribution == "Ubuntu" and ansible_distribution_version == "20.04"
   import_tasks: ubuntu20.04.yml

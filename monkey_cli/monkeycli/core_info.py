@@ -3,9 +3,27 @@ import os
 import tarfile
 
 import requests
+from requests import ConnectionError
 from termcolor import colored
 
 from monkeycli.utils import build_url, human_readable_state
+
+
+class MonkeyCLIException(Exception):
+    pass
+
+
+class MonkeyCLIJobUIDException(MonkeyCLIException):
+    pass
+
+
+def get_request(url, **kwargs):
+    try:
+        r = requests.get(url, **kwargs)
+    except ConnectionError:
+        raise MonkeyCLIException("Unable to connect to monkey-core. " +
+                                 "\nPlease ensure monkey-core is running")
+    return r
 
 
 def get_new_job_uid():
@@ -37,12 +55,11 @@ def print_time_delta(delta, timeunits=False):
 
 def list_jobs(args, printout=False):
     try:
-        r = requests.get(build_url("list/jobs"), params=args)
-    except:
+        r = get_request(url=build_url("list/jobs"), params=args)
+    except Exception as e:
         if printout:
-            print("Unable to connect to Monkey Core: {}".format(
-                build_url("list/jobs")))
-            return []
+            print(e)
+        return []
     if printout:
         res = r.json()
         print("Listing Jobs available")
@@ -82,12 +99,11 @@ def list_jobs(args, printout=False):
 
 def list_providers(printout=False):
     try:
-        r = requests.get(build_url("list/providers"))
-    except:
+        r = get_request(url=build_url("list/providers"))
+    except Exception as e:
         if printout:
-            print("Unable to connect to Monkey Core: {}".format(
-                build_url("list/providers")))
-            return []
+            print(e)
+        return []
     response = r.json()["response"]
     if printout:
         print("Listing Providers available")
@@ -104,12 +120,11 @@ def list_providers(printout=False):
 
 def list_instances(args, printout=False):
     try:
-        r = requests.get(build_url("list/instances"), params=args)
-    except:
+        r = get_request(url=build_url("list/instances"), params=args)
+    except Exception as e:
         if printout:
-            print("Unable to connect to Monkey Core: {}".format(
-                build_url("list/instances")))
-            return []
+            print(e)
+        return []
     if printout:
         res = r.json()
         print("Listing Instances available\n")
@@ -136,25 +151,21 @@ def list_instances(args, printout=False):
 
 def list_local_instances(printout=False):
     try:
-        r = requests.get(build_url("list/local/instances"))
-    except:
+        r = get_request(url=build_url("list/local/instances"))
+    except Exception as e:
         if printout:
-            print("Unable to connect to Monkey Core: {}".format(
-                build_url("list/providers")))
-            return []
+            print(e)
+        return []
     response = r.json()["response"]
     return response
 
 
 def get_full_uid(job_uid, printout=False):
-    try:
-        r = requests.get(build_url("get/job_uid"), params={"job_uid": job_uid})
-    except:
-        if printout:
-            print("Unable to connect to Monkey Core: {}".format(
-                build_url("get/job_uid")))
-        return None
+    r = get_request(url=build_url("get/job_uid"), params={"job_uid": job_uid})
     full_uid = r.json().get("job_uid", None)
+    if full_uid is None:
+        raise MonkeyCLIJobUIDException(
+            f"Unable to find the full id for shortened id: {job_uid}")
     return full_uid
 
 
@@ -163,27 +174,29 @@ def info_jobs(job_uids, printout=False):
     for job_uid in job_uids:
         if printout:
             print(f"Retrieving info for {job_uid}")
-        full_job_uid = get_full_uid(job_uid, printout)
-        if full_job_uid is None:
+
+        try:
+            full_job_uid = get_full_uid(job_uid, printout)
+        except MonkeyCLIException as e:
+            print(f"Failed retrieving job_uid: \n{e}")
             continue
 
         try:
-            r = requests.get(build_url("get/job_info"),
-                             params={"job_uid": full_job_uid})
-        except:
+            r = get_request(url=build_url("get/job_info"),
+                            params={"job_uid": full_job_uid})
+        except Exception as e:
             if printout:
-                print("Unable to connect to Monkey Core: {}".format(
-                    build_url("get/job_uid")))
+                print(e)
             continue
         result = r.json()
         job_info = result["job_info"]
 
         date_format = "%-I:%M %p %-m-%d-%y"
-        print()
-        print((job_info.keys()))
-        print(job_info)
-        print()
-        print()
+        # print()
+        # print((job_info.keys()))
+        # print(job_info)
+        # print()
+        # print()
 
         if printout:
 
@@ -243,18 +256,19 @@ def job_output(job_uid, printout=False):
         symlink_dir = os.path.join(root_dir, "monkey-output", job_uid)
         try:
             os.symlink(output_dir, symlink_dir)
-        except Exception as e:
+        except Exception:
             pass
         output_dir = symlink_dir
 
     args = {"job_uid": full_uid}
     try:
-        r = requests.get(build_url("get/job/output"), params=args, stream=True)
-    except:
+        r = get_request(url=build_url("get/job/output"),
+                        params=args,
+                        stream=True)
+    except Exception as e:
         if printout:
-            print("Unable to connect to Monkey Core: {}".format(
-                build_url("get/job/output")))
-            return []
+            print(e)
+        return []
 
     output_tar = os.path.join(output_dir, "output.tar")
 

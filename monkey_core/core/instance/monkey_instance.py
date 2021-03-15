@@ -8,6 +8,7 @@ from uuid import uuid1
 
 import ansible_runner
 import requests
+from core import monkey_global
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +29,8 @@ def threaded(fn):
 
     def wrapper(*args, **kwargs):
         future = Future()
-        Thread(target=call_with_future, args=(fn, future, args, kwargs)).start()
+        Thread(target=call_with_future,
+               args=(fn, future, args, kwargs)).start()
         return future
 
     return wrapper
@@ -69,7 +71,8 @@ class MonkeyInstance():
         if self.ip_address is None:
             return False
         try:
-            r = requests.get("http://{}:9991/ping".format(self.ip_address), timeout=4)
+            r = requests.get("http://{}:9991/ping".format(self.ip_address),
+                             timeout=4)
         except:
             self.offline_count += 1
             return self.offline_count >= self.offline_retries
@@ -116,7 +119,8 @@ class MonkeyInstance():
         if self.ip_address is None:
             return None
         try:
-            r = requests.get("http://{}:9991/config".format(self.ip_address), timeout=4)
+            r = requests.get("http://{}:9991/config".format(self.ip_address),
+                             timeout=4)
             r.raise_for_status()
             result = r.json()
             if result['ok']:
@@ -126,24 +130,60 @@ class MonkeyInstance():
         except:
             return None
 
-    def run_ansible_role(self, rolename, uuid, extravars=dict(), envvars=dict()):
+    def print_failed_event(self, runner):
+        events = list(runner.events)[-2:]
+        for e in events:
+            event_data = e.get("event_data", dict())
+            print("TASK-----------------------------")
+            print(event_data.get("name", "unknown name"))
+            print("STDOUT:")
+            print(e.get("stdout", "no stdout"))
+            print("TASK ACTION: " + event_data.get("task_action", "unknown"))
+            print("TASK ARGS: " + event_data.get("task_args", "unknown"))
+            print("TASK PATH: " + event_data.get("task_path", "unknown"))
+            print("\n")
+
+    def run_ansible_role_inexclusively(self,
+                                       rolename,
+                                       extravars=dict(),
+                                       envvars=dict(),
+                                       cancel_callback=None):
         extravars.update(self.additional_extravars)
-        runner = ansible_runner.run(
-            host_pattern=self.name,
-            private_data_dir="ansible",
-            module="include_role",
-            module_args=f"name={rolename}",
-            quiet=monkey_global.QUIET_ANSIBLE,
+        runner = ansible_runner.run(host_pattern=self.name,
+                                    private_data_dir="ansible",
+                                    module="include_role",
+                                    module_args=f"name={rolename}",
+                                    quiet=monkey_global.QUIET_ANSIBLE,
+                                    extravars=extravars,
+                                    envvars=envvars,
+                                    cancel_callback=cancel_callback)
+        return runner
+
+    def run_ansible_role(self, rolename, extravars=dict(), envvars=dict()):
+        uuid = self.update_uuid()
+        runner = self.run_ansible_role_inexclusively(
+            rolename=rolename,
             extravars=extravars,
             envvars=envvars,
             cancel_callback=self.ansible_runner_uuid_cancel(uuid))
-        return runner
 
-    def run_ansible_module_inexclusively(self, modulename, args, cancel_callback=None):
+        if self.get_uuid() != uuid:
+            raise AnsibleRunException(
+                "Running ansible role cancelled due to concurrency")
+
+        if runner.status == "failed":
+            self.print_failed_event(runner=runner)
+            raise AnsibleRunException("Ansible role failed to run")
+
+    def run_ansible_module_inexclusively(self,
+                                         modulename,
+                                         args,
+                                         cancel_callback=None):
         args_string = args
         if type(args) is dict:
             args_string = ""
             for key, val in args.items():
+
                 args_string += f"{key}={val} "
         runner = ansible_runner.run(host_pattern=self.name,
                                     private_data_dir="ansible",
@@ -153,7 +193,7 @@ class MonkeyInstance():
                                     cancel_callback=cancel_callback)
         return runner
 
-    def run_ansible_module(self, modulename, args):
+    def run_ansible_module(self, modulename, args=""):
         uuid = self.update_uuid()
         runner = self.run_ansible_module_inexclusively(
             modulename=modulename,
@@ -161,31 +201,62 @@ class MonkeyInstance():
             cancel_callback=self.ansible_runner_uuid_cancel(uuid))
 
         if self.get_uuid() != uuid:
-            raise AnsibleRunException("Running ansible cancelled due to concurrency")
+            raise AnsibleRunException(
+                "Running ansible cancelled due to concurrency")
 
         if runner.status == "failed":
+            self.print_failed_event(runner=runner)
             raise AnsibleRunException("Ansible module failed to run")
 
-    def run_ansible_playbook(self, playbook, extravars, uuid):
+    def run_ansible_playbook_inexclusively(self,
+                                           playbook,
+                                           extravars,
+                                           cancel_callback=None):
         extravars.update(self.additional_extravars)
-        runner = ansible_runner.run(
-            host_pattern=self.name,
-            playbook=playbook,
-            private_data_dir="ansible",
-            extravars=extravars,
-            quiet=monkey_global.QUIET_ANSIBLE,
-            cancel_callback=self.ansible_runner_uuid_cancel(uuid))
+        runner = ansible_runner.run(host_pattern=self.name,
+                                    playbook=playbook,
+                                    private_data_dir="ansible",
+                                    extravars=extravars,
+                                    quiet=monkey_global.QUIET_ANSIBLE,
+                                    cancel_callback=cancel_callback)
         return runner
 
-    def run_ansible_shell(self, command, uuid):
-        runner = ansible_runner.run(
-            host_pattern=self.name,
-            private_data_dir="ansible",
-            module="shell",
-            module_args=f"cmd={command}",
-            quiet=monkey_global.QUIET_ANSIBLE,
+    def run_ansible_playbook(self, playbook, extravars):
+        uuid = self.update_uuid()
+        runner = self.run_ansible_playbook_inexclusively(
+            playbook=playbook,
+            extravars=extravars,
             cancel_callback=self.ansible_runner_uuid_cancel(uuid))
+
+        if self.get_uuid() != uuid:
+            raise AnsibleRunException(
+                "Running ansible cancelled due to concurrency")
+
+        if runner.status == "failed":
+            self.print_failed_event(runner=runner)
+            raise AnsibleRunException("Ansible module failed to run")
+
+    def run_ansible_shell_inexclusively(self, command, cancel_callback=None):
+        runner = ansible_runner.run(host_pattern=self.name,
+                                    private_data_dir="ansible",
+                                    module="shell",
+                                    module_args=f"cmd={command}",
+                                    quiet=monkey_global.QUIET_ANSIBLE,
+                                    cancel_callback=cancel_callback)
         return runner
+
+    def run_ansible_shell(self, command):
+        uuid = self.update_uuid()
+        runner = self.run_ansible_shell_inexclusively(
+            command=command,
+            cancel_callback=self.ansible_runner_uuid_cancel(uuid))
+        if self.get_uuid() != uuid:
+            raise AnsibleRunException(
+                "Running ansible cancelled due to concurrency")
+
+        if runner.status == "failed":
+            self.print_failed_event(runner=runner)
+            raise AnsibleRunException("Ansible module failed to run")
 
     def install_dependency(self, dependency):
         raise NotImplementedError("This is not implemented yet")
@@ -198,7 +269,10 @@ class MonkeyInstance():
                                                       unpack_code_and_persist,
                                                       unpack_job_dir)
 
-    def setup_job(self, job, provider_info=dict()):
+    def mount_monkeyfs(self, job_yml, provider_info):
+        return True, "No mounting needed"
+
+    def setup_job(self, job_yml, provider_info=dict()):
         """
         Setup data item
         Unpacks Job Dir
@@ -208,65 +282,59 @@ class MonkeyInstance():
         Start persisting
         Setup Dependency manager
         """
-        print("Setting up job: ", job)
-        job_uid = job["job_uid"]
+        print("Setting up job: ", job_yml)
+        job_uid = job_yml["job_uid"]
 
-        uuid = self.update_uuid()
-        setup_job_args = {}
-
-        for data_item in job.get("data", []):
+        for data_item in job_yml.get("data", []):
             print("Setting up data item", data_item)
-            success, msg = self.setup_data_item(data_item=data_item, job_uid=job_uid)
+            success, msg = self.setup_data_item(
+                job_uid=job_uid,
+                data_item=data_item,
+            )
             if not success:
                 return success, msg
-        monkeyfs_path = self.get_monkeyfs_dir()
-        job_dir_path = os.path.join(self.get_scratch_dir(), job_uid)
 
-        success, msg = self.unpack_job_dir(job_uid=job_uid,
-                                           monkeyfs_path=monkeyfs_path,
-                                           job_dir_path=job_dir_path)
+        success, msg = self.unpack_job_dir(job_uid=job_uid)
         if not success:
             return success, msg
 
-        for code_item in job.get("code", []):
-            success, msg = self.unpack_code_and_persist(code_item=code_item,
-                                                        monkeyfs_path=monkeyfs_path,
-                                                        job_dir_path=job_dir_path)
+        for code_item in job_yml.get("code", []):
+            success, msg = self.unpack_code_and_persist(
+                job_uid=job_uid,
+                code_item=code_item,
+            )
             if not success:
                 return success, msg
-            print("Success in unpacking all datasets")
+            print("Success in unpacking all codebase items")
 
         print("Setting up logs folder")
-        success, msg = self.setup_logs_folder(job_uid=job_uid,
-                                              monkeyfs_path=monkeyfs_path,
-                                              job_dir_path=job_dir_path)
+        success, msg = self.setup_logs_folder(job_uid=job_uid)
         if not success:
             return success, msg
 
-        for persist_item in job.get("persist", []):
+        for persist_item in job_yml.get("persist", []):
             print("Setting up persist item", persist_item)
-            success, msg = self.setup_persist_folder(job_uid=job_uid,
-                                                     monkeyfs_path=monkeyfs_path,
-                                                     job_dir_path=job_dir_path,
-                                                     persist=persist_item)
+            success, msg = self.setup_persist_folder(
+                job_uid=job_uid,
+                persist=persist_item,
+            )
             if not success:
                 return success, msg
 
         print("Starting Persist")
-        success, msg = self.start_persist(job_uid=job_uid,
-                                          monkeyfs_path=monkeyfs_path,
-                                          job_dir_path=job_dir_path)
+        success, msg = self.start_persist(job_uid=job_uid,)
         if not success:
             return success, msg
 
         print("Setting up dependency manager...")
-        success, msg = self.setup_dependency_manager(run_yml=job["run"],
-                                                     job_dir_path=job_dir_path)
+        success, msg = self.setup_dependency_manager(
+            job_uid=job_uid,
+            run_yml=job_yml["run"],
+        )
         if not success:
             return success, msg
 
         return True, "Successfully setup the job"
-        raise NotImplementedError("This is not implemented yet")
 
     def run_job(self, job, provider_info=dict()):
         raise NotImplementedError("This is not implemented yet")
@@ -281,11 +349,18 @@ class MonkeyInstance():
         raise NotImplementedError("This is not implemented yet")
 
     def get_job_dir(self, job_uid):
-        return os.path.join(self.get_scratch_dir(), job_uid)
+        return os.path.join(self.get_scratch_dir(), job_uid, "")
+
+    def get_monkeyfs_job_dir(self, job_uid):
+        return os.path.join(self.get_monkeyfs_dir(), "jobs", job_uid, "")
 
     def get_dataset_path(self, data_name, checksum, extension):
-        return os.path.join(self.get_monkeyfs_dir(), "data", data_name, checksum,
-                            "data" + extension)
+        return os.path.join(self.get_monkeyfs_dir(), "data", data_name,
+                            checksum, "data" + extension)
 
     def get_codebase_path(self, run_name, checksum, extension):
         return os.path.join(self.get_monkeyfs_dir(), "code", run_name)
+
+    def get_codebase_file_path(self, run_name, checksum, extension):
+        return os.path.join(self.get_monkeyfs_dir(), "code", run_name,
+                            checksum, "code" + extension)

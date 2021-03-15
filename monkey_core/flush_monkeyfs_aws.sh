@@ -7,8 +7,8 @@ then
 fi
 
 echo "Running from creds: $1"
-SECRET=$(./setup_scripts/aws_creds_parser.py $1 -s)
-KEY=$(./setup_scripts/aws_creds_parser.py $1 -k)
+SECRET=$(./core/setup_scripts/aws_creds_parser.py $1 -s)
+KEY=$(./core/setup_scripts/aws_creds_parser.py $1 -k)
 cd ansible
 if [ -z "$2" ]
 then
