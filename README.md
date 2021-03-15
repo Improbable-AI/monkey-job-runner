@@ -115,7 +115,7 @@ A local provider functions with a couple necessary parameters.  Every worker in 
 #### AWS Provider Setup
 TODO
 
-
+Run ./setup_core
 
 #### GCP Provider Setup
 TODO
