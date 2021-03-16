@@ -48,23 +48,23 @@ jobs:
         ls -al ~
       
         
-    - name: Install monkey-cli packages
+    - name: Install monkey_cli packages
       run: |
         pip install .
         pip install -r requirements.txt
-      working-directory: monkey-cli
+      working-directory: monkey_cli
 
     - name: Setup folders
       run: |
         mkdir -p data output
-      working-directory: monkey-cli/samples/mnist
+      working-directory: monkey_cli/samples/mnist
 
     - name: Cache mnist data
       uses: actions/cache@v1
       id: cache-mnist-data
       with:
-        path: monkey-cli/samples/mnist/data
-        key: ${{ hashFiles('monkey-cli/samples/mnist/download_data.py') }}
+        path: monkey_cli/samples/mnist/data
+        key: ${{ hashFiles('monkey_cli/samples/mnist/download_data.py') }}
     
     - name: Cache miss on mnist data
       if: steps.cache-mnist-data.outputs.cache-hit != 'true'
@@ -72,13 +72,13 @@ jobs:
         pip install torchvision
         mkdir -p data output
         python download_data.py
-      working-directory: monkey-cli/samples/mnist
+      working-directory: monkey_cli/samples/mnist
 
     - name: Run mnist sample
       run: |
         python monkey_core.py &
         sleep 15
-        cd ../monkey-cli/samples/mnist
+        cd ../monkey_cli/samples/mnist
         ls -al ~
         tree
         cp ci/local_conda_job.yml job.yml
