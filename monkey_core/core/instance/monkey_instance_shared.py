@@ -130,7 +130,7 @@ def setup_logs_folder(self, job_uid):
     }
     try:
         self.run_ansible_role(
-            rolename="local/configure/persist_folder",
+            rolename="setup/sync/persist_folder",
             extravars=persist_folder_args,
         )
     except AnsibleRunException as e:
@@ -174,7 +174,7 @@ def setup_persist_folder(self, job_uid, persist):
         "bucket_path": monkeyfs_output_folder,
     }
     try:
-        self.run_ansible_role(rolename="local/configure/persist_folder",
+        self.run_ansible_role(rolename="setup/sync/persist_folder",
                               extravars=persist_folder_args)
     except AnsibleRunException as e:
         print(e)
@@ -210,7 +210,7 @@ def start_persist(self, job_uid):
         "persist_loop_script_path": script_loop_path,
     }
     try:
-        self.run_ansible_role(rolename="local/configure/start_persist",
+        self.run_ansible_role(rolename="setup/sync/start_persist",
                               extravars=start_persist_args)
     except AnsibleRunException as e:
         print(e)
@@ -244,13 +244,12 @@ def setup_dependency_manager(self, job_uid, run_yml):
     }
     try:
         if env_type == "conda":
-            self.run_ansible_role(rolename="run/local/setup_conda",
+            self.run_ansible_role(rolename="run/setup_conda",
                                   extravars=env_args)
         elif env_type == "pip":
-            self.run_ansible_role(rolename="run/local/setup_pip",
-                                  extravars=env_args)
+            self.run_ansible_role(rolename="run/setup_pip", extravars=env_args)
         elif env_type == "docker":
-            self.run_ansible_role(rolename="run/local/setup_docker",
+            self.run_ansible_role(rolename="run/setup_docker",
                                   extravars=env_args)
         else:
             return False, "Provided or missing dependency manager"
@@ -281,7 +280,7 @@ def execute_command(self, job_uid, cmd, run_yml):
 
     try:
         self.run_ansible_role(
-            rolename="run/local/cmd",
+            rolename="run/cmd",
             extravars={
                 "run_command": cmd,
                 "job_dir_path": job_dir_path,

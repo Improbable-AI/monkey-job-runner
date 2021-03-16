@@ -1,4 +1,0 @@
----
-- name: Docker Printout
-  debug:
-    msg: "Docker installation all set"

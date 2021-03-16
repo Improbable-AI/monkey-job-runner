@@ -7,4 +7,4 @@
         file: local_vars.yml
 
   roles:
-    - local/setup/setup_keys
+    - local/setup_keys

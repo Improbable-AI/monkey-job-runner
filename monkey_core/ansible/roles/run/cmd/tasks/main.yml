@@ -3,15 +3,27 @@
 - name: Printout Command
   debug: 
     msg: "{{ run_command }}"
-- name: template sync command
+- name: Create the run script
   template:
     src: templates/run.sh
-    dest: ~/.run.sh
+    dest: "{{job_dir_path}}/run.sh"
     mode: u=rwx,g=r,o=r
-- name: Persist folder by running async rsync
-  shell: . ~/.monkey_activate; ~/.run.sh
+
+- name: Get interactive environment
+  shell: bash -ic ". {{activate_file}}; env | grep PATH="
+  register: interactive_output
+
+- name: Remove conda path to file
+  lineinfile:
+    dest: "{{activate_file}}"
+    state: present
+    insertbefore: "BOF"
+    line: "export {{interactive_output.stdout}}"
+
+- name: Run the run script
+  shell: ". {{activate_file}}; ./run.sh" 
   async: 864000
   poll: 15
   args:
-    executable: /bin/bash
+    chdir: "{{job_dir_path}}"
   

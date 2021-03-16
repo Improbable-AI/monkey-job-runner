@@ -40,4 +40,4 @@
         new_aws_host: "{{ inventory_hostname}}"
   roles:
     - aws/install_deps
-    - monkey_client/install
+    - setup/install/monkey_client

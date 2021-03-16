@@ -63,7 +63,7 @@ name: {}, ip: {}, state: {}
 
         try:
             self.run_ansible_role(
-                rolename="local/setup/machine",
+                rolename="local/machine",
                 extravars=self.provider.get_local_vars(),
             )
 

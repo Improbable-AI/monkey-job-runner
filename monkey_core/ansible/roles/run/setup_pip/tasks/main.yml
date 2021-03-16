@@ -2,23 +2,18 @@
 - name: Create venv folder
   shell: |
     python3 -m venv venv
-    echo '. venv/bin/activate' >> ~/.monkey_activate; 
+    echo '. venv/bin/activate' >> {{activate_file}}; 
   args:
     executable: /bin/bash
 
 - name: Create upgrade pip
   shell: |
-    . ~/.monkey_activate
+    . {{activate_file}}
     pip install --upgrade pip
 
 - name: Install requirements
-  shell: . ~/.monkey_activate; pip install -r "{{ environment_file }}"
+  shell: . {{activate_file}}; pip install -r "{{ environment_file }}"
   args:
     executable: /bin/bash
 
-- name: Install monkey logging package
-  shell: . ~/.monkey_activate; pip install .
-  args:
-    chdir: ~/.monkey-client/monkey-log
-    executable: /bin/bash
 

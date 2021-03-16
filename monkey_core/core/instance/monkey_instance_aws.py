@@ -65,7 +65,7 @@ name: {}, ip: {}, state: {}
         logger.info(f"Instance installing: {dependency}")
 
         try:
-            self.run_ansible_role(rolename=f"install/{dependency}")
+            self.run_ansible_role(rolename=f"setup/install/{dependency}")
         except AnsibleRunException as e:
             print(e)
             logger.error(f"Installing Dependency: {dependency} failed")

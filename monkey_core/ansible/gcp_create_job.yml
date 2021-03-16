@@ -61,4 +61,4 @@
         new_gcp_host: "{{ inventory_hostname}}"
   roles:
     - gcp/install_deps
-    - monkey_client/install
+    - setup/install/monkey_client
