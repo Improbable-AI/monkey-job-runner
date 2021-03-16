@@ -42,7 +42,6 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y s3fs
         fi
-        
     - name: Docker Compose Mongo setup
       run: |
         docker-compose up -d
