@@ -13,7 +13,7 @@ jobs:
     defaults:
       run:
         shell: bash
-        working-directory: monkey-core
+        working-directory: monkey_core
 
     steps:
       - name: Do nothing for now

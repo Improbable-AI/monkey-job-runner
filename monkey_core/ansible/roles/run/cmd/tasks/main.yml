@@ -1,0 +1,29 @@
+---
+
+- name: Printout Command
+  debug: 
+    msg: "{{ run_command }}"
+- name: Create the run script
+  template:
+    src: templates/run.sh
+    dest: "{{job_dir_path}}/run.sh"
+    mode: u=rwx,g=r,o=r
+
+- name: Get interactive environment
+  shell: bash -ic ". {{activate_file}}; env | grep PATH="
+  register: interactive_output
+
+- name: Remove conda path to file
+  lineinfile:
+    dest: "{{activate_file}}"
+    state: present
+    insertbefore: "BOF"
+    line: "export {{interactive_output.stdout}}"
+
+- name: Run the run script
+  shell: ". {{activate_file}}; ./run.sh" 
+  async: 864000
+  poll: 15
+  args:
+    chdir: "{{job_dir_path}}"
+  
