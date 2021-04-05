@@ -34,7 +34,6 @@ name: {}, ip: {}, state: {}
     def get_job_dir(self, job_uid):
         return "/home/ubuntu"
 
-    # Passes compute_api in order to restart instances
     def __init__(self, ansible_info):
 
         name = ansible_info["tags"]["Name"]
@@ -58,25 +57,11 @@ name: {}, ip: {}, state: {}
         self.machine_zone = other.machine_zone
 
     def check_online(self):
-
         return super().check_online() and self.state == "running"
-
-    def install_dependency(self, dependency):
-        logger.info(f"Instance installing: {dependency}")
-
-        try:
-            self.run_ansible_role(rolename=f"setup/install/{dependency}")
-        except AnsibleRunException as e:
-            print(e)
-            logger.error(f"Installing Dependency: {dependency} failed")
-            return False
-
-        logger.info(f"Installing Dependency: {dependency} succeeded!")
-        return True
 
     def mount_monkeyfs(self, job_yml, provider_info):
         credential_file = provider_info.get("aws_cred_file", None)
-        aws_storage_name = provider_info["storage_name"]
+        aws_storage_name = provider_info["aws_storage_name"]
         monkeyfs_path = provider_info.get("monkeyfs_path", "/monkeyfs")
         if credential_file is None:
             return False, "Service account credential file is not provided"

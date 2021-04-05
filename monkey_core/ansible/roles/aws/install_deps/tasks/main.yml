@@ -32,7 +32,7 @@
 
 
     - name: Write swap entry in fstab
-      become: true
+      become: true              # 
       mount:
         src: /swapfile
         path: /swapfile

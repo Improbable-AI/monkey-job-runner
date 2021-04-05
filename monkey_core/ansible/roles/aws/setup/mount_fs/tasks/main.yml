@@ -2,7 +2,7 @@
   # tasks:
 - name: Printout fs name
   debug:
-    msg: "Mounting {{ storage_name}} to {{ local_monkeyfs_path }}"
+    msg: "Mounting {{ aws_storage_name}} to {{ local_monkeyfs_path }}"
 
     # TODO(alamp): Make more robust
 - name: Check for existing mount
@@ -41,10 +41,10 @@
         "AWSACCESSKEYID": "{{access_key_id}}"
         "AWSSECRETACCESSKEY": "{{access_key_secret}}"
       command:
-        cmd: "s3fs {{storage_name}} {{local_monkeyfs_path}}"
+        cmd: "s3fs {{aws_storage_name}} {{local_monkeyfs_path}}"
 
 - name: Get Mount Path
-  shell: df "{{ local_monkeyfs_path }}" | grep {{storage_name}} | awk '{print $NF}'
+  shell: df "{{ local_monkeyfs_path }}" | grep {{aws_storage_name}} | awk '{print $NF}'
   register: mount_path
 
 - name: Register Mount Path

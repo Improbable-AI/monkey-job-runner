@@ -1,10 +1,12 @@
+import json
 import os
+import random
 import readline
+import string
 import subprocess
 from shutil import which
 
-from mongoengine import *
-from ruamel.yaml import YAML
+from ruamel.yaml import YAML, round_trip_load
 
 
 def check_for_existing_local_command(command):
@@ -16,7 +18,7 @@ def load_yaml_file_as_dict(filename):
         with open(filename) as f:
             aws_vars = YAML().load(f)
             return aws_vars
-    except:
+    except Exception:
         print("Failed to load ", filename)
         return dict()
 
@@ -31,15 +33,27 @@ def get_gcp_vars():
     return load_yaml_file_as_dict(gcp_vars_file)
 
 
+def write_commented_yaml_file(filename, yaml_params):
+    yaml_params.fa.set_block_style()
+    with open(filename, "w") as f:
+        try:
+            y = YAML()
+            y.explicit_start = True
+            y.default_flow_style = False
+            y.dump(yaml_params, f)
+        except Exception as e:
+            print(f"Failed to write file: {filename}\n{e}")
+            exit(1)
+
+
 def printout_ansible_events(events):
     events = [(x.get("event_data",
-                     {}).get("task", "unknown"), x.get("event_data",
-                                                       {}).get("playbook", "unknown"),
-               x.get("event_data",
-                     {}).get("task_action",
+                     {}).get("task",
                              "unknown"), x.get("event_data",
-                                               {}).get("task_args",
-                                                       "unknown"), x.get("stdout", None))
+                                               {}).get("playbook", "unknown"),
+               x.get("event_data", {}).get("task_action", "unknown"),
+               x.get("event_data", {}).get("task_args",
+                                           "unknown"), x.get("stdout", None))
               for x in events]
 
     for task, playbook, action, args, stdout in events:
@@ -64,26 +78,17 @@ def sync_directories(dir1, dir2):
     return p.returncode == 0
 
 
-def get_monkey_fs():
-    # Check env variable MONKEYFS_PATH first
-    fs_path = os.environ.get("MONKEYFS_PATH", None)
-    if fs_path is not None:
-        print("Found env path:", fs_path)
-        # Check that the env variable is a mounted directory
-        fs_output = os.system("df {} | grep '{}'".format(fs_path, fs_path))
-        if fs_output == 0:
-            # env filepath appears in df
-            return fs_path
-        print("Did not find mount aligning with fs_path:", fs_path)
-    # Check for mounts
-    fs_output = subprocess.check_output(
-        "df ansible/monkeyfs | grep monkeyfs | awk '{print $NF}'",
-        shell=True).decode("utf-8")
-    print(fs_output)
-    if fs_output is not None and fs_output != "":
-        fs_path = fs_output.split("\n")[0]
-        return fs_path
-    return None
+def get_input_with_defaults(prompt_phrase, prompt_name, default_value,
+                            noinput):
+    if noinput:
+        print(f"{prompt_name} not provider. Defaulting to: {default_value}")
+        return default_value
+    return input(f"{prompt_phrase} ({default_value}): ") or default_value
+
+
+def generate_random_monkeyfs_name():
+    return "monkeyfs-" + ''.join(
+        random.choice(string.ascii_lowercase) for _ in range(6))
 
 
 def aws_cred_file_environment(cred_file):
@@ -94,7 +99,8 @@ def aws_cred_file_environment(cred_file):
         d = dict(zip(names, values))
 
         if "Access key ID" not in d or "Secret access key" not in d:
-            raise ValueError("The AWS Cred File does not look like a csv cred file")
+            raise ValueError(
+                "The AWS Cred File does not look like a csv cred file")
 
         access_key_id = d["Access key ID"]
         access_key_secret = d["Secret access key"]
@@ -102,6 +108,12 @@ def aws_cred_file_environment(cred_file):
             "AWS_ACCESS_KEY_ID": access_key_id,
             "AWS_SECRET_ACCESS_KEY": access_key_secret,
         }
+
+
+def gcp_cred_file_environment(cred_file):
+    with open(cred_file) as f:
+        creds = json.load(f)
+        return creds
 
 
 class Completer(object):
@@ -123,7 +135,9 @@ class Completer(object):
         dirname, rest = os.path.split(path)
         tmp = dirname if dirname else '.'
         res = [
-            os.path.join(dirname, p) for p in self._listdir(tmp) if p.startswith(rest)
+            os.path.join(dirname, p)
+            for p in self._listdir(tmp)
+            if p.startswith(rest)
         ]
         # more than one match, or single match which does not exist (typo)
         if len(res) > 1 or not os.path.exists(path):
@@ -142,3 +156,36 @@ class Completer(object):
         if len(line) == 1 and len(text) != 0:
             return self._complete_path(line[-1])[state]
         return None
+
+
+def write_vars_file(
+        raw_vars,
+        provider_name,
+        provider_yaml,
+        file_name,
+        before_comments=dict(),
+        end_line_comments=dict(),
+):
+    vars_dict = round_trip_load(str(raw_vars))
+    vars_dict.yaml_set_start_comment("\nProvider: {}".format(provider_name))
+
+    for key, comment in before_comments.items():
+        vars_dict.yaml_set_comment_before_after_key(key, before=comment)
+
+    for key, comment in end_line_comments.items():
+        vars_dict.yaml_add_eol_comment(comment, key)
+
+    # Create filesystem bucket and pick a new id if failed
+    providers = provider_yaml.get("providers", [])
+    if providers is None:
+        providers = []
+    providers.append(vars_dict)
+    provider_yaml["providers"] = providers
+
+    print("\nWriting to providers.yml...")
+    providers_file = "providers.yml"
+    write_commented_yaml_file(providers_file, provider_yaml)
+
+    print("\nWriting aws vars file...")
+    vars_file = f"ansible/{file_name}"
+    write_commented_yaml_file(vars_file, vars_dict)

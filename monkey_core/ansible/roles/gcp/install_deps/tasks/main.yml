@@ -60,6 +60,11 @@
   - name: get os gcsutil string
     shell: echo gcsfuse-$(lsb_release -c -s)
     register: gsfuse_name
+  - name: add gcloud apt key
+    become: true
+    apt_key:
+      url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+      state: present
   - name: add gcloud repository
     become: true
     apt_repository:
@@ -68,13 +73,6 @@
       state: present
       filename: gsfuse
     retries: 2
-
-  - name: add gcloud apt key
-    become: true
-    apt_key:
-      url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
-      state: present
-      
 
   - name: apt update install gcsfuse python3 nginx
     become: true

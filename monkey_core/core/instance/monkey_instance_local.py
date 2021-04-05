@@ -53,6 +53,9 @@ name: {}, ip: {}, state: {}
 
         self.offline_count = 0
 
+    def mount_monkeyfs(self, job_yml, provider_info):
+        return True, "No mounting needed, was mounted in setup"
+
     def update_instance_details(self, other):
         super().update_instance_details(other)
         self.ansible_info = other.ansible_info
