@@ -24,7 +24,6 @@ def ping():
 def get_list_providers():
     monkey = monkey_global.get_monkey()
     providers_list = monkey.get_list_providers()
-    logger.info(providers_list)
     return jsonify({"response": providers_list})
 
 

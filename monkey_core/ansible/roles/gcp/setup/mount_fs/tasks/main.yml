@@ -1,15 +1,11 @@
 ---
-  # tasks:
-- name: Default fs name
-  set_fact:
-    gcp_project: "{{ (lookup('file', gcp_cred_file) | from_json).project_id }}"
 - name: Printout fs name
   debug:
-    msg: "Mounting {{ storage_name}} to {{ local_monkeyfs_path }}"
+    msg: "Mounting {{ gcp_storage_name}} to {{ local_monkeyfs_path }}"
 
     # TODO(alamp): Make more robust
 - name: Check for existing mount
-  shell: df {{ local_monkeyfs_path }} | grep {{ storage_name }}
+  shell: df {{ local_monkeyfs_path }} | grep {{ gcp_storage_name }}
   register: existing_mount
   ignore_errors: true
 - name: Printout mount
@@ -40,11 +36,11 @@
     - name: Mount fs to Mountpoint
       when: create_mountpoint is not failed
       command:
-        cmd: "gcsfuse {{ storage_name}} {{ local_monkeyfs_path }}"
+        cmd: "gcsfuse {{ gcp_storage_name}} {{ local_monkeyfs_path }}"
       environment:
         GOOGLE_APPLICATION_CREDENTIALS: "{{ gcp_cred_file }}"
 - name: Get Mount Path
-  shell: df "{{ local_monkeyfs_path }}" | grep {{storage_name}} | awk '{print $NF}'
+  shell: df "{{ local_monkeyfs_path }}" | grep {{gcp_storage_name}} | awk '{print $NF}'
   register: mount_path
 
 - name: Register Mount Path

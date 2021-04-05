@@ -109,6 +109,7 @@ def check_for_dead_jobs(self, log_file=None):
                 job.state))
 
             job.set_state(monkey_state.MONKEY_STATE_QUEUED)
+
         if job.provider_type == "local":
             print("looking for local instance: ", job.job_yml["instance"])
             instance = found_provider.get_instance(job.job_yml["instance"])

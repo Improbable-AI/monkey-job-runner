@@ -54,11 +54,10 @@ class MonkeyProviderAWS(MonkeyProvider):
         for key, value in cred_environment.items():
             os.environ[key] = value
 
-        if self.check_filesystem_mounted() == False:
+        if not self.check_filesystem_mounted():
             print("Filesystem mount not found")
             print("Remounting filesystem.... ")
-            if self.check_provider() == False or self.check_filesystem_mounted(
-            ):
+            if not self.check_provider() or self.check_filesystem_mounted():
                 print("Failed to remount filesystem")
                 return None
             else:
@@ -68,9 +67,9 @@ class MonkeyProviderAWS(MonkeyProvider):
         # Check for mounts
         print("Checking for mounted filesystem")
 
-        fs_output = subprocess.run("df {} | grep monkeyfs".format(
-            self.provider_info.get("local_monkeyfs_path",
-                                   "ansible/monkeyfs-aws")),
+        local_monkey_fs = self.provider_info.get("local_monkeyfs_path",
+                                                 "ansible/monkeyfs-aws")
+        fs_output = subprocess.run(f"df {local_monkey_fs} | grep monkeyfs",
                                    shell=True,
                                    capture_output=True).stdout.decode("utf-8")
         if fs_output is not None and fs_output != "":
@@ -186,7 +185,7 @@ class MonkeyProviderAWS(MonkeyProvider):
                 images += [(inst["name"],
                             inst["family"] if "family" in inst else None)
                            for inst in result]
-        except:
+        except Exception:
             pass
 
         return images

@@ -6,11 +6,6 @@
     - name: Import default vars
       include_vars:
         file: gcp_vars.yml
-    - name: Get variables from gcp private key
-      set_fact:
-        ansible_user: "sa_{{ (lookup('file', gcp_cred_file) | from_json).client_id }}"
-        gcp_service_email: "{{ (lookup('file', gcp_cred_file) | from_json).client_email }}"
-        gcp_project: "{{ (lookup('file', gcp_cred_file) | from_json).project_id }}"
 
   roles:
     - gcp/remove_keys

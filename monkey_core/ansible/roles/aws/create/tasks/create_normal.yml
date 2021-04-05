@@ -11,7 +11,7 @@
     instance_tags:
       Name: "{{ monkey_job_uid }}"
       Monkey: "Monkey_AWS"
-      MonkeyStorage: "{{storage_name}}"
+      MonkeyStorage: "{{aws_storage_name}}"
     state: running
     wait: yes
     group: Monkey_Security_Group
@@ -36,7 +36,7 @@
     instance_tags:
       Name: "{{ monkey_job_uid }}"
       Monkey: "Monkey_AWS"
-      MonkeyStorage: "{{storage_name}}"
+      MonkeyStorage: "{{aws_storage_name}}"
     image: "{{base_image}}"
     key_name: "{{ aws_key_name }}"
     wait: yes

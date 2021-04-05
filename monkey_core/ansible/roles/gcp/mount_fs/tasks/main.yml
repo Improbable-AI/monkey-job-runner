@@ -1,12 +1,7 @@
 ---
-  # tasks:
-- name: Default fs name
-  set_fact:
-    gcp_project: "{{ (lookup('file', gcp_cred_file) | from_json).project_id }}"
-    monkeyfs_path: "{{monkeyfs_path | default('/monkeyfs-gcp', true)}}"
 - name: Printout fs name
   debug:
-    msg: "Mounting FS: {{ storage_name }}"
+    msg: "Mounting FS: {{ gcp_storage_name }}"
 
 - name: Create Mountpoint
   ignore_errors: true
@@ -19,9 +14,9 @@
 
 - name: Debug create mountpoint
   debug: 
-    msg: "Mountpoint {{create_mountpoint.failed}}"
+    msg: "Mountpoint {{create_mountpoint.failed}}; gcsfuse {{gcp_storage_name}} {{monkeyfs_path}}"
 - name: Mount fs to Mountpoint
   when: create_mountpoint is not failed
   command:
-    cmd: "gcsfuse {{storage_name}} {{monkeyfs_path}}"
+    cmd: "gcsfuse {{gcp_storage_name}} {{monkeyfs_path}}"
 

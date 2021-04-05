@@ -16,26 +16,6 @@ HEARTBEAT_TIME = 30
 HEARTBEAT_FAILURE_TOLERANCE = 3
 
 
-# Creates backgound decorators @threaded.  To block and get the result, use .result()
-def call_with_future(fn, future, args, kwargs):
-    try:
-        result = fn(*args, **kwargs)
-        future.set_result(result)
-    except Exception as exc:
-        future.set_exception(exc)
-
-
-def threaded(fn):
-
-    def wrapper(*args, **kwargs):
-        future = Future()
-        Thread(target=call_with_future,
-               args=(fn, future, args, kwargs)).start()
-        return future
-
-    return wrapper
-
-
 class AnsibleRunException(Exception):
     pass
 
@@ -263,9 +243,6 @@ class MonkeyInstance():
         if printout:
             self.print_failed_event(runner)
 
-    def install_dependency(self, dependency):
-        raise NotImplementedError("This is not implemented yet")
-
     from core.instance.monkey_instance_shared import (execute_command, run_job,
                                                       setup_data_item,
                                                       setup_dependency_manager,
@@ -276,7 +253,7 @@ class MonkeyInstance():
                                                       unpack_job_dir)
 
     def mount_monkeyfs(self, job_yml, provider_info):
-        return True, "No mounting needed"
+        raise NotImplementedError("This is not implemented yet")
 
     def setup_job(self, job_yml, provider_info=dict()):
         """
@@ -341,6 +318,19 @@ class MonkeyInstance():
             return success, msg
 
         return True, "Successfully setup the job"
+
+    def install_dependency(self, dependency):
+        logger.info(f"Instance installing: {dependency}")
+
+        try:
+            self.run_ansible_role(rolename=f"setup/install/{dependency}")
+        except AnsibleRunException as e:
+            print(e)
+            logger.error(f"Installing Dependency: {dependency} failed")
+            return False
+
+        logger.info(f"Installing Dependency: {dependency} succeeded!")
+        return True
 
     def cleanup_job(self, job_yml, provider_info=dict()):
         raise NotImplementedError("This is not implemented yet")
