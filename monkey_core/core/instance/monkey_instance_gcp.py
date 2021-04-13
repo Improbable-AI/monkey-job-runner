@@ -1,10 +1,9 @@
 import logging
-import os
-import pprint
 
 import ansible_runner
-import yaml
-from core.instance.monkey_instance import MonkeyInstance
+from core import monkey_global
+from core.instance.monkey_instance import AnsibleRunException, MonkeyInstance
+from core.setup_scripts.utils import get_gcp_vars
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +55,7 @@ name: {}, ip: {}, state: {}
         gcp_storage_name = provider_info["gcp_storage_name"]
         monkeyfs_path = provider_info.get("monkeyfs_path", "/monkeyfs")
 
-        print("Mounting filesystem...")
+        logger.debug("Mounting filesystem...")
 
         setup_job_args = {
             "gcp_storage_name": gcp_storage_name,
@@ -69,33 +68,37 @@ name: {}, ip: {}, state: {}
                 extravars=setup_job_args,
             )
         except AnsibleRunException as e:
-            print(e)
-            print("Failed to mount filesystem")
+            logger.error(e)
+            logger.error("Failed to mount filesystem")
             return False, "Failed to mount monkeyfs filesystem"
         return True, "Mounted Monkeyfs properly"
 
-    def cleanup_job(self, job_yml, provider_info=dict()):
+    def cleanup_job(self, job_yml, provider_info={}):
         job_uid = job_yml["job_uid"]
-        print("\n\nTerminating Machine:", job_uid, "\n\n")
+        logger.debug("\n\nTerminating Machine:", job_uid, "\n\n")
+        # Cleanup skipped for now
 
         delete_instance_params = {
             "monkey_job_uid": job_uid,
-            "zone": provider_info["zone"],
-            "gcp_project": provider_info["project"],
-            "gcp_cred_kind": "serviceaccount",
-            "gcp_cred_file": provider_info["gcp_cred_file"],
         }
 
-        print(provider_info)
+        for key, val in get_gcp_vars().items():
+            delete_instance_params[key] = val
 
-        runner = ansible_runner.run(host_pattern="localhost",
-                                    private_data_dir="ansible",
-                                    module="include_role",
-                                    module_args="name=gcp/delete",
-                                    extravars=delete_instance_params)
+        uuid = self.update_uuid()
+        runner = ansible_runner.run(
+            host_pattern="localhost",
+            private_data_dir="ansible",
+            module="include_role",
+            module_args="name=gcp/delete",
+            extravars=delete_instance_params,
+            quiet=monkey_global.QUIET_ANSIBLE,
+            cancel_callback=self.ansible_runner_uuid_cancel(uuid))
 
-        print(runner.stats)
+        if self.get_uuid() != uuid:
+            logger.error("Failed Deletion of machine")
+            return False, "Failed to cleanup job after completion, cancelled due to concurrency"
         if runner.status == "failed":
-            print("Failed Deletion of machine")
+            logger.error("Failed Deletion of machine")
             return False, "Failed to cleanup job after completion"
         return True, "Succesfully cleaned up job"

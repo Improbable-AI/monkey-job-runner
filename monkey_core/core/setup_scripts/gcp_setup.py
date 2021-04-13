@@ -75,8 +75,7 @@ def get_valid_storage_name_input(args, storage_name, credentials):
                 f"Set the monkey_fs gcp gcs bucket name ({storage_name}): "
             ) or storage_name
         credentials["gcp_storage_name"] = storage_name
-        filesystem_ok = create_gcp_monkeyfs(
-                                            credentials=credentials)
+        filesystem_ok = create_gcp_monkeyfs(credentials=credentials)
 
         if not filesystem_ok:
             if not args.storage_name:
@@ -169,18 +168,19 @@ def create_gcp_provider(provider_name, provider_yaml, args):
         "firewall_rule": "monkey-ansible-firewall"
     }
 
-    write_vars_file(raw_vars=raw_gcp_vars,
-                    provider_name=provider_name,
-                    provider_yaml=provider_yaml,
-                    file_name="gcp_vars.yml",
-                    before_comments={
-                        # "gcp_storage_name":
-                        #     "\n\n###########\n# Optional\n###########",
-                    },
-                    end_line_comments={
-                        "gcp_storage_name": "Defautls to monkeyfs-XXXXXX",
-                        "monkeyfs_path": "Defautls to /monkeyfs"
-                    })
+    write_vars_file(
+        raw_vars=raw_gcp_vars,
+        provider_name=provider_name,
+        provider_yaml=provider_yaml,
+        file_name="gcp_vars.yml",
+        before_comments={
+            # "gcp_storage_name":
+            #     "\n\n###########\n# Optional\n###########",
+        },
+        end_line_comments={
+            "gcp_storage_name": "Defautls to monkeyfs-XXXXXX",
+            "monkeyfs_path": "Defautls to /monkeyfs"
+        })
 
     if not mount_gcp_monkeyfs(raw_gcp_vars):
         print("Terminating, failed to mount the gcp filesystem")

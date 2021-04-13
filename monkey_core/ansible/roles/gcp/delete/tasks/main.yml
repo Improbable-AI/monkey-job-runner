@@ -1,6 +1,4 @@
 ---
-  # tasks:
-
 # TODO: ensure copying of data over with shutdown script
 - name: Delete a instance
   gcp_compute_instance:

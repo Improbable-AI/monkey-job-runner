@@ -33,19 +33,6 @@ def get_gcp_vars():
     return load_yaml_file_as_dict(gcp_vars_file)
 
 
-def write_commented_yaml_file(filename, yaml_params):
-    yaml_params.fa.set_block_style()
-    with open(filename, "w") as f:
-        try:
-            y = YAML()
-            y.explicit_start = True
-            y.default_flow_style = False
-            y.dump(yaml_params, f)
-        except Exception as e:
-            print(f"Failed to write file: {filename}\n{e}")
-            exit(1)
-
-
 def printout_ansible_events(events):
     events = [(x.get("event_data",
                      {}).get("task",
@@ -179,6 +166,7 @@ def write_vars_file(
     providers = provider_yaml.get("providers", [])
     if providers is None:
         providers = []
+    vars_dict.fa.set_block_style()
     providers.append(vars_dict)
     provider_yaml["providers"] = providers
 
@@ -189,3 +177,16 @@ def write_vars_file(
     print("\nWriting aws vars file...")
     vars_file = f"ansible/{file_name}"
     write_commented_yaml_file(vars_file, vars_dict)
+
+
+def write_commented_yaml_file(filename, yaml_params):
+    yaml_params.fa.set_block_style()
+    with open(filename, "w") as f:
+        try:
+            y = YAML()
+            y.explicit_start = True
+            y.default_flow_style = False
+            y.dump(yaml_params, f)
+        except Exception as e:
+            print(f"Failed to write file: {filename}\n{e}")
+            exit(1)
