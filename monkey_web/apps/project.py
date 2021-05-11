@@ -45,15 +45,20 @@ RUN_TABLE_OPTIONS = {
 def get_layout(project_id, run_id=None):
     runs = to_hyperparameter_list(get_run_list(project=project_id))
     columns = get_column_spec(runs)
-    run_info = html.P('Select a run to view details') if run_id is None else get_run_info(run_id)
+    run_info = html.P('Select a run to view details') if run_id is None else get_run_info(project_id, run_id)
 
     return html.Div(children=[
         dcc.Store(id='project-current-project', data=project_id),
         dcc.Store(id='project-current-run', data=run_id),
         dcc.Store(id='project-run-list', data=runs),
 
+        html.Div(className='border-bottom', children=[
+            html.Div(className='container', children=[
+                html.H1('View project details'),
+                ]),
+            ]),
         html.Div(className='row', children=[
-            html.Div(className='col-12 col-md-4 offset-md-8 p-3 border-left border-bottom', children=[
+            html.Div(className='col-12 col-md-4 offset-md-8 p-3 border-start border-bottom', children=[
                 html.H5(className='mb-0', children=f'Project: {project_id}'),
                 ]),
             ]),
@@ -68,25 +73,29 @@ def get_layout(project_id, run_id=None):
                     ),
                 ]),
 
-            html.Div(className='col-12 col-md-4 p-3 border-left border-bottom', children=[
+            html.Div(className='col-12 col-md-4 p-3 border-start border-bottom', children=[
                 run_info
                 ]),
             ]),
         ])
 
 
-def get_run_info(run_id):
+def get_run_info(project_id, run_id):
     try:
         r = requests.get(f'{MONKEY_CORE}/get/job_info', params={'job_uid': run_id})
         r.raise_for_status()
         response = r.json()['job_info']
     except:
         raise
+
     return html.Div(children=[
+        html.Dl(children=[
             html.Dt('Monkey id'), html.Dd(run_id),
             html.Dt('Run name'), html.Dd(response['job_yml'].get('name', 'Unnamed workflow')),
             html.Dt('Run status'), html.Dd(MONKEY_STATUS[response['state']]),
-            ])
+            ]),
+        html.A('View Tensorboard', href=f'/tensorboard/{project_id}/{run_id}'),
+        ])
 
 
 def to_hyperparameter_list(raw_runs):

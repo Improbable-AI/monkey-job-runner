@@ -36,7 +36,7 @@ DASHBOARD_TABLE_OPTIONS = {
 
 def get_layout():
     runs = get_run_list()
-    return html.Div(className='container my-5', children=[
+    return html.Div(className='container', children=[
         dcc.Store(id='dashboard-run-list', data=runs),
 
         html.H1(children='Dashboard'),

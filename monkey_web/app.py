@@ -18,7 +18,7 @@ MONKEY_STATUS = {
         'FINISHED': 'Finished',
         }
 
-external_stylesheets = ['https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css']
+external_stylesheets = ['https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css']
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 server = app.server

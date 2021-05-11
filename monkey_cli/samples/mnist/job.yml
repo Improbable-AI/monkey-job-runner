@@ -1,6 +1,6 @@
 ---
 name: mnist
-project_name: monkey
+project_name: mnist
 run:
 # Supported env_type options: conda, pip, docker
     env_type: conda
@@ -15,8 +15,7 @@ code:
     path: .
 # When packing up the codebase, monkey will ignore the following paths
     ignore:
-      - data
-      - output
+      - runs
 persist:
 
 # Define folders or files to persist throughout runs.
@@ -24,25 +23,24 @@ persist:
 # Any defined persist folder will be kept in persistent storage and applied over the codebase at start
 # Persisted folders will be unpacked in the order they are listed
     
-  - output
+  - runs
 
 # Dataset folders will be checksummed before re-uploading
 #     
-data:
-  - name: monkey-data-0
-
-# Dataset type options are fore copy or mount.  Mount will directly mount the dataset bucket while copy will copy the dataset to local memory (highly recommended and only supported)
-#             
-    type: copy
-
-# Path should be a relative directory that will only be reuploaded if a checksum does not match
-#             
-    path: data
-
-# optional compression type. (Must have compression packages available on machine)  Options: tar, gztar (default)
-#             
-    compression: gztar
+data: []
 providers:
-
-# GCP Provider: gcp
-  - name: gcp
+# 
+# AWS Provider: aws
+  - name: aws
+# Pick an AWS instance type (https://aws.amazon.com/ec2/instance-types/)
+    machine_type: t3.small
+# Disk Size (GB)
+    disk_size: 10
+# Available disk types (gp2, st1) (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-volume-types.html)
+    disk_type: gp2
+# Currently only Ubuntu 18.04/20.04 is supported. 
+# Ubuntu 20.04 x86 ( ami-0dba2cb6798deb6d8 )
+    base_image: ami-0567f647e75c7bc05
+    spot: true
+# This is the maximum bid price you are willing to give for the machine. 
+    spot_price: 0.0208

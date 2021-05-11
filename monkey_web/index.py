@@ -6,7 +6,7 @@ from dash.dependencies import Input, Output
 from dash.exceptions import PreventUpdate
 
 from app import app, DATA_REFRESH_INTERVAL
-from apps import dashboard, project
+from apps import dashboard, project, tensorboard
 
 app.layout = html.Div(children=[
     dcc.Location(id='app-url', refresh=False),
@@ -17,9 +17,11 @@ app.layout = html.Div(children=[
         interval=DATA_REFRESH_INTERVAL,
         ),
 
-    html.Nav(className='navbar navbar-dark bg-dark', children=[
-        dcc.Link(className='navbar-brand', href='/',
-            children='Experiment visualizer'),
+    html.Nav(className='navbar navbar-dark bg-dark mb-5', children=[
+        html.Div(className='container', children=[
+            dcc.Link(className='navbar-brand', href='/',
+                children='Experiment visualizer'),
+                ]),
         ]),
 
     html.Div(id='app-content'),
@@ -46,8 +48,12 @@ def display_page(path):
             return project.get_layout(path[1])
         else:
             return project.get_layout(path[1], path[2])
-    elif pathname.startswith('/run/'):
+    elif path[0] == 'run':
         return compare.get_layout(pathname[5:])
+    elif path[0] == 'tensorboard':
+        if len(path) != 3:
+            return '404'
+        return tensorboard.get_layout(path[1], path[2])
     else:
         return '404'
 
