@@ -41,7 +41,7 @@ jobs:
 
     - name: Setup Provider
       run: |
-        ./flush_all_provider_data.sh
+        ./flush_all_provider_data.sh || true
         python3 setup_core.py --create --noinput --type local --name local --local-host localhost --localhost-only
         df -h
         ls -al ~
