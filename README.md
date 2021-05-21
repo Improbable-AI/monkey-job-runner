@@ -199,7 +199,7 @@ To use the GCP provider, use `monkey init` and choose the GCP provider created i
 
 
 #### Local Provider Setup (Beta - Individual Machines)
-To set up local providers with individual machinese, it is a more involved and complicated process.  The process with more detailed explaination can be found in [local_instance_setup.md](https://github.com/Improbable-AI/monkey-job-runner/blob/develop/local_instance_setup.md)
+To set up local providers with individual machinese, it is a more involved and complicated process.  The process with more detailed explaination can be found in [local_instance_setup.md](https://github.com/Improbable-AI/monkey-job-runner/blob/develop/monkey_core/local_instance_setup.md)
 
 A local provider functions with a couple necessary parameters.  Every worker in a local provider is treated as a machine with two necessary folder designations.  *Monkey-Core* will ask for a:
 `remote filesystem mount path` - Where the main `monkeyfs` will mount to distribute data to workers efficiently
@@ -208,4 +208,35 @@ A local provider functions with a couple necessary parameters.  Every worker in 
 `monkeyfs ssh port` - The accessible ssh port of *Monkey-Core* from worker nodes
 `local.yml` - The local inventory file path, which will store information about every local node available as well as override options
 
+#### Checking For Proper Monkey Core Setup
 
+Quick Checklist:
+* MongoDB is running in the background with `docker-compose`
+* At least one provider is setup and has completed setup with `setup_core.py`
+
+If the MongoDB is running and a provider is set up properly, then starting the `monkey_core.py` daemon should be all set.  
+
+Upon initialization, `monkey_core.py` will run some checks on the setup providers and remount needed filesystems if needed.  After checks are completed, `Monkey-Core` will then printout job statuses every 10s.  The status will also be written to the `monkey.status` file for convenience if you would like to open a shell to `watch cat monkey.status` or `tail -f monkey.status`.  Logs for `Monkey-Core` will also be written to `monkey.log` in order to help trace bugs or understand failures in the system.
+
+If you can run the `monkey_core.py` daemon and it prints out the status of jobs, then you should be set to dispatch jobs with `Monkey-CLI`.
+
+
+### Setting Up Monkey CLI
+The code for the `Monkey-CLI` tool is in the subfolder `monkey_cli`.  Like `Monkey-Core`, `Monkey-CLI` has its own set of dependencies.  To install: 
+```
+python3 -n venv venv
+source ven/bin/activate
+pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+Then, there are two options for setting up the Monkey-Cli.
+
+To install it in editable mode run (Recommended)
+```
+pip install -e .
+```
+To install it in a un-editable package
+```
+pip install .
+```
