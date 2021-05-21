@@ -50,7 +50,7 @@ jobs:
       env:
         aws_key: ${{ secrets.personal_avery_aws_service_key }}
       run: |
-        ./flush_all_provider_data.sh
+        ./flush_all_provider_data.sh || true
         echo "$aws_key" | base64 --decode > aws_key.csv
         python3 setup_core.py --noinput --create --type aws -i aws_key.csv --ssh-key-name monkey-aws-ci-conda-key
         cat ansible/aws_vars.yml | grep storage_name | awk '{ print $2 }'
