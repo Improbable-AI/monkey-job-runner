@@ -266,11 +266,7 @@ For explaination we will use the mnist sample located under `./monkey_cli/sample
 
 Explaination on the options chosen for the `monkey init` for this subfolder of code can be found in the [monkey_init_output.md](https://github.com/Improbable-AI/monkey-job-runner/blob/develop/monkey_cli/samples/mnist/monkey_init_output.md).
 
-After the `monkey init` finishes, the new `job.yml` file is written to the root of the repo to define the job.  An example `run.yml` file can be found [example_run.yml](https://github.com/Improbable-AI/monkey-job-runner/blob/develop/monkey_cli/samples/mnist/example_run.yml))
-
-```
-monkey run python mnist.py --learning-rate 0.13
-```
+After the `monkey init` finishes, the new `job.yml` file is written to the root of the repo to define the job.  An example `job.yml` file can be found [example_job.yml](https://github.com/Improbable-AI/monkey-job-runner/blob/develop/monkey_cli/samples/mnist/example_job.yml))
 
 Before the mnist sample can be used, you will have to download the dataset with the convenience script
 ```
@@ -280,11 +276,98 @@ Before the mnist sample can be used, you will have to download the dataset with 
 
 ```
 
-It should connect to *Monkey Core* and give you a uid for the job in the form of:
+At this point, monkey is set up fully to dispatch jobs.  You can do so by using any of the listed Ad-Hoc dispatches, scripting, or sweeping approaches.  
+
+An example of an Ad-Hoc dispatch is just prepending `monkey run` to anything you would originally run
 ```
-monkeyec2-35-170-61-127.compute-1.amazonaws.com-yy-mm-dd-#-***
+monkey run python mnist.py --learning-rate 0.13
+```
+Examples of a sweep dispatch can be found in `param_sweep.py`.
+
+
+When a run is dispatched, you should see similar following output
+```
+> monkey run python3 mnist.py --learning-rate 0.15 --n-epochs 2
+
+Monkey running:
+python3 mnist.py --learning-rate 0.15 --n-epochs 2
+
+Running on provider: aws
+Creating job with id:  monkey-21-05-21-1-sxj 
+
+Uploading dataset...
+Dataset checksum: 17773c10d2d974c120910922951c963b
+Need to upload data...
+Compressing Dataset...
+/tmp/tmpb2igyj4_.tar.gz
+Upload Dataset Success:  True
+Uploading persisted_folder...
+Persisting:  ['output']
+Upload Persisted Folder: Successful
+
+Uploading Codebase...
+Codebase checksum: 54c8bf7ce4fa27c60efae8e8472c38ef
+Need to upload code... codebase_found:  False
+Creating codebase tar...
+Upload Codebase: Successful
+
+Submitting Job: monkey-21-05-21-1-sxj
+
 ```
 
+From this output, we know that the unique `job_id` given to the job is `monkey-21-05-21-1-sxj`.  In order to make it easy, `job_ids` can be referred to by the last three random characters (where it will take the most recent match of the same characters), so this job can be referred to as `sxj`.
+
+From this, we can use the `Monkey-CLI` helper tools.
+
+To get job info pretty printed, run `monkey info job <job_id>`
+```
+> monkey info job sxj
+
+Retrieving info for sxj
+Full monkey uid:                    monkey-21-05-21-1-sxj
+Created:                            4:32 AM 5-21-21
+Command run:                        python3 mnist.py --learning-rate 0.15 --n-epochs 2
+Job state:                          Installing Dependencies
+Elapsed Time:                       02m 49s
+```
+
+To get a list of all monkey instances currently running, use `monkey list instances`
+```
+> monkey list instances
+
+Listing Instances available
+
+      Instance Name            Public IP            State      
+
+Instance list for: aws, Total: 5
+  monkey-21-05-21-1-xno       54.167.18.67         offline     
+  monkey-21-05-21-1-xvp       3.80.52.221          running     
+  monkey-21-05-21-1-sbc      54.227.121.75         running     
+  monkey-21-05-21-1-sxj      34.226.205.67         running     
+  monkey-21-05-21-1-aod      54.91.189.152         running
+```
+Note: we see the sxj instance has started running at this point.  For debugging purposes, you can ssh directly into the instance by using the `aws` provider key in `ansible/keys/`.
+
+You can list all running jobs and there status with `monkey list jobs`
+```
+monkey list jobs     
+
+Listing Jobs available
+
+         Job Name                   Status                Created          Elapsed       Runtime   
+  monkey-21-05-21-1-sxj    Installing Dependencies    05/21/21 04:32       03m 31s        0.0s   
+```
+
+To sync the job output to your local computer you can use the `monkey output <job_id>` command
+```
+> monkey output sxj
+
+Full uid: monkey-21-05-21-1-sxj
+
+To see your output run:
+cd /home/avery/Developer/projects/monkey/monkey_cli/samples/mnist/monkey-output/sxj
+```
+The `monkey output` command will sync the persisted folders of the job into a subfolder `monkey-output`, which is created as a subdirectory under the `job.yml`.  It can be run at any time to force syncing from a provider to the local machine (to get intermediate results).
 
 
 ### Setup Monkey Web
