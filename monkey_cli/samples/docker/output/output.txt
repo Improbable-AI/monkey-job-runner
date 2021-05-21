@@ -1,2 +1,0 @@
-Hello docker output goes here:
-
