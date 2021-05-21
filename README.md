@@ -93,15 +93,24 @@ When *Monkey-Core* starts running, it will scan the `providers.yml` file for exi
 ### Monkey Core Provider Setup
 
 For *Monkey-Core* to dispatch workloads to nodes, it needs to also set up a provider where it has permissions to do so.  There are currently only a few supported providers:
-- Local
 - AWS
-- GCP (broken currently)
+- GCP
+- Local (Individual Machines)
 - SLURM (Future support)
 - Kubernetes (Future support)
 
 Providers are set up in *Monkey-Core* through the script `setup_core.py`, which will ask questions about the required information for setting up the provider.
 
 To re-setup providers, you must delete the provider from the `providers.yml` file, or you can completely wipe *Monkey-Core* with the provided `./flush_all_provider_data.sh` script.
+
+
+#### AWS Provider Setup
+TODO
+
+
+
+#### GCP Provider Setup
+TODO
 
 #### Local Provider Setup
 A local provider functions with a couple necessary parameters.  Every worker in a local provider is treated as a machine with two necessary folder designations.  *Monkey-Core* will ask for a:
@@ -112,10 +121,3 @@ A local provider functions with a couple necessary parameters.  Every worker in 
 `local.yml` - The local inventory file path, which will store information about every local node available as well as override options
 
 
-#### AWS Provider Setup
-TODO
-
-
-
-#### GCP Provider Setup
-TODO
