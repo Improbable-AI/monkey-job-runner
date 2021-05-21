@@ -262,9 +262,12 @@ monkey init
 ```
 Follow the step by step instructions, and a `job.yml` file will be written to the current working directory.  Ensure that the job.yml is at the root of the workflow and all paths are relative to the `job.yml` file.
 
-For explaination
+For explaination we will use the mnist sample located under `./monkey_cli/samples/mnist`.
 
-To dispatch a job, go to the samples directory `./*monkey-cli*/samples/mnist` and run with whatever options desired:
+Explaination on the options chosen for the `monkey init` for this subfolder of code can be found in the [monkey_init_output.md](https://github.com/Improbable-AI/monkey-job-runner/blob/develop/monkey_cli/samples/mnist/monkey_init_output.md).
+
+After the `monkey init` finishes, the new `job.yml` file is written to the root of the repo to define the job.  An example `run.yml` file can be found [example_run.yml](https://github.com/Improbable-AI/monkey-job-runner/blob/develop/monkey_cli/samples/mnist/example_run.yml))
+
 ```
 monkey run python mnist.py --learning-rate 0.13
 ```
