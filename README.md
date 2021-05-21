@@ -358,6 +358,17 @@ Listing Jobs available
   monkey-21-05-21-1-sxj    Installing Dependencies    05/21/21 04:32       03m 31s        0.0s   
 ```
 
+To sync the job output to your local computer you can use the `monkey output <job_id>` command
+```
+> monkey output sxj
+
+Full uid: monkey-21-05-21-1-sxj
+
+To see your output run:
+cd /home/avery/Developer/projects/monkey/monkey_cli/samples/mnist/monkey-output/sxj
+```
+The `monkey output` command will sync the persisted folders of the job into a subfolder `monkey-output`, which is created as a subdirectory under the `job.yml`.  It can be run at any time to force syncing from a provider to the local machine (to get intermediate results).
+
 
 ### Setup Monkey Web
 The code for the `Monkey-Web` tool is in the subfolder `monkey_web`.  To install python requirements: 
