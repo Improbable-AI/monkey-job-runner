@@ -266,6 +266,8 @@ For explaination we will use the mnist sample located under `./monkey_cli/sample
 
 Explaination on the options chosen for the `monkey init` for this subfolder of code can be found in the [monkey_init_output.md](https://github.com/Improbable-AI/monkey-job-runner/blob/develop/monkey_cli/samples/mnist/monkey_init_output.md).
 
+Note: Monkey works best currently on x86 based machines.  The difference between 20.04 and 18.04 Ubuntu seems to not really change things.  The Deep Learning AMI works, but often requires multiple restarts as the Deep Learning AMI is preprogrammed to pull blocking updates upon start.  The Monkey system should recover the image after a couple of restarts. 
+
 After the `monkey init` finishes, the new `job.yml` file is written to the root of the repo to define the job.  An example `job.yml` file can be found [example_job.yml](https://github.com/Improbable-AI/monkey-job-runner/blob/develop/monkey_cli/samples/mnist/example_job.yml))
 
 Before the mnist sample can be used, you will have to download the dataset with the convenience script
