@@ -6,14 +6,4 @@ There are a couple modules to monkey.  First, when cloned the included modules a
 ```
 git submodule update --init --recursive
 
-``
-
-
-
-
-
-
-
-
-
-
+```
