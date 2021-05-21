@@ -240,3 +240,60 @@ To install it in a un-editable package
 ```
 pip install .
 ```
+In editable mode, the *monkey-cli* live files will be used so any package does not require recompiling.  
+
+At this point, you should be able to run the *monkey-cli* binary with `monkey`.
+
+To expore the binary options (not all available) run:
+```
+> monkey --help
+    run                 Run a job on the specified provider
+    create              Create an instance on the specified provider
+    list                List jobs on the specified provider
+    info                Get info on the specified item
+    output              Get the output of a job
+    init                Run this command to instantiate the monkey cli with a job.yml file for your workload
+```
+
+#### Monkey-CLI Job.yml
+Monkey-CLI requires a "job.yml" file to read in parameters to dispatch jobs to Monkey-Core.  To set up this job.yml, run the command 
+```
+monkey init
+```
+Follow the step by step instructions, and a `job.yml` file will be written to the current working directory.  Ensure that the job.yml is at the root of the workflow and all paths are relative to the `job.yml` file.
+
+For explaination
+
+To dispatch a job, go to the samples directory `./*monkey-cli*/samples/mnist` and run with whatever options desired:
+```
+monkey run python mnist.py --learning-rate 0.13
+```
+
+Before the mnist sample can be used, you will have to download the dataset with the convenience script
+```
+# torchvision must be installed to run it.  
+# A quick way to install is to create a venv with the requirements for the sample to run it
+./download_data.py
+
+```
+
+It should connect to *Monkey Core* and give you a uid for the job in the form of:
+```
+monkeyec2-35-170-61-127.compute-1.amazonaws.com-yy-mm-dd-#-***
+```
+
+
+
+### Setup Monkey Web
+The code for the `Monkey-Web` tool is in the subfolder `monkey_web`.  To install python requirements: 
+```
+python3 -n venv venv
+source ven/bin/activate
+pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+To run the `Monkey-Web` interface, simply do
+```
+python index.py
+```
