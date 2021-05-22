@@ -65,7 +65,7 @@ Monkey depends on *Monkey-Core* as the coordinator for all providers (**main nod
 
 *Monkey-Core* is the scheduler and coordinator for the entire Monkey system.  There are multiple pieces that currently need to be run in order to use it.
 
-First of all, go into the `*monkey_core*` directory and set up a python environment and activate it.  Currently it is tested most with `virtualenv`
+First of all, go into the `*monkey_core*` directory and set up a python environment and activate it.  Currently it is tested most with `virtualenv`.  `Monkey-Core` also requires Python 3.8+
 ```
 python3 -m venv venv
 source ven/bin/activate
