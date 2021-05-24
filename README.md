@@ -127,7 +127,15 @@ After creating the programmatic IAM user, attach these permissions and then down
 
 At this point you should have an AWS IAM account with programmatic access and a `.csv` key for the IAM user.  To start setup, run `python3 setup_core.py` and choose Provider Type to be `aws`.  Then it should ask you for the `AWS Account File` which is the `.csv` that contains your AWS information.  
 
-AWS requires `s3fs` to be installed on your local system.  On linux, this can be done with `apt-get install s3fs`, on macOS, this can be done with `brew install s3fs`.
+AWS requires `s3fs` to be installed on your local system.  
+On linux install with
+```
+apt-get install s3fs
+```
+On macOS install with 
+```
+brew install s3fs
+```
 
 The `setup_core.py` script output will ask for other information suh as region/zone/key_name which can be overridden at this stage:
 ```
