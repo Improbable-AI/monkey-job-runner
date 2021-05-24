@@ -272,13 +272,24 @@ To expore the binary options (not all available) run:
 ```
 
 #### Monkey-CLI Job.yml
+
+For explaination we will use the mnist sample located under `./monkey_cli/samples/mnist`.
+
+Before the mnist sample can be used, you will have to download the dataset with the convenience script
+```
+# torchvision must be installed to run it.  
+pip install torchvision
+
+# A quick way to install is to create a venv with the requirements for the sample to run it
+python3 download_data.py
+```
+
 Monkey-CLI requires a "job.yml" file to read in parameters to dispatch jobs to Monkey-Core.  To set up this job.yml, run the command 
 ```
 monkey init
 ```
 Follow the step by step instructions, and a `job.yml` file will be written to the current working directory.  Ensure that the job.yml is at the root of the workflow and all paths are relative to the `job.yml` file.
 
-For explaination we will use the mnist sample located under `./monkey_cli/samples/mnist`.
 
 Explaination on the options chosen for the `monkey init` for this subfolder of code can be found in the [monkey_init_output.md](https://github.com/Improbable-AI/monkey-job-runner/blob/develop/monkey_cli/samples/mnist/monkey_init_output.md).
 
@@ -286,13 +297,6 @@ Note: Monkey works best currently on x86 based machines.  The difference between
 
 After the `monkey init` finishes, the new `job.yml` file is written to the root of the repo to define the job.  An example `job.yml` file can be found [example_job.yml](https://github.com/Improbable-AI/monkey-job-runner/blob/develop/monkey_cli/samples/mnist/example_job.yml))
 
-Before the mnist sample can be used, you will have to download the dataset with the convenience script
-```
-# torchvision must be installed to run it.  
-# A quick way to install is to create a venv with the requirements for the sample to run it
-./download_data.py
-
-```
 
 At this point, monkey is set up fully to dispatch jobs.  You can do so by using any of the listed Ad-Hoc dispatches, scripting, or sweeping approaches.  
 
