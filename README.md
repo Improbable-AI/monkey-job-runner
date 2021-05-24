@@ -85,7 +85,7 @@ docker-compose start
 docker-compose logs
 ```
 
-At this point *Monkey-Core* should be able to run with `./monkey_core.py`
+At this point *Monkey-Core* should run with `python3 monkey_core.py` and print out "No providers found".  Monkey-Core requires at least one provider to be set up for it to start.
 
 Notes:
 When *Monkey-Core* starts running, it will scan the `providers.yml` file for existing providers that it needs to setup or check.  For every cloud provider, *Monkey-Core* will mount the storage bucket as a filesystem in `ansible/monkeyfs-(aws|gcp)`.  For all local workers, *Monkey-Core* will check their availability and ensure that the worker has been set up properly.
@@ -99,10 +99,15 @@ For *Monkey-Core* to dispatch workloads to nodes, it needs to also set up a prov
 - SLURM (Future support)
 - Kubernetes (Future support)
 
-Providers are set up in *Monkey-Core* through the script `setup_core.py`, which will ask questions about the required information for setting up the provider.
+Providers are set up in *Monkey-Core* through the script `python3 setup_core.py`, which will ask questions about the required information for setting up the provider.
 
 To re-setup providers, you must delete the provider from the `providers.yml` file, or you can completely wipe *Monkey-Core* with the provided `./flush_all_provider_data.sh` script.
 
+To start setup, run
+```
+python3 setup_core.py
+```
+It will require a key for cloud providers, which you must provide with the correct permisions.
 
 #### AWS Provider Setup
 
@@ -120,7 +125,7 @@ After creating the programmatic IAM user, attach these permissions and then down
 
 ##### AWS Setup
 
-At this point you should have an AWS IAM account with programmatic access and a `.csv` key for the IAM user.  To start setup, run `./setup_core.py` and choose Provider Type to be `aws`.  Then it should ask you for the `AWS Account File` which is the `.csv` that contains your AWS information.  
+At this point you should have an AWS IAM account with programmatic access and a `.csv` key for the IAM user.  To start setup, run `python3 setup_core.py` and choose Provider Type to be `aws`.  Then it should ask you for the `AWS Account File` which is the `.csv` that contains your AWS information.  
 
 AWS requires `s3fs` to be installed on your local system.  On linux, this can be done with `apt-get install s3fs`, on macOS, this can be done with `brew install s3fs`.
 
@@ -143,7 +148,7 @@ After completion of the script, Monkey will start setting up a virtual private c
 
 At this point, if the `setup_core.py` automation scripts succeed, Monkey will also mount the created bucket to the host machine under `ansible/monkeyfs-aws`.  This provides a filesystem abstraction for the Monkey system to easily write files and retrieve files from the AWS provider.  Upon starting of `Monkey-Core`, if the filesystem gets demounted, it will automatically reconnect the `s3fs` mount.
 
-To use the AWS provider, use `monkey init` and choose the AWS provider created in your `job.yml` creation.
+To use the AWS provider on the CLI side (explained later in the doc), use `monkey init` and choose the AWS provider created in your `job.yml` creation.
 
 #### GCP Provider Setup
 
@@ -162,7 +167,7 @@ These are blanket permissions that will be made more specific in the future. For
 After creating the programmatic service account, attach these permissions and then download the .json key for the service account.
 
 ##### GCP Setup
-At this point you should have an AWS Service Account `.json` key for the IAM user.  To start setup, run `./setup_core.py` and choose Provider Type to be `gcp`.  Then it should ask you for the `GVP Account File` which is the `.json` that contains your GCP information.  
+At this point you should have an AWS Service Account `.json` key for the IAM user.  To start setup, run `python3 setup_core.py` and choose Provider Type to be `gcp`.  Then it should ask you for the `GVP Account File` which is the `.json` that contains your GCP information.  
 
 GCP requires `gcsfuse` to be installed on your local system.  
 On linux, this can be done with:
@@ -194,19 +199,12 @@ Like AWS, after completion of the script Monkey will start setting up a virtual 
 
 At this point, if the `setup_core.py` automation scripts succeed, Monkey will also mount the created bucket to the host machine under `ansible/monkeyfs-gcp`.  This provides a filesystem abstraction for the Monkey system to easily write files and retrieve files from the GCP provider.  Upon starting of `Monkey-Core`, if the filesystem gets demounted, it will automatically reconnect the `gcsfuse` mount.
 
-To use the GCP provider, use `monkey init` and choose the GCP provider created in your `job.yml` creation.
+To use the GCP provider on the CLI side (explained later in the doc), use `monkey init` and choose the GCP provider created in your `job.yml` creation.
 
 
 
 #### Local Provider Setup (Beta - Individual Machines)
 To set up local providers with individual machinese, it is a more involved and complicated process.  The process with more detailed explaination can be found in [local_instance_setup.md](https://github.com/Improbable-AI/monkey-job-runner/blob/develop/monkey_core/local_instance_setup.md)
-
-A local provider functions with a couple necessary parameters.  Every worker in a local provider is treated as a machine with two necessary folder designations.  *Monkey-Core* will ask for a:
-`remote filesystem mount path` - Where the main `monkeyfs` will mount to distribute data to workers efficiently
-`remote scratch path` - Where scratch folders are generated temporarily to process worker requests
-`monkeyfs ssh IP` - The accessible IP or hostname of *Monkey-Core* from worker nodes
-`monkeyfs ssh port` - The accessible ssh port of *Monkey-Core* from worker nodes
-`local.yml` - The local inventory file path, which will store information about every local node available as well as override options
 
 #### Checking For Proper Monkey Core Setup
 
@@ -218,7 +216,12 @@ If the MongoDB is running and a provider is set up properly, then starting the `
 
 Upon initialization, `monkey_core.py` will run some checks on the setup providers and remount needed filesystems if needed.  After checks are completed, `Monkey-Core` will then printout job statuses every 10s.  The status will also be written to the `monkey.status` file for convenience if you would like to open a shell to `watch cat monkey.status` or `tail -f monkey.status`.  Logs for `Monkey-Core` will also be written to `monkey.log` in order to help trace bugs or understand failures in the system.
 
-If you can run the `monkey_core.py` daemon and it prints out the status of jobs, then you should be set to dispatch jobs with `Monkey-CLI`.
+Now you should be able to run:
+```
+python3 monkey_core.py
+```
+Daemon and it should print out the status of jobs every 10-15 seconds.  
+The next step then is to set up `Monkey-CLI` and your workflow.
 
 
 ### Setting Up Monkey CLI
