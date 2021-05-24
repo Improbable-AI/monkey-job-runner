@@ -107,7 +107,7 @@ To start setup, run
 ```
 python3 setup_core.py
 ```
-It will require a key for cloud providers, which you must provide with the correct permisions.
+It will require a key for cloud providers, which you must provide with the correct permisions.  You must pick which providers you want to set up with `Monkey-Core` to use them as execution environments for your workflows.
 
 #### AWS Provider Setup
 
