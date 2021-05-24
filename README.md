@@ -67,8 +67,8 @@ Monkey depends on *Monkey-Core* as the coordinator for all providers (**main nod
 
 First of all, go into the `*monkey_core*` directory and set up a python environment and activate it.  Currently it is tested most with `virtualenv`.  `Monkey-Core` also requires Python 3.8+
 ```
-python3 -m venv venv
-source ven/bin/activate
+python3 -m venv monkey-venv
+source monkey-venv/bin/activate
 pip install --upgrade pip
 pip install -r requirements.txt
 ```
