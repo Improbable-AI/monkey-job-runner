@@ -233,7 +233,9 @@ The next step then is to set up `Monkey-CLI` and your workflow.
 
 
 ### Setting Up Monkey CLI
-The code for the `Monkey-CLI` tool is in the subfolder `monkey_cli`.  Like `Monkey-Core`, `Monkey-CLI` has its own set of dependencies.  To install: 
+The code for the `Monkey-CLI` tool is in the subfolder `monkey_cli`.  Like `Monkey-Core`, `Monkey-CLI` has its own set of dependencies.  I would recommend keeping your `Monkey-Core` installation in a different shell than the `Monkey-CLI` as the `Monkey-Core` can produce helpful logs for debugging.
+
+To install `Monkey-CLI` in the `monkey_cli` directory create a new python environment: 
 ```
 python3 -n venv venv
 source ven/bin/activate
