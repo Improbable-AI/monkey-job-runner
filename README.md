@@ -282,6 +282,11 @@ pip install torchvision
 
 # A quick way to install is to create a venv with the requirements for the sample to run it
 python3 download_data.py
+# This should download the mnist dataset into ./data folder
+```
+Lastly set up the persisted output folder:
+```
+mkdir output
 ```
 
 Monkey-CLI requires a "job.yml" file to read in parameters to dispatch jobs to Monkey-Core.  To set up this job.yml, run the command 
