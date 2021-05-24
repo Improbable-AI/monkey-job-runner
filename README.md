@@ -83,6 +83,9 @@ docker-compose start
 
 # To reattach logs run:
 docker-compose logs
+
+# If you get an error saying mongo-volume bind path does not exist then run
+mkdir mongodb/mongo-volume
 ```
 
 At this point *Monkey-Core* should run with `python3 monkey_core.py` and print out "No providers found".  Monkey-Core requires at least one provider to be set up for it to start.
