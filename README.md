@@ -124,11 +124,13 @@ AmazonVPCFullAccess
 ```
 These are blanket permissions that will be made more specific in the future. For now they are all needed.
 
-After creating the programmatic IAM user, attach these permissions and then download the `.csv` key for the IAM user.  The `.csv` key should have the AWS `Access key ID` and `Secret access key`, which monkey will use to dispatch runs.
+After creating the programmatic IAM user, attach these permissions and then download the `.csv` key for the IAM user.  The `.csv` key should have the AWS `Access key ID` and `Secret access key`, which monkey will use to dispatch runs. Get the `.csv` file by following the instructions [here](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-quickstart.html#cli-configure-quickstart-creds).
 
 ##### AWS Setup
 
-At this point you should have an AWS IAM account with programmatic access and a `.csv` key for the IAM user.  To start setup, run `python3 setup_core.py` and choose Provider Type to be `aws`.  Then it should ask you for the `AWS Account File` which is the `.csv` that contains your AWS information.  
+At this point you should have an AWS IAM account with programmatic access and a `.csv` key for the IAM user. 
+
+To start setup, run `python3 setup_core.py` and choose Provider Type to be `aws`.  Then it should ask you for the `AWS Account File` which is the `.csv` that contains your AWS information.  
 
 AWS requires `s3fs` to be installed on your local system.  
 On linux install with
