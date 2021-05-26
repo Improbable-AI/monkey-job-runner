@@ -191,7 +191,12 @@ curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
 sudo apt-get update
 sudo apt-get install gcsfuse
 ```
-On macOS, this can be done with `brew install gcsfuse`.
+
+On macOS, `gcsfuse` needs to be installed via source as `brew install gcsfuse` is disabled at the time of this document:
+```
+brew install go osxfuse
+GO111MODULE=auto go get -u github.com/googlecloudplatform/gcsfuse
+```
 
 The `setup_core.py` script output will ask for other information suh as region/zone/key_name which can be overridden at this stage:
 ```
@@ -242,8 +247,8 @@ The code for the `Monkey-CLI` tool is in the subfolder `monkey_cli`.  Like `Monk
 
 To install `Monkey-CLI` in the `monkey_cli` directory create a new python environment: 
 ```
-python3 -n venv venv
-source ven/bin/activate
+python3 -m venv venv
+source venv/bin/activate
 pip install --upgrade pip
 pip install -r requirements.txt
 ```
