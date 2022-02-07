@@ -407,8 +407,8 @@ The `monkey output` command will sync the persisted folders of the job into a su
 ### Setup Monkey Web
 The code for the `Monkey-Web` tool is in the subfolder `monkey_web`.  To install python requirements: 
 ```
-python3 -n venv venv
-source ven/bin/activate
+python3 -m venv venv
+source venv/bin/activate
 pip install --upgrade pip
 pip install -r requirements.txt
 ```
