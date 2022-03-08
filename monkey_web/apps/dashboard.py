@@ -91,7 +91,7 @@ def update_run_table(runs, path):
         raise PreventUpdate
     return runs
 
-
+#Fixing issue
 """
 # Dash struggles with multiple datatable callbacks
 @app.callback(Output('app-url', 'pathname'),
